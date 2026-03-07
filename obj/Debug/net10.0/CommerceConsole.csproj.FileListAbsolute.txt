@@ -1,0 +1,15 @@
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\bin\Debug\net10.0\CommerceConsole.exe
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\bin\Debug\net10.0\CommerceConsole.deps.json
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\bin\Debug\net10.0\CommerceConsole.runtimeconfig.json
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\bin\Debug\net10.0\CommerceConsole.dll
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\bin\Debug\net10.0\CommerceConsole.pdb
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\obj\Debug\net10.0\CommerceConsole.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\obj\Debug\net10.0\CommerceConsole.AssemblyInfoInputs.cache
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\obj\Debug\net10.0\CommerceConsole.AssemblyInfo.cs
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\obj\Debug\net10.0\CommerceConsole.csproj.CoreCompileInputs.cache
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\obj\Debug\net10.0\CommerceConsole.sourcelink.json
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\obj\Debug\net10.0\CommerceConsole.dll
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\obj\Debug\net10.0\refint\CommerceConsole.dll
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\obj\Debug\net10.0\CommerceConsole.pdb
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\obj\Debug\net10.0\CommerceConsole.genruntimeconfig.cache
+C:\Users\Hashim\Documents\Git Repos\CommerceConsole\obj\Debug\net10.0\ref\CommerceConsole.dll

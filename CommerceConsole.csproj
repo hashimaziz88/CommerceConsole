@@ -7,4 +7,19 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include=".codex\01_Project_Overview.md" />
+    <None Include=".codex\02_Architecture_and_Solution_Structure.md" />
+    <None Include=".codex\03_Domain_Model.md" />
+    <None Include=".codex\04_Submission_1_Implementation_Blueprint.md" />
+    <None Include=".codex\05_Submission_2_Design_Pattern_Upgrade.md" />
+    <None Include=".codex\06_Coding_Standards.md" />
+    <None Include=".codex\07_Git_Workflow_and_Branching.md" />
+    <None Include=".codex\08_Codex_Prompt_Pack.md" />
+    <None Include=".codex\09_GitHub_Feature_Issues.md" />
+    <None Include=".codex\agents.md" />
+    <None Include=".codex\README.md" />
+    <None Include=".codex\rules.md" />
+  </ItemGroup>
+
 </Project>
