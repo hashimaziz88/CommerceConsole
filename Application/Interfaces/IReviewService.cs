@@ -8,12 +8,17 @@ namespace CommerceConsole.Application.Interfaces;
 public interface IReviewService
 {
     /// <summary>
-    /// Adds a new review.
+    /// Adds a customer review for a product.
     /// </summary>
-    void AddReview(Product product, Review review);
+    void AddReview(Customer customer, Guid productId, int rating, string comment);
 
     /// <summary>
     /// Returns reviews for a product.
     /// </summary>
-    List<Review> GetProductReviews(Product product);
+    List<Review> GetProductReviews(Guid productId);
+
+    /// <summary>
+    /// Returns average rating for a product.
+    /// </summary>
+    double GetAverageRating(Guid productId);
 }
