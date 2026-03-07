@@ -22,7 +22,7 @@ public static class Program
         SeedData.Seed(userRepository, productRepository);
 
         AuthService authService = new(userRepository);
-        _ = new ProductService(productRepository);
+        ProductService productService = new(productRepository);
         _ = new CartService();
         _ = new WalletService();
         _ = new OrderService(orderRepository);
@@ -30,8 +30,8 @@ public static class Program
         _ = new ReportService(orderRepository);
 
         SessionContext sessionContext = new();
-        CustomerMenu customerMenu = new();
-        AdminMenu adminMenu = new();
+        CustomerMenu customerMenu = new(productService);
+        AdminMenu adminMenu = new(productService);
 
         MainMenu mainMenu = new(authService, sessionContext, customerMenu, adminMenu);
         mainMenu.Run();

@@ -13,11 +13,14 @@ Responsible for:
 - input capture
 - user navigation
 - friendly error messaging
+- product list rendering and input parsing helpers
 
 Current classes:
 - `Presentation/Menus/MainMenu.cs`
 - `Presentation/Menus/CustomerMenu.cs`
 - `Presentation/Menus/AdminMenu.cs`
+- `Presentation/Helpers/ProductDisplayHelper.cs`
+- `Presentation/Helpers/ConsoleInputHelper.cs`
 
 Rules followed:
 - no repository access from menus
@@ -29,6 +32,7 @@ Responsible for:
 - use-case orchestration
 - service contracts and abstractions
 - authentication and session coordination
+- catalog management use cases
 
 Current contracts:
 - `Application/Interfaces/*`
@@ -95,6 +99,22 @@ Repository persistence model files:
 - administrator -> `AdminMenu`
 6. Logout clears session context.
 
+## Product Catalog Flow (Prompt 3)
+
+Customer:
+- browse active products
+- search products by name/category
+
+Administrator:
+- add product
+- update product
+- delete product
+- restock product
+- view all products
+- view low-stock products (threshold based)
+
+Business rules are centralized in `ProductService` + domain entity guards.
+
 ## Persistence Design
 
 Persisted files:
@@ -113,6 +133,7 @@ Behavior:
 - Persistence models were split into standalone files to avoid nested classes and improve readability.
 - Session state is in-memory only by design for current scope.
 - Seed logic is idempotent so restarts do not duplicate baseline data.
+- Catalog actions route through `ProductService` to centralize validation and mutations.
 
 ## Known Limitations (Current Scope)
 
