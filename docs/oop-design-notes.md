@@ -1,31 +1,90 @@
-# OOP Design Starter Notes
+# OOP Design Notes
 
-## Access modifier choices
+## Purpose
 
-- `public` for service contracts, entities, and menu entry points consumed across layers.
-- `private` for internal state and helper implementation details.
-- `protected` constructor in `User` to enforce inheritance-only creation.
-- `private set` on mutable entity properties to protect invariants.
+Explain key OOP decisions in the current codebase so implementation choices are easy to justify in reviews, demos, and technical discussions.
 
-## Static choices
+## Core Principles Applied
 
-- `SeedData` is static because it represents a stateless bootstrap concern.
-- Most services/repositories are instance-based to support dependency injection and testability.
+### Encapsulation
 
-## Polymorphism choices
+- Entity state changes are controlled through methods and guarded setters.
+- Examples:
+- `Product.UpdateDetails(...)`, `Product.Restock(...)`, `Product.ReduceStock(...)`
+- `Customer.AddFunds(...)`, `Customer.DebitFunds(...)`
+- `Cart.AddItem(...)`, `Cart.UpdateQuantity(...)`
 
-- `User` is abstract with `Customer` and `Administrator` subclasses.
-- Repository interfaces (`IRepository<T>`, specialized repos) enable implementation polymorphism.
-- Service interfaces enable swapping implementations during testing and pattern upgrades.
+Why this matters:
+- invalid state is blocked at the domain boundary
+- call sites cannot bypass business guards accidentally
 
-## Separation of concerns (SoC)
+### Abstraction
 
-- Menus handle user interaction only.
-- Services coordinate use cases.
-- Entities enforce business rules/invariants.
-- Repositories isolate storage operations.
+- Service interfaces define behavior contracts without exposing implementation details.
+- Repository interfaces abstract storage mechanics away from application logic.
 
-## Inheritance choices
+Examples:
+- `IAuthService`, `IOrderService`, `IWalletService`
+- `IRepository<T>`, `IUserRepository`, `IProductRepository`, `IOrderRepository`
 
-- Inheritance is used only where there is a strong "is-a" relationship (`Customer : User`, `Administrator : User`).
-- Composition is preferred elsewhere (for example, `Customer` owns `Cart` and order history).
+### Inheritance
+
+- `User` is an abstract base type.
+- `Customer` and `Administrator` extend `User` with role-specific identity.
+
+Rationale:
+- these are true "is-a" relationships
+- shared identity/auth behavior is centralized
+
+### Polymorphism
+
+- Application code depends on interface contracts rather than concrete classes.
+- Repository/service implementations can be swapped (for tests or later design patterns).
+
+Current practical polymorphism:
+- `AuthService` depends on `IUserRepository`
+- `ReportService` depends on `IOrderRepository`
+
+## Access Modifier Choices
+
+- `public` on contracts and externally consumed types
+- `private` for internal fields and helper methods
+- `protected` constructor in `User` to enforce inheritance semantics
+- `private set` on entity properties to prevent uncontrolled writes
+
+## Static vs Instance Decisions
+
+Static type:
+- `SeedData` is static because it is stateless bootstrap orchestration.
+
+Instance types:
+- repositories/services are instance-based to support composition and test substitution.
+
+## Separation of Concerns (SoC)
+
+- Presentation handles interaction only.
+- Application coordinates use cases.
+- Domain enforces rules/invariants.
+- Infrastructure handles persistence and technical concerns.
+
+This separation reduces coupling and makes each layer simpler to reason about.
+
+## Composition Over Inheritance
+
+Composition is used where appropriate:
+- `Customer` owns a `Cart`
+- `Order` owns `OrderItem` snapshots and a `Payment`
+- `Product` owns review collection
+
+Why it matters:
+- improves flexibility
+- avoids deep inheritance hierarchies
+
+## Where This Supports Future Pattern Work
+
+Current structure is ready for pattern introduction without rewrite:
+- Factory for role-based creation
+- Strategy for payment/report variants
+- State-style order transition policy
+
+These can be layered on top of existing contracts.

@@ -151,7 +151,7 @@ Prefer the application layer to depend on abstractions like repositories and ser
 
 ## Data strategy from day one
 
-Use in-memory repositories backed by `List<T>` collections. This satisfies the spec and keeps implementation fast and deterministic for tests.
+Use repositories backed by `List<T>` collections with JSON-file persistence for runtime durability. This keeps implementation simple while ensuring data survives app restarts and remains deterministic for tests.
 
 ## Monday pattern implementation path
 
@@ -162,3 +162,4 @@ On Monday (2026-03-09), add patterns on top of working behavior:
 - Repository formalization if additional abstractions are needed
 
 No feature backlog should remain by this step.
+

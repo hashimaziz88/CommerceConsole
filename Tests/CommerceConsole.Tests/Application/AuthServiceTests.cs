@@ -18,13 +18,22 @@ public sealed class AuthServiceTests
     [Fact]
     public void RegisterCustomer_WithValidDetails_AddsCustomer()
     {
-        InMemoryUserRepository userRepository = new();
-        AuthService authService = new(userRepository);
+        string dataDirectory = CreateTempDataDirectory();
 
-        Customer customer = authService.RegisterCustomer("Test User", "test@example.com", "pass123");
+        try
+        {
+            InMemoryUserRepository userRepository = new(dataDirectory);
+            AuthService authService = new(userRepository);
 
-        Assert.Equal("test@example.com", customer.Email);
-        Assert.NotNull(userRepository.GetByEmail("test@example.com"));
+            Customer customer = authService.RegisterCustomer("Test User", "test@example.com", "pass123");
+
+            Assert.Equal("test@example.com", customer.Email);
+            Assert.NotNull(userRepository.GetByEmail("test@example.com"));
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
     }
 
     /// <summary>
@@ -33,13 +42,22 @@ public sealed class AuthServiceTests
     [Fact]
     public void RegisterCustomer_WithDuplicateEmail_ThrowsDuplicateEmailException()
     {
-        InMemoryUserRepository userRepository = new();
-        AuthService authService = new(userRepository);
+        string dataDirectory = CreateTempDataDirectory();
 
-        _ = authService.RegisterCustomer("First User", "dup@example.com", "pass123");
+        try
+        {
+            InMemoryUserRepository userRepository = new(dataDirectory);
+            AuthService authService = new(userRepository);
 
-        Assert.Throws<DuplicateEmailException>(() =>
-            _ = authService.RegisterCustomer("Second User", "dup@example.com", "pass456"));
+            _ = authService.RegisterCustomer("First User", "dup@example.com", "pass123");
+
+            Assert.Throws<DuplicateEmailException>(() =>
+                _ = authService.RegisterCustomer("Second User", "dup@example.com", "pass456"));
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
     }
 
     /// <summary>
@@ -48,11 +66,20 @@ public sealed class AuthServiceTests
     [Fact]
     public void RegisterCustomer_WithInvalidEmail_ThrowsValidationException()
     {
-        InMemoryUserRepository userRepository = new();
-        AuthService authService = new(userRepository);
+        string dataDirectory = CreateTempDataDirectory();
 
-        Assert.Throws<ValidationException>(() =>
-            _ = authService.RegisterCustomer("Test User", "invalid-email", "pass123"));
+        try
+        {
+            InMemoryUserRepository userRepository = new(dataDirectory);
+            AuthService authService = new(userRepository);
+
+            Assert.Throws<ValidationException>(() =>
+                _ = authService.RegisterCustomer("Test User", "invalid-email", "pass123"));
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
     }
 
     /// <summary>
@@ -61,14 +88,23 @@ public sealed class AuthServiceTests
     [Fact]
     public void Login_WithCustomerCredentials_ReturnsCustomer()
     {
-        InMemoryUserRepository userRepository = new();
-        AuthService authService = new(userRepository);
+        string dataDirectory = CreateTempDataDirectory();
 
-        _ = authService.RegisterCustomer("Test User", "test@example.com", "pass123");
+        try
+        {
+            InMemoryUserRepository userRepository = new(dataDirectory);
+            AuthService authService = new(userRepository);
 
-        User user = authService.Login("test@example.com", "pass123");
+            _ = authService.RegisterCustomer("Test User", "test@example.com", "pass123");
 
-        Assert.IsType<Customer>(user);
+            User user = authService.Login("test@example.com", "pass123");
+
+            Assert.IsType<Customer>(user);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
     }
 
     /// <summary>
@@ -77,15 +113,24 @@ public sealed class AuthServiceTests
     [Fact]
     public void Login_WithSeededAdminCredentials_ReturnsAdministrator()
     {
-        InMemoryUserRepository userRepository = new();
-        InMemoryProductRepository productRepository = new();
-        SeedData.Seed(userRepository, productRepository);
+        string dataDirectory = CreateTempDataDirectory();
 
-        AuthService authService = new(userRepository);
+        try
+        {
+            InMemoryUserRepository userRepository = new(dataDirectory);
+            InMemoryProductRepository productRepository = new(dataDirectory);
+            SeedData.Seed(userRepository, productRepository);
 
-        User user = authService.Login("admin@commerce.local", "admin123");
+            AuthService authService = new(userRepository);
 
-        Assert.IsType<Administrator>(user);
+            User user = authService.Login("admin@commerce.local", "admin123");
+
+            Assert.IsType<Administrator>(user);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
     }
 
     /// <summary>
@@ -94,13 +139,22 @@ public sealed class AuthServiceTests
     [Fact]
     public void Login_WithWrongPassword_ThrowsAuthenticationException()
     {
-        InMemoryUserRepository userRepository = new();
-        AuthService authService = new(userRepository);
+        string dataDirectory = CreateTempDataDirectory();
 
-        _ = authService.RegisterCustomer("Test User", "test@example.com", "pass123");
+        try
+        {
+            InMemoryUserRepository userRepository = new(dataDirectory);
+            AuthService authService = new(userRepository);
 
-        Assert.Throws<AuthenticationException>(() =>
-            _ = authService.Login("test@example.com", "wrong-pass"));
+            _ = authService.RegisterCustomer("Test User", "test@example.com", "pass123");
+
+            Assert.Throws<AuthenticationException>(() =>
+                _ = authService.Login("test@example.com", "wrong-pass"));
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
     }
 
     /// <summary>
@@ -119,5 +173,20 @@ public sealed class AuthServiceTests
         sessionContext.SignOut();
         Assert.False(sessionContext.IsAuthenticated);
         Assert.Null(sessionContext.CurrentUser);
+    }
+
+    private static string CreateTempDataDirectory()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "CommerceConsoleTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    private static void DeleteDirectoryIfExists(string path)
+    {
+        if (Directory.Exists(path))
+        {
+            Directory.Delete(path, true);
+        }
     }
 }

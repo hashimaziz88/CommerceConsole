@@ -55,7 +55,7 @@ public sealed class JsonFileStore
     public void SaveList<T>(string fileName, IEnumerable<T> items)
     {
         string path = GetFilePath(fileName);
-        string tempPath = path + ".tmp";
+        string tempPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
 
         string json = JsonSerializer.Serialize(items, _serializerOptions);
         File.WriteAllText(tempPath, json);

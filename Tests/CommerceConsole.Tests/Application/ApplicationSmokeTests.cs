@@ -15,12 +15,36 @@ public sealed class ApplicationSmokeTests
     [Fact]
     public void AuthService_RegisterCustomer_ReturnsCustomer()
     {
-        InMemoryUserRepository userRepository = new();
-        AuthService authService = new(userRepository);
+        string dataDirectory = CreateTempDataDirectory();
 
-        var customer = authService.RegisterCustomer("Test User", "test@example.com", "pass123");
+        try
+        {
+            InMemoryUserRepository userRepository = new(dataDirectory);
+            AuthService authService = new(userRepository);
 
-        Assert.NotNull(customer);
-        Assert.Equal("test@example.com", customer.Email);
+            var customer = authService.RegisterCustomer("Test User", "test@example.com", "pass123");
+
+            Assert.NotNull(customer);
+            Assert.Equal("test@example.com", customer.Email);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
+    }
+
+    private static string CreateTempDataDirectory()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "CommerceConsoleTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    private static void DeleteDirectoryIfExists(string path)
+    {
+        if (Directory.Exists(path))
+        {
+            Directory.Delete(path, true);
+        }
     }
 }

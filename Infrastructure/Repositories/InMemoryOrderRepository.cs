@@ -1,14 +1,29 @@
 using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Domain.Entities;
+using CommerceConsole.Domain.Enums;
+using CommerceConsole.Infrastructure.Persistence;
+using CommerceConsole.Infrastructure.Repositories.Models;
 
 namespace CommerceConsole.Infrastructure.Repositories;
 
 /// <summary>
-/// In-memory order repository used for bootstrap and testing.
+/// In-memory order repository with JSON persistence.
 /// </summary>
 public sealed class InMemoryOrderRepository : IOrderRepository
 {
-    private readonly List<Order> _orders = new();
+    private const string FileName = "orders.json";
+
+    private readonly JsonFileStore _fileStore;
+    private readonly List<Order> _orders;
+
+    /// <summary>
+    /// Initializes the order repository.
+    /// </summary>
+    public InMemoryOrderRepository(string? dataDirectory = null)
+    {
+        _fileStore = new JsonFileStore(dataDirectory);
+        _orders = LoadOrders();
+    }
 
     /// <inheritdoc />
     public List<Order> GetAll()
@@ -32,6 +47,7 @@ public sealed class InMemoryOrderRepository : IOrderRepository
     public void Add(Order entity)
     {
         _orders.Add(entity);
+        Persist();
     }
 
     /// <inheritdoc />
@@ -41,6 +57,7 @@ public sealed class InMemoryOrderRepository : IOrderRepository
         if (index >= 0)
         {
             _orders[index] = entity;
+            Persist();
         }
     }
 
@@ -51,6 +68,70 @@ public sealed class InMemoryOrderRepository : IOrderRepository
         if (existing is not null)
         {
             _orders.Remove(existing);
+            Persist();
         }
+    }
+
+    private List<Order> LoadOrders()
+    {
+        List<OrderRecord> records = _fileStore.LoadList<OrderRecord>(FileName);
+        return records.Select(ToDomain).ToList();
+    }
+
+    private void Persist()
+    {
+        List<OrderRecord> records = _orders.Select(FromDomain).ToList();
+        _fileStore.SaveList(FileName, records);
+    }
+
+    private static Order ToDomain(OrderRecord record)
+    {
+        List<OrderItem> items = record.Items.Select(item =>
+            new OrderItem(item.ProductId, item.ProductName, item.UnitPrice, item.Quantity)).ToList();
+
+        Payment payment = new(
+            record.Payment.Id,
+            record.Payment.OrderId,
+            record.Payment.Amount,
+            record.Payment.Method);
+
+        if (record.Payment.Status == PaymentStatus.Completed)
+        {
+            payment.MarkCompleted();
+        }
+        else if (record.Payment.Status == PaymentStatus.Failed)
+        {
+            payment.MarkFailed();
+        }
+
+        Order order = new(record.Id, record.CustomerId, items, payment);
+        order.UpdateStatus(record.Status);
+
+        return order;
+    }
+
+    private static OrderRecord FromDomain(Order order)
+    {
+        return new OrderRecord
+        {
+            Id = order.Id,
+            CustomerId = order.CustomerId,
+            Status = order.Status,
+            Items = order.Items.Select(item => new OrderItemRecord
+            {
+                ProductId = item.ProductId,
+                ProductName = item.ProductName,
+                UnitPrice = item.UnitPrice,
+                Quantity = item.Quantity
+            }).ToList(),
+            Payment = new PaymentRecord
+            {
+                Id = order.Payment.Id,
+                OrderId = order.Payment.OrderId,
+                Amount = order.Payment.Amount,
+                Method = order.Payment.Method,
+                Status = order.Payment.Status
+            }
+        };
     }
 }

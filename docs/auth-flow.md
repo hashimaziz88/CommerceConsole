@@ -1,38 +1,83 @@
 # Authentication Flow and Assumptions
 
-## Registration flow
+## Objective
 
-1. User selects `Register` from the main menu.
-2. System collects full name, email, and password.
-3. `AuthService.RegisterCustomer(...)` validates required fields and email format.
-4. Service checks for email uniqueness through `IUserRepository.GetByEmail(...)`.
-5. On success, a `Customer` is created and stored.
+Provide role-aware authentication for customer and administrator users while keeping UI logic thin and business logic centralized.
 
-## Login flow
+## Actors
 
-1. User selects `Login` from the main menu.
-2. System collects email and password.
-3. `AuthService.Login(...)` validates inputs and authenticates credentials.
-4. On success, `SessionContext.SignIn(...)` stores the current user.
-5. Main menu routes to the correct menu based on role:
-   - `Customer` -> `CustomerMenu`
-   - `Administrator` -> `AdminMenu`
-6. User can log out from role menu, which clears session state via `SessionContext.SignOut()`.
+- Guest (not authenticated)
+- Customer (authenticated role)
+- Administrator (authenticated role)
 
-## Seeded admin account
+## Seeded Administrator
 
+Default admin is created by `SeedData` only when missing:
 - Email: `admin@commerce.local`
 - Password: `admin123`
-- Created by `Infrastructure/Data/SeedData.cs` when no admin exists.
 
-## Validation and exception assumptions
+This seed record is persisted in `data/users.json`.
 
-- Missing or invalid registration fields raise `ValidationException`.
-- Duplicate registration email raises `DuplicateEmailException`.
-- Invalid login credentials raise `AuthenticationException`.
-- Menus catch and print friendly messages at presentation boundary.
+## Registration Flow
 
-## Session assumptions
+1. User selects `Register` in `MainMenu`.
+2. UI captures full name, email, and password.
+3. `AuthService.RegisterCustomer(...)` validates:
+- non-empty full name
+- non-empty email
+- basic email format
+- non-empty password
+4. Service checks for duplicate email via `IUserRepository.GetByEmail(...)`.
+5. On success, new `Customer` is saved and persisted.
+6. UI prints a success message.
 
-- Single in-process session context (`SessionContext`) is enough for console scope.
-- No persistent sessions are stored between app runs.
+Exceptions surfaced to UI:
+- `ValidationException`
+- `DuplicateEmailException`
+
+## Login Flow
+
+1. User selects `Login` in `MainMenu`.
+2. UI captures email and password.
+3. `AuthService.Login(...)` validates non-empty inputs.
+4. Repository lookup confirms user exists and password matches.
+5. On success, `SessionContext.SignIn(...)` stores current user.
+6. Main menu routes by role.
+
+Exceptions surfaced to UI:
+- `ValidationException`
+- `AuthenticationException`
+
+## Role-Based Routing
+
+Routing happens in `MainMenu.RouteByRole()`:
+- `UserRole.Customer` -> `CustomerMenu.Run(...)`
+- `UserRole.Administrator` -> `AdminMenu.Run(...)`
+
+Each role menu validates the expected role before continuing.
+
+## Session Lifecycle
+
+`SessionContext` behavior:
+- `CurrentUser` set on login
+- `IsAuthenticated` derived from `CurrentUser`
+- `SignOut()` clears session
+
+Session is process-local and non-persistent by current design.
+
+## Security and Scope Notes
+
+Current implementation is demo-oriented:
+- passwords are stored in plain text
+- no account lockout/throttling
+- no password reset
+- no multi-session support
+
+These are acceptable for current console coursework scope and can be upgraded later.
+
+## Traceability to Code
+
+- Service logic: `Application/Services/AuthService.cs`
+- Session state: `Application/Services/SessionContext.cs`
+- UI routing: `Presentation/Menus/MainMenu.cs`
+- Admin bootstrap: `Infrastructure/Data/SeedData.cs`
