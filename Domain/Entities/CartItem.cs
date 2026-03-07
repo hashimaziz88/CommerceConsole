@@ -1,0 +1,78 @@
+using CommerceConsole.Domain.Exceptions;
+
+namespace CommerceConsole.Domain.Entities;
+
+/// <summary>
+/// Represents an item stored in a shopping cart.
+/// </summary>
+public sealed class CartItem
+{
+    /// <summary>
+    /// Initializes a cart item.
+    /// </summary>
+    public CartItem(Guid productId, string productName, decimal unitPrice, int quantity)
+    {
+        if (productId == Guid.Empty)
+        {
+            throw new ValidationException("Product ID must be valid.");
+        }
+
+        if (string.IsNullOrWhiteSpace(productName))
+        {
+            throw new ValidationException("Product name is required.");
+        }
+
+        if (unitPrice < 0)
+        {
+            throw new ValidationException("Unit price cannot be negative.");
+        }
+
+        if (quantity <= 0)
+        {
+            throw new ValidationException("Quantity must be greater than zero.");
+        }
+
+        ProductId = productId;
+        ProductName = productName.Trim();
+        UnitPrice = unitPrice;
+        Quantity = quantity;
+    }
+
+    /// <summary>
+    /// Gets product ID.
+    /// </summary>
+    public Guid ProductId { get; }
+
+    /// <summary>
+    /// Gets product name snapshot.
+    /// </summary>
+    public string ProductName { get; }
+
+    /// <summary>
+    /// Gets unit price snapshot.
+    /// </summary>
+    public decimal UnitPrice { get; }
+
+    /// <summary>
+    /// Gets selected quantity.
+    /// </summary>
+    public int Quantity { get; private set; }
+
+    /// <summary>
+    /// Gets line total for this item.
+    /// </summary>
+    public decimal LineTotal => UnitPrice * Quantity;
+
+    /// <summary>
+    /// Updates the selected quantity.
+    /// </summary>
+    public void UpdateQuantity(int quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new ValidationException("Quantity must be greater than zero.");
+        }
+
+        Quantity = quantity;
+    }
+}
