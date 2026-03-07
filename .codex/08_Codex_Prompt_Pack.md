@@ -2,7 +2,18 @@
 
 Use the following prompts with ChatGPT Codex or any coding agent. Paste one prompt at a time.
 
-## Prompt 1 - Generate the solution skeleton
+Prompt-to-issue mapping:
+- Prompt 1 -> Issue 1
+- Prompt 2 -> Issue 2
+- Prompt 3 -> Issue 3
+- Prompt 4 -> Issue 4
+- Prompt 5 -> Issue 5
+- Prompt 6 -> Issue 6
+- Prompt 7 -> Issue 7
+- Prompt 8 -> Issue 8
+- Prompt 9 -> Issue 9
+
+## Prompt 1 - Bootstrap clean solution architecture with tests and docs scaffolding
 
 ```text
 Create a C# console application called CommerceConsole for an Online Shopping Backend System.
@@ -32,32 +43,11 @@ Rules:
 - Use comments on classes and public methods
 - Keep classes small and responsibilities clear
 - Use guard clauses and meaningful names
-- Add a short architecture note in docs/architecture.md
+- Add short starter notes in docs/architecture.md and docs/test-plan.md
+- Add short starter notes on OOP implemetation details and choices, covering Access modidfiers chocies, choices of static, polymorphism choices, soc , inheritance and all oop
 ```
 
-## Prompt 2 - Implement domain entities cleanly
-
-```text
-Implement the domain entities and enums for the CommerceConsole project.
-
-Requirements:
-- Use OOP properly
-- Apply validation in constructors or mutator methods where appropriate
-- Product must prevent negative price and stock
-- Cart must support add/update/remove/clear/calculate total
-- Order must capture snapshot-based order items
-- Review rating must be between 1 and 5
-- Customer should include wallet balance, cart, and order history
-
-Also:
-- Add unit tests for domain invariants
-- Update docs/test-plan.md with what is covered
-
-Do not add console input/output in domain classes.
-Provide clean, compilable C# code.
-```
-
-## Prompt 3 - Build authentication and role-based navigation
+## Prompt 2 - Implement registration, login, and role-based navigation with tests
 
 ```text
 Implement registration and login for the CommerceConsole project.
@@ -69,7 +59,7 @@ Requirements:
 - Enforce unique email addresses
 - Add current session tracking
 - Route users to customer or admin menus based on role
-- Keep all business logic in services, not in Program.cs
+- Keep business logic in services, not in Program.cs
 - Use custom exceptions for validation and authentication failures
 
 Also:
@@ -79,7 +69,7 @@ Also:
 Return code for required services, repositories, menu integration, and tests.
 ```
 
-## Prompt 4 - Build catalog and admin product management
+## Prompt 3 - Build product browsing, searching, and admin catalog management
 
 ```text
 Implement product browsing, searching, and administrator product management.
@@ -103,31 +93,47 @@ Rules:
 - Keep methods short and readable
 
 Also:
-- Add tests for product search and catalog mutations
+- Add tests for product validation, search, and catalog mutations
 - Update docs with product rules and low-stock behavior
 ```
 
-## Prompt 5 - Build cart, wallet, checkout, and orders
+## Prompt 4 - Implement shopping cart and wallet workflows
 
 ```text
-Implement cart, wallet, checkout, and order workflows for the CommerceConsole project.
+Implement cart and wallet workflows for the CommerceConsole project.
 
 Requirements:
 - Add to cart
 - View cart
 - Update cart quantity
 - Remove cart items if quantity becomes zero
+- Validate cart quantities against stock rules
 - View wallet balance
 - Add wallet funds
+
+Rules:
+- Keep presentation layer thin
+- Use custom exceptions for invalid operations
+- Keep cart and wallet logic in services/domain, not menus
+
+Also:
+- Add tests for cart mutations and wallet top-up validation
+- Update docs with cart and wallet behavior
+```
+
+## Prompt 5 - Add checkout, payments, and order processing
+
+```text
+Implement checkout, payment simulation, and order processing for the CommerceConsole project.
+
+Requirements:
 - Checkout with wallet-only payment
 - Validate stock before checkout
 - Validate wallet balance before checkout
 - Reduce stock on successful checkout
 - Create payment and order records
+- Ensure order stores snapshot-based order items
 - Clear cart after successful checkout
-- View order history
-- Track orders
-- Admin can view all orders and update order status
 
 Architecture rules:
 - Checkout orchestration must live in OrderService
@@ -135,17 +141,39 @@ Architecture rules:
 - Keep presentation layer thin
 
 Also:
-- Add tests for happy path and failure cases
-- Update docs with checkout and order transition behavior
+- Add tests for checkout happy path and failure cases
+- Update docs with checkout behavior and invariants
 ```
 
-## Prompt 6 - Build reviews and reporting
+## Prompt 6 - Implement order history, tracking, and admin order status updates
+
+```text
+Implement order management views and status updates for the CommerceConsole project.
+
+Requirements:
+- Customer can view order history
+- Customer can track order statuses
+- Admin can view all orders
+- Admin can update order statuses
+- Enforce valid status transitions
+
+Rules:
+- Keep transition rules centralized
+- Keep menu handlers thin and focused on routing/display
+
+Also:
+- Add tests for valid and invalid order status transitions
+- Update docs with order lifecycle rules
+```
+
+## Prompt 7 - Add reviews, reporting, and documentation alignment
 
 ```text
 Implement product review and reporting features for the CommerceConsole project.
 
 Requirements:
 - Customers can add reviews with rating and comment
+- Review rating must be between 1 and 5
 - Show average product rating using LINQ
 - Generate sales reports for admin using LINQ
 - Include total revenue, orders by status, best-selling products, and low-stock products
@@ -157,7 +185,24 @@ Also:
 Keep code modular and ready for future strategy extraction.
 ```
 
-## Prompt 7 - Monday design pattern implementation
+## Prompt 8 - Complete quality hardening (validation, exceptions, UX, tests, docs)
+
+```text
+Perform a quality-hardening pass on CommerceConsole.
+
+Focus areas:
+- Input validation coverage across all menus
+- Friendly exception handling at presentation boundaries
+- Reusable console helpers and consistent UX messaging
+- Removal of duplicated logic
+- Method/class readability and naming quality
+- Regression test additions for critical workflows
+- Documentation drift fixes versus implementation
+
+Then provide a focused improvement patch with code, tests, and docs updates.
+```
+
+## Prompt 9 - Monday design-pattern implementation (no feature expansion)
 
 ```text
 Implement design patterns in the CommerceConsole project on top of existing behavior.
@@ -175,23 +220,4 @@ Constraints:
 - Add pattern-focused tests
 - Update docs to explain where and why each pattern is used
 - Do not over-engineer the solution
-```
-
-## Prompt 8 - Final quality verification
-
-```text
-Review the CommerceConsole project for rubric alignment and maintainability.
-
-Check for:
-- Long methods
-- Long classes
-- Duplicated logic
-- Missing validation
-- Missing exception handling
-- Weak naming
-- Poor separation of concerns
-- Missing/weak tests for core workflows
-- Documentation drift versus implementation
-
-Then provide a focused improvement patch with code, tests, and docs updates.
 ```

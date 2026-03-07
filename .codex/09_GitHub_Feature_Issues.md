@@ -105,6 +105,7 @@ Milestone lock: `M2-Catalog-Cart-and-Checkout`
 Branch suggestion: `feature/04-cart-management`
 
 
+5
 ---
 name: Feature request
 about: Suggest an idea for this project
@@ -129,6 +130,7 @@ Milestone lock: `M2-Catalog-Cart-and-Checkout`
 Branch suggestion: `feature/05-orders-and-checkout`
 
 
+6
 ---
 name: Feature request
 about: Suggest an idea for this project
