@@ -1,4 +1,5 @@
 using CommerceConsole.Application.Interfaces;
+using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
 using CommerceConsole.Domain.Exceptions;
 using CommerceConsole.Presentation.Helpers;
@@ -92,34 +93,34 @@ public sealed class AdminMenu
         int stock = ConsoleInputHelper.ReadInt("Initial stock quantity: ");
 
         var product = _productService.AddProduct(name, description, category, price, stock);
-        Console.WriteLine($"Product added successfully with ID: {product.Id}");
+        Console.WriteLine($"Product '{product.Name}' added successfully.");
     }
 
     private void UpdateProduct()
     {
-        Guid id = ConsoleInputHelper.ReadGuid("Product ID: ");
+        Product selectedProduct = SelectProductForAction("=== Select Product To Update ===");
         string name = ConsoleInputHelper.ReadRequiredString("New name: ");
         string description = ConsoleInputHelper.ReadRequiredString("New description: ");
         string category = ConsoleInputHelper.ReadRequiredString("New category: ");
         decimal price = ConsoleInputHelper.ReadDecimal("New price: ");
 
-        _productService.UpdateProduct(id, name, description, category, price);
+        _productService.UpdateProduct(selectedProduct.Id, name, description, category, price);
         Console.WriteLine("Product updated successfully.");
     }
 
     private void DeleteProduct()
     {
-        Guid id = ConsoleInputHelper.ReadGuid("Product ID to delete: ");
-        _productService.DeleteProduct(id);
+        Product selectedProduct = SelectProductForAction("=== Select Product To Delete ===");
+        _productService.DeleteProduct(selectedProduct.Id);
         Console.WriteLine("Product deleted successfully.");
     }
 
     private void RestockProduct()
     {
-        Guid id = ConsoleInputHelper.ReadGuid("Product ID to restock: ");
+        Product selectedProduct = SelectProductForAction("=== Select Product To Restock ===");
         int quantity = ConsoleInputHelper.ReadInt("Restock quantity: ");
 
-        _productService.RestockProduct(id, quantity);
+        _productService.RestockProduct(selectedProduct.Id, quantity);
         Console.WriteLine("Product restocked successfully.");
     }
 
@@ -134,6 +135,19 @@ public sealed class AdminMenu
         int threshold = ConsoleInputHelper.ReadInt("Low-stock threshold: ");
         var products = _productService.GetLowStockProducts(threshold);
         ProductDisplayHelper.ShowProducts($"=== Low Stock Products (<= {threshold}) ===", products);
+    }
+
+    private Product SelectProductForAction(string heading)
+    {
+        List<Product> products = _productService.GetAllProducts();
+        if (products.Count == 0)
+        {
+            throw new NotFoundException("No products are available.");
+        }
+
+        ProductDisplayHelper.ShowSelectableProducts(heading, products);
+        int selection = ConsoleInputHelper.ReadSelection("Choose product number: ", products.Count);
+        return products[selection - 1];
     }
 
     private static void ExecuteAction(Action action)

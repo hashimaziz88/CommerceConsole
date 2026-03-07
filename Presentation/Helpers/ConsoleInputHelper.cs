@@ -60,20 +60,25 @@ public static class ConsoleInputHelper
     }
 
     /// <summary>
-    /// Reads a GUID value.
+    /// Reads a one-based selection from a numbered list.
     /// </summary>
-    public static Guid ReadGuid(string prompt)
+    public static int ReadSelection(string prompt, int maxOption)
     {
+        if (maxOption < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxOption), "At least one option must be available.");
+        }
+
         while (true)
         {
             Console.Write(prompt);
             string? input = Console.ReadLine();
-            if (Guid.TryParse(input, out Guid value))
+            if (int.TryParse(input, out int selected) && selected >= 1 && selected <= maxOption)
             {
-                return value;
+                return selected;
             }
 
-            Console.WriteLine("Enter a valid GUID.");
+            Console.WriteLine($"Enter a number between 1 and {maxOption}.");
         }
     }
 }
