@@ -35,7 +35,7 @@ Responsible for:
 - service contracts and abstractions
 - authentication/session coordination
 - catalog management
-- cart and wallet workflow rules
+- cart, wallet, and checkout workflow rules
 
 Current contracts:
 - `Application/Interfaces/*`
@@ -46,7 +46,7 @@ Current services:
 - `ProductService`
 - `CartService`
 - `WalletService`
-- `OrderService` (checkout implementation still pending by issue scope)
+- `OrderService`
 - `ReviewService`
 - `ReportService`
 
@@ -132,6 +132,24 @@ Rules centralized in services:
 - wallet amount validation in `WalletService` and `Customer`
 - presentation only handles input/output and exception display without exposing internal identifiers
 
+## Checkout and Order Processing Flow (Prompt 5)
+
+Customer:
+- checks out cart with wallet-only payment
+
+Orchestration in `OrderService`:
+- validates cart content, product existence/active state, stock, and wallet balance
+- debits wallet and reduces stock on success
+- creates payment and snapshot-based order items
+- persists order record and clears cart
+
+Presentation integration:
+- customer menu triggers checkout action
+- menus remain thin; orchestration stays in application service
+
+Detailed behavior and invariants:
+- `docs/checkout-orders.md`
+
 ## Persistence Design
 
 Persisted files:
@@ -144,6 +162,7 @@ Behavior:
 - add/update/remove immediately writes through to JSON
 - malformed JSON is recovered as empty list (non-crashing fallback)
 - user persistence includes wallet balance and cart snapshots
+- checkout persists wallet/cart, product stock, and order/payment records
 
 ## Design Decisions and Rationale
 
@@ -151,16 +170,30 @@ Behavior:
 - Persistence models are standalone files (no nested classes) for readability.
 - Session state is in-memory only by design for current scope.
 - Seed logic is idempotent so restarts do not duplicate baseline data.
-- Catalog/cart/wallet rules are centralized in services to keep menus thin.
+- Catalog/cart/wallet/checkout rules are centralized in services to keep menus thin.
+
+## Current Design Patterns
+
+Patterns already implemented in the current baseline:
+- Repository Pattern (`I*Repository` + `InMemory*Repository`)
+- Service Layer Pattern (`Application/Services/*`)
+- Constructor-based Dependency Injection
+- Composition Root (`Program.cs`)
+- Data Mapper (`ToDomain` / `FromDomain` in repositories)
+- Rich Domain Model with Guard Clauses (`Domain/Entities/*`)
+- Session Context pattern (`SessionContext`)
+
+Detailed mapping and use-cases are documented in:
+- `docs/design-patterns-current.md`
 
 ## Known Limitations (Current Scope)
 
-- `OrderService.Checkout(...)` is still a planned implementation item.
-- Historical timestamps are not fully hydrated from persistence records yet.
-- No file locking across multiple app instances (single-process assumption).
+- order history/tracking UI and admin status update workflows are not fully integrated yet
+- historical timestamps are not fully hydrated from persistence records yet
+- no file locking across multiple app instances (single-process assumption)
 
 ## Next Evolution Steps
 
-- Implement checkout/order workflows (Issue 5).
-- Add persistence for order-history projections where needed.
-- Introduce stricter transition policies for order status updates.
+- implement order history/tracking/admin status workflows (Issue 6)
+- expand reporting/review workflows (Issue 7)
+- introduce stricter transition policies and explicit pattern modules (Issue 8/9)

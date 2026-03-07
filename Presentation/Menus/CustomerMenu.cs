@@ -7,22 +7,28 @@ using CommerceConsole.Presentation.Helpers;
 namespace CommerceConsole.Presentation.Menus;
 
 /// <summary>
-/// Customer menu with product browsing, cart, and wallet actions.
+/// Customer menu with product browsing, cart, wallet, and checkout actions.
 /// </summary>
 public sealed class CustomerMenu
 {
     private readonly IProductService _productService;
     private readonly ICartService _cartService;
     private readonly IWalletService _walletService;
+    private readonly IOrderService _orderService;
 
     /// <summary>
     /// Initializes the customer menu.
     /// </summary>
-    public CustomerMenu(IProductService productService, ICartService cartService, IWalletService walletService)
+    public CustomerMenu(
+        IProductService productService,
+        ICartService cartService,
+        IWalletService walletService,
+        IOrderService orderService)
     {
         _productService = productService;
         _cartService = cartService;
         _walletService = walletService;
+        _orderService = orderService;
     }
 
     /// <summary>
@@ -66,12 +72,15 @@ public sealed class CustomerMenu
                     ExecuteAction(() => AddWalletFunds(customer));
                     break;
                 case "8":
+                    ExecuteAction(() => Checkout(customer));
+                    break;
+                case "9":
                     sessionContext.SignOut();
                     done = true;
                     Console.WriteLine("You have been logged out.");
                     break;
                 default:
-                    Console.WriteLine("Invalid option. Please enter 1 through 8.");
+                    Console.WriteLine("Invalid option. Please enter 1 through 9.");
                     break;
             }
 
@@ -89,7 +98,8 @@ public sealed class CustomerMenu
         Console.WriteLine("5. Update Cart Item Quantity");
         Console.WriteLine("6. View Wallet Balance");
         Console.WriteLine("7. Add Wallet Funds");
-        Console.WriteLine("8. Logout");
+        Console.WriteLine("8. Checkout");
+        Console.WriteLine("9. Logout");
     }
 
     private void BrowseProducts()
@@ -170,6 +180,17 @@ public sealed class CustomerMenu
         Console.WriteLine("Funds added successfully.");
     }
 
+    private void Checkout(Customer customer)
+    {
+        Order order = _orderService.Checkout(customer);
+
+        Console.WriteLine("Checkout completed successfully.");
+        Console.WriteLine($"Items: {order.Items.Count}");
+        Console.WriteLine($"Total paid: {order.TotalAmount:C}");
+        Console.WriteLine($"Order status: {order.Status}");
+        Console.WriteLine($"Payment status: {order.Payment.Status}");
+    }
+
     private static void ExecuteAction(Action action)
     {
         try
@@ -187,6 +208,10 @@ public sealed class CustomerMenu
         catch (InsufficientStockException ex)
         {
             Console.WriteLine($"Stock error: {ex.Message}");
+        }
+        catch (InsufficientFundsException ex)
+        {
+            Console.WriteLine($"Funds error: {ex.Message}");
         }
     }
 }
