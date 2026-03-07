@@ -32,6 +32,7 @@ The project is being delivered with Submission 2 quality standards from the star
 - `docs/cart-wallet.md`
 - `docs/checkout-orders.md`
 - `docs/order-lifecycle.md`
+- `docs/reviews-reporting.md`
 - `docs/oop-design-notes.md`
 - `docs/design-patterns-current.md`
 - `docs/test-plan.md`
@@ -47,7 +48,7 @@ The project is being delivered with Submission 2 quality standards from the star
 
 ### Overview
 
-CommerceConsole simulates an online shopping backend with role-based access for customers and administrators. The current scope includes authentication, catalog management, cart and wallet workflows, checkout and order processing, order lifecycle management, JSON persistence, and foundational reporting/review scaffolding.
+CommerceConsole simulates an online shopping backend with role-based access for customers and administrators. The current scope includes authentication, catalog management, cart and wallet workflows, checkout and order processing, order lifecycle management, reviews, reporting, and JSON persistence.
 
 ### Components and Functional Requirements
 
@@ -93,9 +94,11 @@ Status: Implemented
 Status: Implemented
 
 7. Reviews and reporting
-- review capture + rating aggregation
-- revenue/order-status/best-seller reporting
-Status: Service foundations present, full functional integration planned (Milestone 3)
+- customer product reviews with rating/comment (purchased products only)
+- rating validation (1 to 5)
+- average rating display
+- admin sales report: total revenue, orders by status, best sellers, low stock
+Status: Implemented
 
 8. Quality hardening
 - stronger validation/exception UX paths
@@ -116,6 +119,7 @@ Status: Planned for Monday phase (Milestone 4)
 - Current design pattern inventory: `docs/design-patterns-current.md`
 - Checkout invariants and behavior: `docs/checkout-orders.md`
 - Order lifecycle and transition rules: `docs/order-lifecycle.md`
+- Review/report definitions and examples: `docs/reviews-reporting.md`
 - Domain and submission planning references: `.codex/03_Domain_Model.md`, `.codex/04_Submission_1_Implementation_Blueprint.md`
 
 ### Planned Artefacts (when required by submission pack)
@@ -182,7 +186,7 @@ Seed behavior:
 
 ## Current Limitations
 
-- reporting and review workflows are not fully integrated yet
+- advanced report strategy variants are not extracted yet
 - password storage is plain text (coursework scope trade-off)
 - JSON persistence is designed for single-process console use
 
@@ -191,3 +195,4 @@ Seed behavior:
 - Coding standards: `.codex/06_Coding_Standards.md`
 - Git workflow and branching: `.codex/07_Git_Workflow_and_Branching.md`
 - Prompt pack and issue mapping: `.codex/08_Codex_Prompt_Pack.md`, `.codex/09_GitHub_Feature_Issues.md`
+

@@ -13,7 +13,7 @@ Responsible for:
 - input capture
 - user navigation
 - friendly error messaging
-- product/cart/order rendering helpers
+- product/cart/order/report rendering helpers
 
 Current classes:
 - `Presentation/Menus/MainMenu.cs`
@@ -22,6 +22,7 @@ Current classes:
 - `Presentation/Helpers/ProductDisplayHelper.cs`
 - `Presentation/Helpers/CartDisplayHelper.cs`
 - `Presentation/Helpers/OrderDisplayHelper.cs`
+- `Presentation/Helpers/ReportDisplayHelper.cs`
 - `Presentation/Helpers/ConsoleInputHelper.cs`
 
 Rules followed:
@@ -35,7 +36,7 @@ Responsible for:
 - use-case orchestration
 - service contracts and abstractions
 - authentication/session coordination
-- catalog, cart, wallet, checkout, and order lifecycle rules
+- catalog, cart, wallet, checkout, order lifecycle, review, and report rules
 
 Current contracts:
 - `Application/Interfaces/*`
@@ -164,6 +165,26 @@ Status transition enforcement:
 Lifecycle rules and transition matrix:
 - `docs/order-lifecycle.md`
 
+## Reviews and Reporting Flow (Prompt 7)
+
+Customer:
+- adds product reviews with rating and comment for purchased products only
+- sees average ratings in product views
+
+Administrator:
+- generates sales report with:
+- total revenue
+- orders by status
+- best-selling products
+- low-stock products
+
+Service orchestration:
+- `ReviewService` validates and persists reviews
+- `ReportService` performs LINQ-based aggregations and report projections
+
+Report definitions and examples:
+- `docs/reviews-reporting.md`
+
 ## Persistence Design
 
 Persisted files:
@@ -177,6 +198,7 @@ Behavior:
 - malformed JSON is recovered as empty list (non-crashing fallback)
 - user persistence includes wallet balance and cart snapshots
 - checkout/order workflows persist wallet/cart, stock, and order/payment records
+- review additions persist through product repository updates
 
 ## Design Decisions and Rationale
 
@@ -184,7 +206,8 @@ Behavior:
 - Persistence models are standalone files (no nested classes) for readability.
 - Session state is in-memory only by design for current scope.
 - Seed logic is idempotent so restarts do not duplicate baseline data.
-- Catalog/cart/wallet/checkout/order lifecycle rules are centralized in services to keep menus thin.
+- Core workflow rules are centralized in services to keep menus thin.
+- Report rows are represented by dedicated models for future strategy extraction.
 
 ## Current Design Patterns
 
@@ -202,12 +225,13 @@ Detailed mapping and use-cases are documented in:
 
 ## Known Limitations (Current Scope)
 
-- reporting and review workflows are not fully integrated yet
+- reporting and review menus are implemented, but advanced analytics variants are not yet extracted into strategies
 - historical timestamps are not fully hydrated from persistence records yet
 - no file locking across multiple app instances (single-process assumption)
 
 ## Next Evolution Steps
 
-- expand reporting/review workflows (Issue 7)
 - implement quality hardening and regression expansion (Issue 8)
 - introduce explicit Factory/Strategy/State modules (Issue 9)
+
+

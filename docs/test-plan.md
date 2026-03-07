@@ -2,7 +2,7 @@
 
 ## Goal
 
-Ensure core authentication, product catalog workflows, cart/wallet workflows, checkout/order processing behavior, order lifecycle transitions, domain safety checks, and persistence behavior are correct and stable while features are incrementally added.
+Ensure core authentication, product catalog workflows, cart/wallet workflows, checkout/order processing behavior, order lifecycle transitions, review/report calculations, domain safety checks, and persistence behavior are correct and stable while features are incrementally added.
 
 ## Test Projects and Structure
 
@@ -49,6 +49,12 @@ Current test folders:
 - valid order status transition sequence
 - invalid order status transition rejection
 - terminal-state transition rejection
+- review add success + persistence + average rating
+- review rating validation failure
+- report total revenue calculation
+- report orders-by-status calculation
+- report best-selling product aggregation/ranking
+- report low-stock filtering/sorting
 
 ### Infrastructure tests
 - seed persistence to JSON files
@@ -57,7 +63,7 @@ Current test folders:
 
 ## Test Data Strategy
 
-- each auth/product/cart/wallet/checkout/order-transition/persistence test creates its own temporary data directory
+- each auth/product/cart/wallet/checkout/order-transition/review/report/persistence test creates its own temporary data directory
 - tests clean up temp directories after execution
 - this avoids shared state and file-lock collisions
 
@@ -69,12 +75,11 @@ Current test folders:
 ## Current Risks and Gaps
 
 Not yet covered (planned in next phases):
-- reporting aggregation correctness matrix
-- review workflow correctness matrix
 - menu-driven input parsing behavior tests
+- full end-to-end console interaction regression suite
+- advanced reporting variants (future strategy extraction)
 
 ## Expansion Plan by Issue
 
-- Issue 7: reviews/reporting tests
 - Issue 8: regression and edge-case hardening tests
 - Issue 9: design-pattern parity tests
