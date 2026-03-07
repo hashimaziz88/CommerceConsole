@@ -24,6 +24,11 @@ public interface IOrderService
     List<Order> GetAllOrders();
 
     /// <summary>
+    /// Returns the valid next statuses for an order state.
+    /// </summary>
+    IReadOnlyList<OrderStatus> GetAllowedTransitions(OrderStatus currentStatus);
+
+    /// <summary>
     /// Updates one order status.
     /// </summary>
     void UpdateOrderStatus(Guid orderId, OrderStatus status);

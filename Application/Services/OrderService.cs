@@ -12,6 +12,16 @@ public sealed class OrderService : IOrderService
 {
     private const string WalletPaymentMethod = "Wallet";
 
+    private static readonly Dictionary<OrderStatus, IReadOnlyList<OrderStatus>> AllowedTransitions = new()
+    {
+        [OrderStatus.Pending] = new[] { OrderStatus.Paid, OrderStatus.Cancelled },
+        [OrderStatus.Paid] = new[] { OrderStatus.Processing, OrderStatus.Cancelled },
+        [OrderStatus.Processing] = new[] { OrderStatus.Shipped, OrderStatus.Cancelled },
+        [OrderStatus.Shipped] = new[] { OrderStatus.Delivered },
+        [OrderStatus.Delivered] = Array.Empty<OrderStatus>(),
+        [OrderStatus.Cancelled] = Array.Empty<OrderStatus>()
+    };
+
     private readonly IOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;
     private readonly IUserRepository _userRepository;
@@ -79,22 +89,44 @@ public sealed class OrderService : IOrderService
     /// <inheritdoc />
     public List<Order> GetCustomerOrders(Guid customerId)
     {
-        return _orderRepository.GetByCustomerId(customerId);
+        return _orderRepository
+            .GetByCustomerId(customerId)
+            .OrderByDescending(order => order.CreatedAt)
+            .ToList();
     }
 
     /// <inheritdoc />
     public List<Order> GetAllOrders()
     {
-        return _orderRepository.GetAll();
+        return _orderRepository
+            .GetAll()
+            .OrderByDescending(order => order.CreatedAt)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<OrderStatus> GetAllowedTransitions(OrderStatus currentStatus)
+    {
+        return AllowedTransitions.TryGetValue(currentStatus, out IReadOnlyList<OrderStatus>? transitions)
+            ? transitions
+            : Array.Empty<OrderStatus>();
     }
 
     /// <inheritdoc />
     public void UpdateOrderStatus(Guid orderId, OrderStatus status)
     {
-        Order? order = _orderRepository.GetById(orderId);
-        if (order is null)
+        Order order = GetOrderOrThrow(orderId);
+
+        if (order.Status == status)
         {
             return;
+        }
+
+        IReadOnlyList<OrderStatus> allowed = GetAllowedTransitions(order.Status);
+        if (!allowed.Contains(status))
+        {
+            throw new ValidationException(
+                $"Invalid status transition from '{order.Status}' to '{status}'.");
         }
 
         order.UpdateStatus(status);
@@ -134,6 +166,17 @@ public sealed class OrderService : IOrderService
         }
 
         return product;
+    }
+
+    private Order GetOrderOrThrow(Guid orderId)
+    {
+        Order? order = _orderRepository.GetById(orderId);
+        if (order is null)
+        {
+            throw new NotFoundException("Order was not found.");
+        }
+
+        return order;
     }
 
     private sealed record ProductCheckoutLine(Product Product, int Quantity);
