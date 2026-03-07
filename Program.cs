@@ -25,12 +25,12 @@ public static class Program
         ProductService productService = new(productRepository);
         CartService cartService = new(productRepository, userRepository);
         WalletService walletService = new(userRepository);
-        _ = new OrderService(orderRepository);
+        OrderService orderService = new(orderRepository, productRepository, userRepository);
         _ = new ReviewService();
         _ = new ReportService(orderRepository);
 
         SessionContext sessionContext = new();
-        CustomerMenu customerMenu = new(productService, cartService, walletService);
+        CustomerMenu customerMenu = new(productService, cartService, walletService, orderService);
         AdminMenu adminMenu = new(productService);
 
         MainMenu mainMenu = new(authService, sessionContext, customerMenu, adminMenu);
