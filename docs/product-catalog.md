@@ -15,7 +15,8 @@ This document explains Prompt 3 implementation for:
 - Customer menu option: `Browse Active Products`
 - Data source: `IProductService.GetActiveProducts()`
 - Visibility rule: only `IsActive == true` products are shown
-- Output includes ID, category, price, stock, active flag, and average rating
+- Output includes name, category, price, stock, status, and average rating
+- Internal identifiers are never displayed in presentation output
 
 ### Search by name/category
 
@@ -39,7 +40,7 @@ Validation is centralized in domain constructor (`Product`) and surfaced through
 
 ### Update product
 
-Menu action collects product ID + updated fields.
+Menu action uses numbered product selection + updated fields.
 
 Behavior:
 - product must exist (`NotFoundException` if missing)
@@ -49,6 +50,7 @@ Behavior:
 ### Delete product
 
 Behavior:
+- product is selected by number from the product list
 - product must exist (`NotFoundException` if missing)
 - repository removes product row
 - persisted file is updated immediately
@@ -56,6 +58,7 @@ Behavior:
 ### Restock product
 
 Behavior:
+- product is selected by number from the product list
 - product must exist
 - restock quantity must be positive
 - `Product.Restock(...)` applies guard clause

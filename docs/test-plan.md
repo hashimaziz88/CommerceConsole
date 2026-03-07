@@ -2,7 +2,7 @@
 
 ## Goal
 
-Ensure core authentication, product catalog workflows, domain safety checks, and persistence behavior are correct and stable while features are incrementally added.
+Ensure core authentication, product catalog workflows, cart/wallet workflows, domain safety checks, and persistence behavior are correct and stable while features are incrementally added.
 
 ## Test Projects and Structure
 
@@ -35,6 +35,12 @@ Current test folders:
 - product delete success
 - product restock success
 - low-stock filtering by threshold
+- cart add success
+- cart add stock violation
+- cart update-to-zero removal
+- cart update stock violation
+- wallet top-up success + persistence
+- wallet top-up validation failure
 
 ### Infrastructure tests
 - seed persistence to JSON files
@@ -43,7 +49,7 @@ Current test folders:
 
 ## Test Data Strategy
 
-- each auth/product/persistence test creates its own temporary data directory
+- each auth/product/cart/wallet/persistence test creates its own temporary data directory
 - tests clean up temp directories after execution
 - this avoids shared state and file-lock collisions
 
@@ -56,14 +62,12 @@ Current test folders:
 
 Not yet covered (planned in next phases):
 - checkout success/failure path matrix
-- wallet debit/top-up behavior matrix
 - order status transition policy matrix
 - reporting aggregation correctness matrix
 - menu-driven input parsing behavior tests
 
 ## Expansion Plan by Issue
 
-- Issue 4: cart and wallet tests
 - Issue 5: checkout and order creation tests
 - Issue 6: order history/tracking/status tests
 - Issue 7: reviews/reporting tests

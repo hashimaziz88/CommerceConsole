@@ -13,26 +13,29 @@ Responsible for:
 - input capture
 - user navigation
 - friendly error messaging
-- product list rendering and input parsing helpers
+- product/cart rendering helpers
 
 Current classes:
 - `Presentation/Menus/MainMenu.cs`
 - `Presentation/Menus/CustomerMenu.cs`
 - `Presentation/Menus/AdminMenu.cs`
 - `Presentation/Helpers/ProductDisplayHelper.cs`
+- `Presentation/Helpers/CartDisplayHelper.cs`
 - `Presentation/Helpers/ConsoleInputHelper.cs`
 
 Rules followed:
 - no repository access from menus
 - no domain mutation logic directly in menu handlers
+- no exposure of internal identifiers in user-facing screens
 
 ### Application layer
 
 Responsible for:
 - use-case orchestration
 - service contracts and abstractions
-- authentication and session coordination
-- catalog management use cases
+- authentication/session coordination
+- catalog management
+- cart and wallet workflow rules
 
 Current contracts:
 - `Application/Interfaces/*`
@@ -107,13 +110,27 @@ Customer:
 
 Administrator:
 - add product
-- update product
-- delete product
-- restock product
+- update product (numbered product selection)
+- delete product (numbered product selection)
+- restock product (numbered product selection)
 - view all products
 - view low-stock products (threshold based)
 
 Business rules are centralized in `ProductService` + domain entity guards.
+
+## Cart and Wallet Flow (Prompt 4)
+
+Customer:
+- add to cart from numbered active-product selections
+- view cart
+- update cart quantities from numbered cart-item selections (zero quantity removes)
+- view wallet balance
+- add wallet funds
+
+Rules centralized in services:
+- stock-aware quantity checks in `CartService`
+- wallet amount validation in `WalletService` and `Customer`
+- presentation only handles input/output and exception display without exposing internal identifiers
 
 ## Persistence Design
 
@@ -126,14 +143,15 @@ Behavior:
 - repositories deserialize records on initialization
 - add/update/remove immediately writes through to JSON
 - malformed JSON is recovered as empty list (non-crashing fallback)
+- user persistence includes wallet balance and cart snapshots
 
 ## Design Decisions and Rationale
 
-- Repository APIs were kept unchanged to preserve application-layer stability.
-- Persistence models were split into standalone files to avoid nested classes and improve readability.
+- Repository APIs were kept stable to avoid cascading service changes.
+- Persistence models are standalone files (no nested classes) for readability.
 - Session state is in-memory only by design for current scope.
 - Seed logic is idempotent so restarts do not duplicate baseline data.
-- Catalog actions route through `ProductService` to centralize validation and mutations.
+- Catalog/cart/wallet rules are centralized in services to keep menus thin.
 
 ## Known Limitations (Current Scope)
 
@@ -144,5 +162,5 @@ Behavior:
 ## Next Evolution Steps
 
 - Implement checkout/order workflows (Issue 5).
-- Add persistence for cart/wallet/order-history projections where needed.
+- Add persistence for order-history projections where needed.
 - Introduce stricter transition policies for order status updates.
