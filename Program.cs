@@ -26,12 +26,12 @@ public static class Program
         CartService cartService = new(productRepository, userRepository);
         WalletService walletService = new(userRepository);
         OrderService orderService = new(orderRepository, productRepository, userRepository);
-        _ = new ReviewService();
-        _ = new ReportService(orderRepository);
+        ReviewService reviewService = new(orderRepository, productRepository, userRepository);
+        ReportService reportService = new(orderRepository, productRepository);
 
         SessionContext sessionContext = new();
-        CustomerMenu customerMenu = new(productService, cartService, walletService, orderService);
-        AdminMenu adminMenu = new(productService, orderService);
+        CustomerMenu customerMenu = new(productService, cartService, walletService, orderService, reviewService);
+        AdminMenu adminMenu = new(productService, orderService, reportService);
 
         MainMenu mainMenu = new(authService, sessionContext, customerMenu, adminMenu);
         mainMenu.Run();

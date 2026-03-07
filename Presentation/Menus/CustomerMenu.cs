@@ -7,7 +7,7 @@ using CommerceConsole.Presentation.Helpers;
 namespace CommerceConsole.Presentation.Menus;
 
 /// <summary>
-/// Customer menu with product browsing, cart, wallet, checkout, and order tracking actions.
+/// Customer menu with product browsing, cart, wallet, checkout, order tracking, and review actions.
 /// </summary>
 public sealed class CustomerMenu
 {
@@ -15,6 +15,7 @@ public sealed class CustomerMenu
     private readonly ICartService _cartService;
     private readonly IWalletService _walletService;
     private readonly IOrderService _orderService;
+    private readonly IReviewService _reviewService;
 
     /// <summary>
     /// Initializes the customer menu.
@@ -23,12 +24,14 @@ public sealed class CustomerMenu
         IProductService productService,
         ICartService cartService,
         IWalletService walletService,
-        IOrderService orderService)
+        IOrderService orderService,
+        IReviewService reviewService)
     {
         _productService = productService;
         _cartService = cartService;
         _walletService = walletService;
         _orderService = orderService;
+        _reviewService = reviewService;
     }
 
     /// <summary>
@@ -81,12 +84,15 @@ public sealed class CustomerMenu
                     TrackOrderStatus(customer);
                     break;
                 case "11":
+                    ExecuteAction(() => AddReview(customer));
+                    break;
+                case "12":
                     sessionContext.SignOut();
                     done = true;
                     Console.WriteLine("You have been logged out.");
                     break;
                 default:
-                    Console.WriteLine("Invalid option. Please enter 1 through 11.");
+                    Console.WriteLine("Invalid option. Please enter 1 through 12.");
                     break;
             }
 
@@ -107,7 +113,8 @@ public sealed class CustomerMenu
         Console.WriteLine("8. Checkout");
         Console.WriteLine("9. View Order History");
         Console.WriteLine("10. Track Order Status");
-        Console.WriteLine("11. Logout");
+        Console.WriteLine("11. Add Product Review");
+        Console.WriteLine("12. Logout");
     }
 
     private void BrowseProducts()
@@ -219,6 +226,26 @@ public sealed class CustomerMenu
 
         Order selectedOrder = orders[selection - 1];
         OrderDisplayHelper.ShowTracking(selectedOrder);
+    }
+
+    private void AddReview(Customer customer)
+    {
+        List<Product> products = _reviewService.GetReviewableProducts(customer);
+        if (products.Count == 0)
+        {
+            Console.WriteLine("You have no purchased products available for review.");
+            return;
+        }
+
+        ProductDisplayHelper.ShowSelectableProducts("=== Select Product To Review ===", products);
+        int selection = ConsoleInputHelper.ReadSelection("Choose product number: ", products.Count);
+
+        int rating = ConsoleInputHelper.ReadInt("Rating (1-5): ");
+        string comment = ConsoleInputHelper.ReadRequiredString("Comment: ");
+
+        Product selectedProduct = products[selection - 1];
+        _reviewService.AddReview(customer, selectedProduct.Id, rating, comment);
+        Console.WriteLine("Review submitted successfully.");
     }
 
     private static void ExecuteAction(Action action)

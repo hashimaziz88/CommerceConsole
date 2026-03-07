@@ -7,20 +7,22 @@ using CommerceConsole.Presentation.Helpers;
 namespace CommerceConsole.Presentation.Menus;
 
 /// <summary>
-/// Administrator catalog and order management menu.
+/// Administrator catalog, order, and reporting management menu.
 /// </summary>
 public sealed class AdminMenu
 {
     private readonly IProductService _productService;
     private readonly IOrderService _orderService;
+    private readonly IReportService _reportService;
 
     /// <summary>
     /// Initializes the administrator menu.
     /// </summary>
-    public AdminMenu(IProductService productService, IOrderService orderService)
+    public AdminMenu(IProductService productService, IOrderService orderService, IReportService reportService)
     {
         _productService = productService;
         _orderService = orderService;
+        _reportService = reportService;
     }
 
     /// <summary>
@@ -67,12 +69,15 @@ public sealed class AdminMenu
                     ExecuteAction(UpdateOrderStatus);
                     break;
                 case "9":
+                    ExecuteAction(ViewSalesReport);
+                    break;
+                case "10":
                     sessionContext.SignOut();
                     done = true;
                     Console.WriteLine("You have been logged out.");
                     break;
                 default:
-                    Console.WriteLine("Invalid option. Please enter 1 through 9.");
+                    Console.WriteLine("Invalid option. Please enter 1 through 10.");
                     break;
             }
 
@@ -91,7 +96,8 @@ public sealed class AdminMenu
         Console.WriteLine("6. View Low Stock Products");
         Console.WriteLine("7. View All Orders");
         Console.WriteLine("8. Update Order Status");
-        Console.WriteLine("9. Logout");
+        Console.WriteLine("9. View Sales Report");
+        Console.WriteLine("10. Logout");
     }
 
     private void AddProduct()
@@ -184,6 +190,19 @@ public sealed class AdminMenu
 
         _orderService.UpdateOrderStatus(selectedOrder.Id, selectedStatus);
         Console.WriteLine($"Order status updated to {selectedStatus}.");
+    }
+
+    private void ViewSalesReport()
+    {
+        int topCount = ConsoleInputHelper.ReadInt("Top-selling products to show: ");
+        int lowStockThreshold = ConsoleInputHelper.ReadInt("Low-stock threshold: ");
+
+        decimal totalRevenue = _reportService.GetTotalRevenue();
+        Dictionary<OrderStatus, int> ordersByStatus = _reportService.GetOrdersByStatus();
+        var bestSellingProducts = _reportService.GetBestSellingProducts(topCount);
+        var lowStockProducts = _reportService.GetLowStockProducts(lowStockThreshold);
+
+        ReportDisplayHelper.ShowSalesReport(totalRevenue, ordersByStatus, bestSellingProducts, lowStockProducts);
     }
 
     private Product SelectProductForAction(string heading)
