@@ -1,2 +1,6 @@
 .vs/
 .dotnet/
+**/bin/
+**/obj/
+TestResults/
+*.user

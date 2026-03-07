@@ -44,7 +44,7 @@ Rules:
 - Keep classes small and responsibilities clear
 - Use guard clauses and meaningful names
 - Add short starter notes in docs/architecture.md and docs/test-plan.md
-- Add short starter notes on OOP implemetation details and choices, covering Access modidfiers chocies, choices of static, polymorphism choices, soc , inheritance and all oop
+- Add short starter notes in docs/oop-design-notes.md covering access modifiers, static usage, polymorphism, SoC, and inheritance choices
 ```
 
 ## Prompt 2 - Implement registration, login, and role-based navigation with tests
@@ -221,3 +221,4 @@ Constraints:
 - Update docs to explain where and why each pattern is used
 - Do not over-engineer the solution
 ```
+
