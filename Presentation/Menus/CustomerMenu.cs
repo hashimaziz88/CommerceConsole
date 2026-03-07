@@ -7,7 +7,7 @@ using CommerceConsole.Presentation.Helpers;
 namespace CommerceConsole.Presentation.Menus;
 
 /// <summary>
-/// Customer menu with product browsing, cart, wallet, and checkout actions.
+/// Customer menu with product browsing, cart, wallet, checkout, and order tracking actions.
 /// </summary>
 public sealed class CustomerMenu
 {
@@ -75,12 +75,18 @@ public sealed class CustomerMenu
                     ExecuteAction(() => Checkout(customer));
                     break;
                 case "9":
+                    ViewOrderHistory(customer);
+                    break;
+                case "10":
+                    TrackOrderStatus(customer);
+                    break;
+                case "11":
                     sessionContext.SignOut();
                     done = true;
                     Console.WriteLine("You have been logged out.");
                     break;
                 default:
-                    Console.WriteLine("Invalid option. Please enter 1 through 9.");
+                    Console.WriteLine("Invalid option. Please enter 1 through 11.");
                     break;
             }
 
@@ -99,7 +105,9 @@ public sealed class CustomerMenu
         Console.WriteLine("6. View Wallet Balance");
         Console.WriteLine("7. Add Wallet Funds");
         Console.WriteLine("8. Checkout");
-        Console.WriteLine("9. Logout");
+        Console.WriteLine("9. View Order History");
+        Console.WriteLine("10. Track Order Status");
+        Console.WriteLine("11. Logout");
     }
 
     private void BrowseProducts()
@@ -189,6 +197,28 @@ public sealed class CustomerMenu
         Console.WriteLine($"Total paid: {order.TotalAmount:C}");
         Console.WriteLine($"Order status: {order.Status}");
         Console.WriteLine($"Payment status: {order.Payment.Status}");
+    }
+
+    private void ViewOrderHistory(Customer customer)
+    {
+        List<Order> orders = _orderService.GetCustomerOrders(customer.Id);
+        OrderDisplayHelper.ShowOrders("=== Your Order History ===", orders);
+    }
+
+    private void TrackOrderStatus(Customer customer)
+    {
+        List<Order> orders = _orderService.GetCustomerOrders(customer.Id);
+        if (orders.Count == 0)
+        {
+            Console.WriteLine("No orders found.");
+            return;
+        }
+
+        OrderDisplayHelper.ShowSelectableOrders("=== Select Order To Track ===", orders);
+        int selection = ConsoleInputHelper.ReadSelection("Choose order number: ", orders.Count);
+
+        Order selectedOrder = orders[selection - 1];
+        OrderDisplayHelper.ShowTracking(selectedOrder);
     }
 
     private static void ExecuteAction(Action action)
