@@ -14,3 +14,11 @@ Start with:
 - `C:\Users\Hashim\Documents\Git Repos\CommerceConsole\.codex\README.md`
 - `C:\Users\Hashim\Documents\Git Repos\CommerceConsole\.codex\01_Project_Overview.md`
 - `C:\Users\Hashim\Documents\Git Repos\CommerceConsole\.codex\04_Submission_1_Implementation_Blueprint.md`
+
+## Working Docs
+
+- `docs/architecture.md`
+- `docs/oop-design-notes.md`
+- `docs/design-patterns-current.md`
+
+

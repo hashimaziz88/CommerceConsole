@@ -20,6 +20,20 @@ The project follows layered separation:
 
 OOP choices were made to keep each layer cohesive and minimize cross-layer leakage.
 
+## Current Design Patterns Already Present
+
+The codebase already includes concrete pattern usage (not just planned refactors):
+- Repository Pattern (`I*Repository` with `InMemory*Repository` implementations)
+- Service Layer Pattern (`Application/Services/*`)
+- Constructor-based Dependency Injection
+- Composition Root in `Program.cs`
+- Data Mapper methods (`ToDomain` / `FromDomain`) in repositories
+- Rich Domain Model with guard clauses in entities
+- Session Context pattern for process-level authenticated user state
+
+For the full pattern inventory and usage mapping, see:
+- `docs/design-patterns-current.md`
+
 ## Core OOP Pillars Applied
 
 ### Encapsulation
@@ -410,3 +424,5 @@ If asked to justify design quickly:
 - specialized methods are intent-driven (`AddFunds`, `Restock`, `FindProductOrThrow`) and keep rules centralized
 - LINQ is used in services/repositories for readable filtering/ordering/aggregation, with `ToList()` for deterministic snapshots
 - presentation remains thin and identifier-safe, while business logic stays in domain/application
+
+

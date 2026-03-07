@@ -153,6 +153,20 @@ Behavior:
 - Seed logic is idempotent so restarts do not duplicate baseline data.
 - Catalog/cart/wallet rules are centralized in services to keep menus thin.
 
+## Current Design Patterns
+
+Patterns already implemented in the current baseline:
+- Repository Pattern (`I*Repository` + `InMemory*Repository`)
+- Service Layer Pattern (`Application/Services/*`)
+- Constructor-based Dependency Injection
+- Composition Root (`Program.cs`)
+- Data Mapper (`ToDomain` / `FromDomain` in repositories)
+- Rich Domain Model with Guard Clauses (`Domain/Entities/*`)
+- Session Context pattern (`SessionContext`)
+
+Detailed mapping and use-cases are documented in:
+- `docs/design-patterns-current.md`
+
 ## Known Limitations (Current Scope)
 
 - `OrderService.Checkout(...)` is still a planned implementation item.
@@ -164,3 +178,5 @@ Behavior:
 - Implement checkout/order workflows (Issue 5).
 - Add persistence for order-history projections where needed.
 - Introduce stricter transition policies for order status updates.
+
+
