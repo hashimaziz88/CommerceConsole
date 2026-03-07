@@ -2,7 +2,7 @@
 
 ## Goal
 
-Ensure core authentication, domain safety checks, and persistence behavior are correct and stable while features are incrementally added.
+Ensure core authentication, product catalog workflows, domain safety checks, and persistence behavior are correct and stable while features are incrementally added.
 
 ## Test Projects and Structure
 
@@ -27,6 +27,14 @@ Current test folders:
 - seeded admin login success
 - wrong-password rejection
 - session sign-in/sign-out state behavior
+- product add success
+- product add validation failure
+- product search by category with active filtering
+- product update success
+- product update not-found failure
+- product delete success
+- product restock success
+- low-stock filtering by threshold
 
 ### Infrastructure tests
 - seed persistence to JSON files
@@ -35,7 +43,7 @@ Current test folders:
 
 ## Test Data Strategy
 
-- each auth/persistence test creates its own temporary data directory
+- each auth/product/persistence test creates its own temporary data directory
 - tests clean up temp directories after execution
 - this avoids shared state and file-lock collisions
 
@@ -55,7 +63,6 @@ Not yet covered (planned in next phases):
 
 ## Expansion Plan by Issue
 
-- Issue 3: product search/filter and low-stock tests
 - Issue 4: cart and wallet tests
 - Issue 5: checkout and order creation tests
 - Issue 6: order history/tracking/status tests
