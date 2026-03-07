@@ -7,18 +7,20 @@ using CommerceConsole.Presentation.Helpers;
 namespace CommerceConsole.Presentation.Menus;
 
 /// <summary>
-/// Administrator catalog management menu.
+/// Administrator catalog and order management menu.
 /// </summary>
 public sealed class AdminMenu
 {
     private readonly IProductService _productService;
+    private readonly IOrderService _orderService;
 
     /// <summary>
     /// Initializes the administrator menu.
     /// </summary>
-    public AdminMenu(IProductService productService)
+    public AdminMenu(IProductService productService, IOrderService orderService)
     {
         _productService = productService;
+        _orderService = orderService;
     }
 
     /// <summary>
@@ -59,12 +61,18 @@ public sealed class AdminMenu
                     ExecuteAction(ViewLowStockProducts);
                     break;
                 case "7":
+                    ViewAllOrders();
+                    break;
+                case "8":
+                    ExecuteAction(UpdateOrderStatus);
+                    break;
+                case "9":
                     sessionContext.SignOut();
                     done = true;
                     Console.WriteLine("You have been logged out.");
                     break;
                 default:
-                    Console.WriteLine("Invalid option. Please enter 1 through 7.");
+                    Console.WriteLine("Invalid option. Please enter 1 through 9.");
                     break;
             }
 
@@ -81,7 +89,9 @@ public sealed class AdminMenu
         Console.WriteLine("4. Restock Product");
         Console.WriteLine("5. View Products");
         Console.WriteLine("6. View Low Stock Products");
-        Console.WriteLine("7. Logout");
+        Console.WriteLine("7. View All Orders");
+        Console.WriteLine("8. Update Order Status");
+        Console.WriteLine("9. Logout");
     }
 
     private void AddProduct()
@@ -135,6 +145,45 @@ public sealed class AdminMenu
         int threshold = ConsoleInputHelper.ReadInt("Low-stock threshold: ");
         var products = _productService.GetLowStockProducts(threshold);
         ProductDisplayHelper.ShowProducts($"=== Low Stock Products (<= {threshold}) ===", products);
+    }
+
+    private void ViewAllOrders()
+    {
+        List<Order> orders = _orderService.GetAllOrders();
+        OrderDisplayHelper.ShowOrders("=== All Orders ===", orders);
+    }
+
+    private void UpdateOrderStatus()
+    {
+        List<Order> orders = _orderService.GetAllOrders();
+        if (orders.Count == 0)
+        {
+            Console.WriteLine("No orders available.");
+            return;
+        }
+
+        OrderDisplayHelper.ShowSelectableOrders("=== Select Order To Update ===", orders);
+        int orderSelection = ConsoleInputHelper.ReadSelection("Choose order number: ", orders.Count);
+        Order selectedOrder = orders[orderSelection - 1];
+
+        IReadOnlyList<OrderStatus> allowedTransitions = _orderService.GetAllowedTransitions(selectedOrder.Status);
+        if (allowedTransitions.Count == 0)
+        {
+            Console.WriteLine("This order is in a terminal state and cannot transition further.");
+            return;
+        }
+
+        Console.WriteLine("=== Allowed Next Statuses ===");
+        for (int index = 0; index < allowedTransitions.Count; index++)
+        {
+            Console.WriteLine($"{index + 1}. {allowedTransitions[index]}");
+        }
+
+        int statusSelection = ConsoleInputHelper.ReadSelection("Choose next status: ", allowedTransitions.Count);
+        OrderStatus selectedStatus = allowedTransitions[statusSelection - 1];
+
+        _orderService.UpdateOrderStatus(selectedOrder.Id, selectedStatus);
+        Console.WriteLine($"Order status updated to {selectedStatus}.");
     }
 
     private Product SelectProductForAction(string heading)

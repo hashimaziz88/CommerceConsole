@@ -31,6 +31,7 @@ The project is being delivered with Submission 2 quality standards from the star
 - `docs/product-catalog.md`
 - `docs/cart-wallet.md`
 - `docs/checkout-orders.md`
+- `docs/order-lifecycle.md`
 - `docs/oop-design-notes.md`
 - `docs/design-patterns-current.md`
 - `docs/test-plan.md`
@@ -46,7 +47,7 @@ The project is being delivered with Submission 2 quality standards from the star
 
 ### Overview
 
-CommerceConsole simulates an online shopping backend with role-based access for customers and administrators. The current scope includes authentication, catalog management, cart and wallet workflows, checkout and order processing, JSON persistence, and foundational reporting/review/order status scaffolding.
+CommerceConsole simulates an online shopping backend with role-based access for customers and administrators. The current scope includes authentication, catalog management, cart and wallet workflows, checkout and order processing, order lifecycle management, JSON persistence, and foundational reporting/review scaffolding.
 
 ### Components and Functional Requirements
 
@@ -85,9 +86,11 @@ Status: Implemented
 Status: Implemented
 
 6. Order history, tracking, and admin order status updates
-- customer order history/track flow
-- admin order status management
-Status: Partially scaffolded, full behavior planned (Milestone 3)
+- customer order history view
+- customer order status tracking
+- admin all-order visibility
+- admin order status updates with transition-rule enforcement
+Status: Implemented
 
 7. Reviews and reporting
 - review capture + rating aggregation
@@ -112,6 +115,7 @@ Status: Planned for Monday phase (Milestone 4)
 - OOP design rationale: `docs/oop-design-notes.md`
 - Current design pattern inventory: `docs/design-patterns-current.md`
 - Checkout invariants and behavior: `docs/checkout-orders.md`
+- Order lifecycle and transition rules: `docs/order-lifecycle.md`
 - Domain and submission planning references: `.codex/03_Domain_Model.md`, `.codex/04_Submission_1_Implementation_Blueprint.md`
 
 ### Planned Artefacts (when required by submission pack)
@@ -178,7 +182,7 @@ Seed behavior:
 
 ## Current Limitations
 
-- order history and admin order status UI flows are not fully integrated yet
+- reporting and review workflows are not fully integrated yet
 - password storage is plain text (coursework scope trade-off)
 - JSON persistence is designed for single-process console use
 

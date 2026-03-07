@@ -31,7 +31,7 @@ public static class Program
 
         SessionContext sessionContext = new();
         CustomerMenu customerMenu = new(productService, cartService, walletService, orderService);
-        AdminMenu adminMenu = new(productService);
+        AdminMenu adminMenu = new(productService, orderService);
 
         MainMenu mainMenu = new(authService, sessionContext, customerMenu, adminMenu);
         mainMenu.Run();
