@@ -95,6 +95,7 @@ Status: Implemented
 
 7. Reviews and reporting
 - customer product reviews with rating/comment (purchased products only)
+- review menu only displays purchased products as selectable options
 - rating validation (1 to 5)
 - average rating display
 - admin sales report: total revenue, orders by status, best sellers, low stock

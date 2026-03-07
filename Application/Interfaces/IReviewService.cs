@@ -8,6 +8,11 @@ namespace CommerceConsole.Application.Interfaces;
 public interface IReviewService
 {
     /// <summary>
+    /// Returns products the customer is eligible to review.
+    /// </summary>
+    List<Product> GetReviewableProducts(Customer customer);
+
+    /// <summary>
     /// Adds a customer review for a product.
     /// </summary>
     void AddReview(Customer customer, Guid productId, int rating, string comment);

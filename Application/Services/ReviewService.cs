@@ -33,6 +33,26 @@ public sealed class ReviewService : IReviewService
     }
 
     /// <inheritdoc />
+    public List<Product> GetReviewableProducts(Customer customer)
+    {
+        if (customer is null)
+        {
+            throw new ValidationException("Customer is required.");
+        }
+
+        HashSet<Guid> purchasedProductIds = _orderRepository.GetByCustomerId(customer.Id)
+            .Where(order => ReviewEligibleOrderStatuses.Contains(order.Status))
+            .SelectMany(order => order.Items)
+            .Select(item => item.ProductId)
+            .ToHashSet();
+
+        return _productRepository.GetAll()
+            .Where(product => purchasedProductIds.Contains(product.Id))
+            .OrderBy(product => product.Name)
+            .ToList();
+    }
+
+    /// <inheritdoc />
     public void AddReview(Customer customer, Guid productId, int rating, string comment)
     {
         if (customer is null)

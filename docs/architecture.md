@@ -169,6 +169,7 @@ Lifecycle rules and transition matrix:
 
 Customer:
 - adds product reviews with rating and comment for purchased products only
+- review selection only displays products from customer purchase history
 - sees average ratings in product views
 
 Administrator:
@@ -233,5 +234,4 @@ Detailed mapping and use-cases are documented in:
 
 - implement quality hardening and regression expansion (Issue 8)
 - introduce explicit Factory/Strategy/State modules (Issue 9)
-
 

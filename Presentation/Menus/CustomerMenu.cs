@@ -230,10 +230,10 @@ public sealed class CustomerMenu
 
     private void AddReview(Customer customer)
     {
-        List<Product> products = _productService.GetActiveProducts();
+        List<Product> products = _reviewService.GetReviewableProducts(customer);
         if (products.Count == 0)
         {
-            Console.WriteLine("No active products are available for review.");
+            Console.WriteLine("You have no purchased products available for review.");
             return;
         }
 

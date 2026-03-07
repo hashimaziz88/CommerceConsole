@@ -13,6 +13,8 @@ This document explains Prompt 7 implementation for:
 
 Customer capability:
 - submit a product review with rating and comment from `CustomerMenu`
+- review selection menu only lists products previously purchased by the current customer
+- if no purchased products are reviewable, the menu exits with a friendly message
 
 Service:
 - `ReviewService.AddReview(Customer customer, Guid productId, int rating, string comment)`
