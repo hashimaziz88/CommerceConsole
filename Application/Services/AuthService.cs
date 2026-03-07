@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Exceptions;
@@ -9,6 +10,10 @@ namespace CommerceConsole.Application.Services;
 /// </summary>
 public sealed class AuthService : IAuthService
 {
+    private static readonly Regex BasicEmailPattern = new(
+        "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private readonly IUserRepository _userRepository;
 
     /// <summary>
@@ -22,6 +27,26 @@ public sealed class AuthService : IAuthService
     /// <inheritdoc />
     public Customer RegisterCustomer(string fullName, string email, string password)
     {
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            throw new ValidationException("Full name is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ValidationException("Email is required.");
+        }
+
+        if (!BasicEmailPattern.IsMatch(email.Trim()))
+        {
+            throw new ValidationException("Email format is invalid.");
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new ValidationException("Password is required.");
+        }
+
         if (_userRepository.GetByEmail(email) is not null)
         {
             throw new DuplicateEmailException("A user with this email already exists.");
@@ -35,6 +60,16 @@ public sealed class AuthService : IAuthService
     /// <inheritdoc />
     public User Login(string email, string password)
     {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ValidationException("Email is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new ValidationException("Password is required.");
+        }
+
         User? user = _userRepository.GetByEmail(email);
         if (user is null || !user.VerifyPassword(password))
         {

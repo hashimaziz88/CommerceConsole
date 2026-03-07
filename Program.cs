@@ -21,7 +21,7 @@ public static class Program
 
         SeedData.Seed(userRepository, productRepository);
 
-        _ = new AuthService(userRepository);
+        AuthService authService = new(userRepository);
         _ = new ProductService(productRepository);
         _ = new CartService();
         _ = new WalletService();
@@ -29,9 +29,11 @@ public static class Program
         _ = new ReviewService();
         _ = new ReportService(orderRepository);
 
-        MainMenu mainMenu = new();
-        mainMenu.Show();
+        SessionContext sessionContext = new();
+        CustomerMenu customerMenu = new();
+        AdminMenu adminMenu = new();
 
-        Console.WriteLine("Scaffold ready. Continue with feature implementation prompts.");
+        MainMenu mainMenu = new(authService, sessionContext, customerMenu, adminMenu);
+        mainMenu.Run();
     }
 }

@@ -56,6 +56,7 @@ Requirements:
 - Register new customers
 - Allow login for both customers and administrators
 - Seed one admin user in SeedData
+- Persist user data in JSON files (for example `data/users.json`)
 - Enforce unique email addresses
 - Add current session tracking
 - Route users to customer or admin menus based on role
@@ -89,7 +90,7 @@ Admin features:
 Rules:
 - Keep validation centralized
 - Avoid duplicated console formatting code
-- Use in-memory repositories
+- Use repositories with JSON persistence where data is mutable
 - Keep methods short and readable
 
 Also:
@@ -221,4 +222,7 @@ Constraints:
 - Update docs to explain where and why each pattern is used
 - Do not over-engineer the solution
 ```
+
+
+
 

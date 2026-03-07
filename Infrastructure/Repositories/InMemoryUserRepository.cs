@@ -1,14 +1,29 @@
 using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Domain.Entities;
+using CommerceConsole.Domain.Enums;
+using CommerceConsole.Infrastructure.Persistence;
+using CommerceConsole.Infrastructure.Repositories.Models;
 
 namespace CommerceConsole.Infrastructure.Repositories;
 
 /// <summary>
-/// In-memory user repository used for bootstrap and testing.
+/// In-memory user repository with JSON persistence.
 /// </summary>
 public sealed class InMemoryUserRepository : IUserRepository
 {
-    private readonly List<User> _users = new();
+    private const string FileName = "users.json";
+
+    private readonly JsonFileStore _fileStore;
+    private readonly List<User> _users;
+
+    /// <summary>
+    /// Initializes the user repository.
+    /// </summary>
+    public InMemoryUserRepository(string? dataDirectory = null)
+    {
+        _fileStore = new JsonFileStore(dataDirectory);
+        _users = LoadUsers();
+    }
 
     /// <inheritdoc />
     public List<User> GetAll()
@@ -33,6 +48,7 @@ public sealed class InMemoryUserRepository : IUserRepository
     public void Add(User entity)
     {
         _users.Add(entity);
+        Persist();
     }
 
     /// <inheritdoc />
@@ -42,6 +58,7 @@ public sealed class InMemoryUserRepository : IUserRepository
         if (index >= 0)
         {
             _users[index] = entity;
+            Persist();
         }
     }
 
@@ -52,6 +69,48 @@ public sealed class InMemoryUserRepository : IUserRepository
         if (existing is not null)
         {
             _users.Remove(existing);
+            Persist();
         }
+    }
+
+    private List<User> LoadUsers()
+    {
+        List<UserRecord> records = _fileStore.LoadList<UserRecord>(FileName);
+        return records.Select(ToDomain).ToList();
+    }
+
+    private void Persist()
+    {
+        List<UserRecord> records = _users.Select(FromDomain).ToList();
+        _fileStore.SaveList(FileName, records);
+    }
+
+    private static User ToDomain(UserRecord record)
+    {
+        if (record.Role == UserRole.Administrator)
+        {
+            return new Administrator(record.Id, record.FullName, record.Email, record.Password);
+        }
+
+        Customer customer = new(record.Id, record.FullName, record.Email, record.Password);
+        if (record.WalletBalance > 0)
+        {
+            customer.AddFunds(record.WalletBalance);
+        }
+
+        return customer;
+    }
+
+    private static UserRecord FromDomain(User user)
+    {
+        return new UserRecord
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            Password = user.Password,
+            Role = user.Role,
+            WalletBalance = user is Customer customer ? customer.WalletBalance : 0m
+        };
     }
 }
