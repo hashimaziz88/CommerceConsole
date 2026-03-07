@@ -8,10 +8,21 @@ namespace CommerceConsole.Application.Services;
 /// </summary>
 public sealed class WalletService : IWalletService
 {
+    private readonly IUserRepository _userRepository;
+
+    /// <summary>
+    /// Initializes wallet service dependencies.
+    /// </summary>
+    public WalletService(IUserRepository userRepository)
+    {
+        _userRepository = userRepository;
+    }
+
     /// <inheritdoc />
     public void AddFunds(Customer customer, decimal amount)
     {
         customer.AddFunds(amount);
+        _userRepository.Update(customer);
     }
 
     /// <inheritdoc />

@@ -1,3 +1,4 @@
+using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Domain.Entities;
 
 namespace CommerceConsole.Application.Interfaces;
