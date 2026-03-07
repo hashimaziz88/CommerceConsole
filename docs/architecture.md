@@ -13,7 +13,7 @@ Responsible for:
 - input capture
 - user navigation
 - friendly error messaging
-- product/cart rendering helpers
+- product/cart/order rendering helpers
 
 Current classes:
 - `Presentation/Menus/MainMenu.cs`
@@ -21,6 +21,7 @@ Current classes:
 - `Presentation/Menus/AdminMenu.cs`
 - `Presentation/Helpers/ProductDisplayHelper.cs`
 - `Presentation/Helpers/CartDisplayHelper.cs`
+- `Presentation/Helpers/OrderDisplayHelper.cs`
 - `Presentation/Helpers/ConsoleInputHelper.cs`
 
 Rules followed:
@@ -34,8 +35,7 @@ Responsible for:
 - use-case orchestration
 - service contracts and abstractions
 - authentication/session coordination
-- catalog management
-- cart, wallet, and checkout workflow rules
+- catalog, cart, wallet, checkout, and order lifecycle rules
 
 Current contracts:
 - `Application/Interfaces/*`
@@ -143,12 +143,26 @@ Orchestration in `OrderService`:
 - creates payment and snapshot-based order items
 - persists order record and clears cart
 
-Presentation integration:
-- customer menu triggers checkout action
-- menus remain thin; orchestration stays in application service
-
 Detailed behavior and invariants:
 - `docs/checkout-orders.md`
+
+## Order History and Status Lifecycle Flow (Prompt 6)
+
+Customer:
+- views personal order history
+- tracks selected order status
+
+Administrator:
+- views all orders
+- updates order statuses
+
+Status transition enforcement:
+- centralized in `OrderService`
+- admin can only select allowed next statuses
+- invalid transitions throw `ValidationException`
+
+Lifecycle rules and transition matrix:
+- `docs/order-lifecycle.md`
 
 ## Persistence Design
 
@@ -162,7 +176,7 @@ Behavior:
 - add/update/remove immediately writes through to JSON
 - malformed JSON is recovered as empty list (non-crashing fallback)
 - user persistence includes wallet balance and cart snapshots
-- checkout persists wallet/cart, product stock, and order/payment records
+- checkout/order workflows persist wallet/cart, stock, and order/payment records
 
 ## Design Decisions and Rationale
 
@@ -170,7 +184,7 @@ Behavior:
 - Persistence models are standalone files (no nested classes) for readability.
 - Session state is in-memory only by design for current scope.
 - Seed logic is idempotent so restarts do not duplicate baseline data.
-- Catalog/cart/wallet/checkout rules are centralized in services to keep menus thin.
+- Catalog/cart/wallet/checkout/order lifecycle rules are centralized in services to keep menus thin.
 
 ## Current Design Patterns
 
@@ -188,12 +202,12 @@ Detailed mapping and use-cases are documented in:
 
 ## Known Limitations (Current Scope)
 
-- order history/tracking UI and admin status update workflows are not fully integrated yet
+- reporting and review workflows are not fully integrated yet
 - historical timestamps are not fully hydrated from persistence records yet
 - no file locking across multiple app instances (single-process assumption)
 
 ## Next Evolution Steps
 
-- implement order history/tracking/admin status workflows (Issue 6)
 - expand reporting/review workflows (Issue 7)
-- introduce stricter transition policies and explicit pattern modules (Issue 8/9)
+- implement quality hardening and regression expansion (Issue 8)
+- introduce explicit Factory/Strategy/State modules (Issue 9)
