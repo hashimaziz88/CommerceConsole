@@ -93,9 +93,15 @@ public sealed class InMemoryUserRepository : IUserRepository
         }
 
         Customer customer = new(record.Id, record.FullName, record.Email, record.Password);
+
         if (record.WalletBalance > 0)
         {
             customer.AddFunds(record.WalletBalance);
+        }
+
+        foreach (UserCartItemRecord item in record.CartItems)
+        {
+            customer.Cart.AddItem(item.ProductId, item.ProductName, item.UnitPrice, item.Quantity);
         }
 
         return customer;
@@ -103,6 +109,21 @@ public sealed class InMemoryUserRepository : IUserRepository
 
     private static UserRecord FromDomain(User user)
     {
+        List<UserCartItemRecord> cartItems = new();
+        decimal walletBalance = 0m;
+
+        if (user is Customer customer)
+        {
+            walletBalance = customer.WalletBalance;
+            cartItems = customer.Cart.Items.Select(item => new UserCartItemRecord
+            {
+                ProductId = item.ProductId,
+                ProductName = item.ProductName,
+                UnitPrice = item.UnitPrice,
+                Quantity = item.Quantity
+            }).ToList();
+        }
+
         return new UserRecord
         {
             Id = user.Id,
@@ -110,7 +131,8 @@ public sealed class InMemoryUserRepository : IUserRepository
             Email = user.Email,
             Password = user.Password,
             Role = user.Role,
-            WalletBalance = user is Customer customer ? customer.WalletBalance : 0m
+            WalletBalance = walletBalance,
+            CartItems = cartItems
         };
     }
 }

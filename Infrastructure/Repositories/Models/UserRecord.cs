@@ -36,4 +36,9 @@ internal sealed class UserRecord
     /// Gets or sets wallet balance for customer rows.
     /// </summary>
     public decimal WalletBalance { get; set; }
+
+    /// <summary>
+    /// Gets or sets persisted cart item snapshots.
+    /// </summary>
+    public List<UserCartItemRecord> CartItems { get; set; } = new();
 }
