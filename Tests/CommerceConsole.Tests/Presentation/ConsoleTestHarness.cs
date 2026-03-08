@@ -34,4 +34,28 @@ internal static class ConsoleTestHarness
             }
         }
     }
+
+    /// <summary>
+    /// Executes a console write operation and returns the captured output.
+    /// </summary>
+    public static string RunWithOutput(Action writeOperation)
+    {
+        lock (ConsoleSync)
+        {
+            TextWriter originalOut = Console.Out;
+
+            try
+            {
+                using StringWriter writer = new();
+                Console.SetOut(writer);
+
+                writeOperation();
+                return writer.ToString();
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+        }
+    }
 }
