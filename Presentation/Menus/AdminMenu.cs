@@ -28,23 +28,34 @@ public sealed class AdminMenu
         string.Empty,
         "Reporting",
         "9. View Sales Report",
+        "10. View Smart Insights (Bonus)",
+        "11. Export Sales Report PDF (Bonus)",
         string.Empty,
         "Session",
-        "10. Logout to Main Menu"
+        "12. Logout to Main Menu"
     };
 
     private readonly IProductService _productService;
     private readonly IOrderService _orderService;
     private readonly IReportService _reportService;
+    private readonly IReportExportService _reportExportService;
+    private readonly IInsightsService _insightsService;
 
     /// <summary>
     /// Initializes the administrator menu.
     /// </summary>
-    public AdminMenu(IProductService productService, IOrderService orderService, IReportService reportService)
+    public AdminMenu(
+        IProductService productService,
+        IOrderService orderService,
+        IReportService reportService,
+        IReportExportService reportExportService,
+        IInsightsService insightsService)
     {
         _productService = productService;
         _orderService = orderService;
         _reportService = reportService;
+        _reportExportService = reportExportService;
+        _insightsService = insightsService;
     }
 
     /// <summary>
@@ -62,7 +73,7 @@ public sealed class AdminMenu
         while (!done)
         {
             ShowMenuOptions(sessionContext.CurrentUser.FullName);
-            int selection = ConsoleInputHelper.ReadSelection("Choose option (1-10): ", 10);
+            int selection = ConsoleInputHelper.ReadSelection("Choose option (1-12): ", 12);
 
             switch (selection)
             {
@@ -94,6 +105,12 @@ public sealed class AdminMenu
                     MenuActionHelper.Execute(ViewSalesReport);
                     break;
                 case 10:
+                    MenuActionHelper.Execute(ViewSmartInsights);
+                    break;
+                case 11:
+                    MenuActionHelper.Execute(ExportSalesReportPdf);
+                    break;
+                case 12:
                     sessionContext.SignOut();
                     done = true;
                     ConsoleTheme.WriteInfo("Administrator session ended. Returning to main menu.");
@@ -248,6 +265,36 @@ public sealed class AdminMenu
         IReadOnlyList<LowStockReportItem> lowStockProducts = _reportService.GetLowStockProducts(lowStockThreshold);
 
         ReportDisplayHelper.ShowSalesReport(totalRevenue, ordersByStatus, bestSellingProducts, lowStockProducts);
+    }
+
+    private void ViewSmartInsights()
+    {
+        ConsoleTheme.WriteSection("Admin > Reporting > Smart Insights");
+        int lowStockThreshold = ConsoleInputHelper.ReadNonNegativeInt("Low-stock threshold for insights: ");
+
+        IReadOnlyList<string> insights = _insightsService.GetAdminInsights(lowStockThreshold);
+        ReportDisplayHelper.ShowInsights(insights);
+    }
+
+    private void ExportSalesReportPdf()
+    {
+        ConsoleTheme.WriteSection("Admin > Reporting > Export PDF");
+
+        int topCount = ConsoleInputHelper.ReadPositiveInt("Top-selling products to include: ");
+        int lowStockThreshold = ConsoleInputHelper.ReadNonNegativeInt("Low-stock threshold: ");
+
+        string defaultOutputDirectory = Path.Combine(Environment.CurrentDirectory, "exports");
+        ConsoleTheme.WriteInfo($"Default export folder: {defaultOutputDirectory}");
+
+        string outputDirectory = defaultOutputDirectory;
+        if (!ConfirmationPrompt.AskYesNo("Use default export folder?", true))
+        {
+            outputDirectory = ConsoleInputHelper.ReadRequiredString("Custom export folder path: ");
+        }
+
+        string filePath = _reportExportService.ExportSalesReportPdf(outputDirectory, topCount, lowStockThreshold);
+        ConsoleTheme.WriteSuccess("Sales report exported successfully.");
+        ConsoleTheme.WriteInfo($"PDF path: {filePath}");
     }
 
     private Product SelectProductForAction(string heading)
