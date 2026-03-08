@@ -21,6 +21,7 @@ The project is being delivered with Submission 2 quality standards from the star
 - Practical persistence: mutable data is stored in JSON files for console-level persistence.
 - Security-aware presentation: user-facing screens avoid exposing internal identifiers.
 - Incremental delivery: milestones are scoped to reduce rewrite risk.
+- Demo-friendly terminal UX: framed menus, confirmations, breadcrumbs, and consistent message styling.
 
 ## Documentation
 
@@ -129,6 +130,16 @@ Status: Planned for Monday phase (Milestone 4)
 - architecture diagram visual
 - state diagrams
 - additional design visuals/wireframes where applicable
+
+## Terminal UX Highlights
+
+Recent presentation-layer UX enhancements include:
+- welcome banner and role-aware workspace headers
+- breadcrumb-style menu framing and grouped action layout
+- consistent message tone with `[INFO]`, `[OK]`, `[WARN]`, `[ERROR]`, and `[TIP]`
+- confirmation prompts before high-impact actions (delete, checkout, status updates, exit)
+- improved product/cart/order/report rendering for cleaner demos
+- optional pause points to support guided walkthrough pacing
 
 ## Running the Application
 

@@ -75,6 +75,7 @@ Current test folders:
 - non-negative integer input behavior
 - positive decimal input retry behavior
 - invalid input-range configuration guard
+- confirmation prompt yes/no/default behavior
 
 ## Test Data Strategy
 
