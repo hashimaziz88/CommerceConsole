@@ -21,12 +21,33 @@ public sealed class CartWalletServiceTests
 
         try
         {
-            var context = CreateContext(dataDirectory);
+            CartWalletContext context = CreateContext(dataDirectory);
 
             context.CartService.AddToCart(context.Customer, context.Product.Id, 2);
 
             Assert.Single(context.Customer.Cart.Items);
             Assert.Equal(2, context.Customer.Cart.Items[0].Quantity);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
+    }
+
+    /// <summary>
+    /// Verifies null customer add-to-cart calls are rejected.
+    /// </summary>
+    [Fact]
+    public void AddToCart_WithNullCustomer_ThrowsValidationException()
+    {
+        string dataDirectory = CreateTempDataDirectory();
+
+        try
+        {
+            CartWalletContext context = CreateContext(dataDirectory);
+
+            Assert.Throws<ValidationException>(() =>
+                context.CartService.AddToCart(null!, context.Product.Id, 1));
         }
         finally
         {
@@ -44,7 +65,7 @@ public sealed class CartWalletServiceTests
 
         try
         {
-            var context = CreateContext(dataDirectory);
+            CartWalletContext context = CreateContext(dataDirectory);
 
             Assert.Throws<InsufficientStockException>(() =>
                 context.CartService.AddToCart(context.Customer, context.Product.Id, context.Product.StockQuantity + 1));
@@ -65,12 +86,34 @@ public sealed class CartWalletServiceTests
 
         try
         {
-            var context = CreateContext(dataDirectory);
+            CartWalletContext context = CreateContext(dataDirectory);
             context.CartService.AddToCart(context.Customer, context.Product.Id, 2);
 
             context.CartService.UpdateCartItem(context.Customer, context.Product.Id, 0);
 
             Assert.Empty(context.Customer.Cart.Items);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
+    }
+
+    /// <summary>
+    /// Verifies negative quantity update is rejected.
+    /// </summary>
+    [Fact]
+    public void UpdateCartItem_WithNegativeQuantity_ThrowsValidationException()
+    {
+        string dataDirectory = CreateTempDataDirectory();
+
+        try
+        {
+            CartWalletContext context = CreateContext(dataDirectory);
+            context.CartService.AddToCart(context.Customer, context.Product.Id, 1);
+
+            Assert.Throws<ValidationException>(() =>
+                context.CartService.UpdateCartItem(context.Customer, context.Product.Id, -1));
         }
         finally
         {
@@ -88,7 +131,7 @@ public sealed class CartWalletServiceTests
 
         try
         {
-            var context = CreateContext(dataDirectory);
+            CartWalletContext context = CreateContext(dataDirectory);
             context.CartService.AddToCart(context.Customer, context.Product.Id, 1);
 
             Assert.Throws<InsufficientStockException>(() =>
@@ -110,7 +153,7 @@ public sealed class CartWalletServiceTests
 
         try
         {
-            var context = CreateContext(dataDirectory);
+            CartWalletContext context = CreateContext(dataDirectory);
 
             context.WalletService.AddFunds(context.Customer, 250m);
 
@@ -136,10 +179,31 @@ public sealed class CartWalletServiceTests
 
         try
         {
-            var context = CreateContext(dataDirectory);
+            CartWalletContext context = CreateContext(dataDirectory);
 
             Assert.Throws<ValidationException>(() =>
                 context.WalletService.AddFunds(context.Customer, 0));
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
+    }
+
+    /// <summary>
+    /// Verifies null customer balance checks are rejected.
+    /// </summary>
+    [Fact]
+    public void GetBalance_WithNullCustomer_ThrowsValidationException()
+    {
+        string dataDirectory = CreateTempDataDirectory();
+
+        try
+        {
+            CartWalletContext context = CreateContext(dataDirectory);
+
+            Assert.Throws<ValidationException>(() =>
+                _ = context.WalletService.GetBalance(null!));
         }
         finally
         {

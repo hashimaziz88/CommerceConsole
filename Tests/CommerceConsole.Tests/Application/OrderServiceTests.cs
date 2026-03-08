@@ -187,6 +187,48 @@ public sealed class OrderServiceTests
         }
     }
 
+    /// <summary>
+    /// Verifies customer order lookup requires a valid customer ID.
+    /// </summary>
+    [Fact]
+    public void GetCustomerOrders_WithEmptyCustomerId_ThrowsValidationException()
+    {
+        string dataDirectory = CreateTempDataDirectory();
+
+        try
+        {
+            CheckoutContext context = CreateContext(dataDirectory);
+
+            Assert.Throws<ValidationException>(() =>
+                context.OrderService.GetCustomerOrders(Guid.Empty));
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
+    }
+
+    /// <summary>
+    /// Verifies status update requires a valid order ID.
+    /// </summary>
+    [Fact]
+    public void UpdateOrderStatus_WithEmptyOrderId_ThrowsValidationException()
+    {
+        string dataDirectory = CreateTempDataDirectory();
+
+        try
+        {
+            CheckoutContext context = CreateContext(dataDirectory);
+
+            Assert.Throws<ValidationException>(() =>
+                context.OrderService.UpdateOrderStatus(Guid.Empty, OrderStatus.Processing));
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(dataDirectory);
+        }
+    }
+
     private static CheckoutContext CreateContext(string dataDirectory)
     {
         InMemoryUserRepository userRepository = new(dataDirectory);
