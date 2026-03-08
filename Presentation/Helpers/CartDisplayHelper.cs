@@ -12,24 +12,23 @@ public static class CartDisplayHelper
     /// </summary>
     public static void ShowCart(IReadOnlyList<CartItem> items, decimal total)
     {
-        Console.WriteLine("=== Cart ===");
+        ConsoleTheme.WriteSection("Cart Summary");
 
         if (items.Count == 0)
         {
-            Console.WriteLine("Your cart is empty.");
+            ConsoleTheme.WriteInfo("Your cart is currently empty.");
             return;
         }
 
-        foreach (CartItem item in items)
+        for (int index = 0; index < items.Count; index++)
         {
-            Console.WriteLine($"Name: {item.ProductName}");
-            Console.WriteLine($"Unit Price: {item.UnitPrice:C}");
-            Console.WriteLine($"Quantity: {item.Quantity}");
-            Console.WriteLine($"Line Total: {item.LineTotal:C}");
-            Console.WriteLine(new string('-', 35));
+            CartItem item = items[index];
+            Console.WriteLine($"{index + 1}. {item.ProductName}");
+            Console.WriteLine($"   Qty: {item.Quantity} | Unit: {item.UnitPrice:C} | Subtotal: {item.LineTotal:C}");
+            ConsoleTheme.WriteDivider();
         }
 
-        Console.WriteLine($"Cart Total: {total:C}");
+        ConsoleTheme.WriteInfo($"Cart Total: {total:C}");
     }
 
     /// <summary>
@@ -37,20 +36,21 @@ public static class CartDisplayHelper
     /// </summary>
     public static void ShowSelectableCart(IReadOnlyList<CartItem> items, decimal total)
     {
-        Console.WriteLine("=== Select Cart Item ===");
+        ConsoleTheme.WriteSection("Choose Cart Item");
 
         if (items.Count == 0)
         {
-            Console.WriteLine("Your cart is empty.");
+            ConsoleTheme.WriteInfo("Your cart is currently empty.");
             return;
         }
 
         for (int index = 0; index < items.Count; index++)
         {
             CartItem item = items[index];
-            Console.WriteLine($"{index + 1}. {item.ProductName} | Qty: {item.Quantity} | Unit: {item.UnitPrice:C} | Line: {item.LineTotal:C}");
+            Console.WriteLine($"{index + 1}. {item.ProductName} | Qty: {item.Quantity} | Unit: {item.UnitPrice:C} | Subtotal: {item.LineTotal:C}");
         }
 
-        Console.WriteLine($"Cart Total: {total:C}");
+        ConsoleTheme.WriteInfo($"Cart Total: {total:C}");
+        ConsoleTheme.WriteHint("Set quantity to 0 if you want to remove an item.");
     }
 }

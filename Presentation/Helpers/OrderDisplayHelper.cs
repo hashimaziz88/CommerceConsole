@@ -1,4 +1,5 @@
 using CommerceConsole.Domain.Entities;
+using CommerceConsole.Domain.Enums;
 
 namespace CommerceConsole.Presentation.Helpers;
 
@@ -12,22 +13,20 @@ public static class OrderDisplayHelper
     /// </summary>
     public static void ShowOrders(string heading, IReadOnlyList<Order> orders)
     {
-        Console.WriteLine(heading);
+        ConsoleTheme.WriteSection(heading);
 
         if (orders.Count == 0)
         {
-            Console.WriteLine("No orders found.");
+            ConsoleTheme.WriteInfo("No orders found.");
             return;
         }
 
-        foreach (Order order in orders)
+        for (int index = 0; index < orders.Count; index++)
         {
-            Console.WriteLine($"Placed: {order.CreatedAt:yyyy-MM-dd HH:mm} UTC");
-            Console.WriteLine($"Items: {order.Items.Count}");
-            Console.WriteLine($"Total: {order.TotalAmount:C}");
-            Console.WriteLine($"Order Status: {order.Status}");
-            Console.WriteLine($"Payment Status: {order.Payment.Status}");
-            Console.WriteLine(new string('-', 40));
+            Order order = orders[index];
+            Console.WriteLine($"{index + 1}. Placed: {order.CreatedAt:yyyy-MM-dd HH:mm} UTC | Items: {order.Items.Count} | Total: {order.TotalAmount:C}");
+            Console.WriteLine($"   Status: {FormatStatus(order.Status)} | Payment: {order.Payment.Status}");
+            ConsoleTheme.WriteDivider();
         }
     }
 
@@ -36,19 +35,18 @@ public static class OrderDisplayHelper
     /// </summary>
     public static void ShowSelectableOrders(string heading, IReadOnlyList<Order> orders)
     {
-        Console.WriteLine(heading);
+        ConsoleTheme.WriteSection(heading);
 
         if (orders.Count == 0)
         {
-            Console.WriteLine("No orders found.");
+            ConsoleTheme.WriteInfo("No orders found.");
             return;
         }
 
         for (int index = 0; index < orders.Count; index++)
         {
             Order order = orders[index];
-            Console.WriteLine(
-                $"{index + 1}. {order.CreatedAt:yyyy-MM-dd HH:mm} UTC | Items: {order.Items.Count} | Total: {order.TotalAmount:C} | Status: {order.Status} | Payment: {order.Payment.Status}");
+            Console.WriteLine($"{index + 1}. {order.CreatedAt:yyyy-MM-dd HH:mm} UTC | Items: {order.Items.Count} | Total: {order.TotalAmount:C} | {FormatStatus(order.Status)}");
         }
     }
 
@@ -57,11 +55,25 @@ public static class OrderDisplayHelper
     /// </summary>
     public static void ShowTracking(Order order)
     {
-        Console.WriteLine("=== Order Tracking ===");
+        ConsoleTheme.WriteSection("Order Tracking");
         Console.WriteLine($"Placed: {order.CreatedAt:yyyy-MM-dd HH:mm} UTC");
-        Console.WriteLine($"Current Status: {order.Status}");
+        Console.WriteLine($"Current Status: {FormatStatus(order.Status)}");
         Console.WriteLine($"Payment Status: {order.Payment.Status}");
         Console.WriteLine($"Items: {order.Items.Count}");
         Console.WriteLine($"Total: {order.TotalAmount:C}");
+        ConsoleTheme.WriteHint("Lifecycle: Pending -> Paid -> Processing -> Shipped -> Delivered");
+    }
+
+    private static string FormatStatus(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Cancelled => "[CANCELLED]",
+            OrderStatus.Delivered => "[DELIVERED]",
+            OrderStatus.Shipped => "[SHIPPED]",
+            OrderStatus.Processing => "[PROCESSING]",
+            OrderStatus.Paid => "[PAID]",
+            _ => "[PENDING]"
+        };
     }
 }

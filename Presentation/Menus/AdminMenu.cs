@@ -12,6 +12,27 @@ namespace CommerceConsole.Presentation.Menus;
 /// </summary>
 public sealed class AdminMenu
 {
+    private static readonly IReadOnlyList<string> MenuOptions = new List<string>
+    {
+        "Catalog Management",
+        "1. Add Product",
+        "2. Update Product",
+        "3. Delete Product",
+        "4. Restock Product",
+        "5. View Products",
+        "6. View Low Stock Products",
+        string.Empty,
+        "Order Operations",
+        "7. View All Orders",
+        "8. Update Order Status",
+        string.Empty,
+        "Reporting",
+        "9. View Sales Report",
+        string.Empty,
+        "Session",
+        "10. Logout to Main Menu"
+    };
+
     private readonly IProductService _productService;
     private readonly IOrderService _orderService;
     private readonly IReportService _reportService;
@@ -33,15 +54,15 @@ public sealed class AdminMenu
     {
         if (sessionContext.CurrentUser?.Role != UserRole.Administrator)
         {
-            Console.WriteLine("Access denied. Administrator login required.");
+            ConsoleTheme.WriteError("Access denied. Administrator login required.");
             return;
         }
 
         bool done = false;
         while (!done)
         {
-            ShowMenuOptions();
-            int selection = ConsoleInputHelper.ReadSelection("Select an option: ", 10);
+            ShowMenuOptions(sessionContext.CurrentUser.FullName);
+            int selection = ConsoleInputHelper.ReadSelection("Choose option (1-10): ", 10);
 
             switch (selection)
             {
@@ -75,31 +96,30 @@ public sealed class AdminMenu
                 case 10:
                     sessionContext.SignOut();
                     done = true;
-                    Console.WriteLine("You have been logged out.");
+                    ConsoleTheme.WriteInfo("Administrator session ended. Returning to main menu.");
                     break;
             }
 
-            Console.WriteLine();
+            if (!done)
+            {
+                ConsoleTheme.Pause();
+            }
         }
     }
 
-    private static void ShowMenuOptions()
+    private static void ShowMenuOptions(string adminName)
     {
-        Console.WriteLine("=== Administrator Menu ===");
-        Console.WriteLine("1. Add Product");
-        Console.WriteLine("2. Update Product");
-        Console.WriteLine("3. Delete Product");
-        Console.WriteLine("4. Restock Product");
-        Console.WriteLine("5. View Products");
-        Console.WriteLine("6. View Low Stock Products");
-        Console.WriteLine("7. View All Orders");
-        Console.WriteLine("8. Update Order Status");
-        Console.WriteLine("9. View Sales Report");
-        Console.WriteLine("10. Logout");
+        MenuFrameRenderer.ShowMenu(
+            "Administrator Workspace",
+            "Home > Administrator",
+            MenuOptions,
+            $"Signed in as {adminName}. Use grouped actions for catalog, orders, and reporting.");
     }
 
     private void AddProduct()
     {
+        ConsoleTheme.WriteSection("Admin > Catalog > Add Product");
+
         string name = ConsoleInputHelper.ReadRequiredString("Name: ");
         string description = ConsoleInputHelper.ReadRequiredString("Description: ");
         string category = ConsoleInputHelper.ReadRequiredString("Category: ");
@@ -107,77 +127,96 @@ public sealed class AdminMenu
         int stock = ConsoleInputHelper.ReadNonNegativeInt("Initial stock quantity: ");
 
         Product product = _productService.AddProduct(name, description, category, price, stock);
-        Console.WriteLine($"Product '{product.Name}' added successfully.");
+        ConsoleTheme.WriteSuccess($"Product '{product.Name}' added successfully.");
     }
 
     private void UpdateProduct()
     {
-        Product selectedProduct = SelectProductForAction("=== Select Product To Update ===");
+        ConsoleTheme.WriteSection("Admin > Catalog > Update Product");
+
+        Product selectedProduct = SelectProductForAction("Select Product To Update");
         string name = ConsoleInputHelper.ReadRequiredString("New name: ");
         string description = ConsoleInputHelper.ReadRequiredString("New description: ");
         string category = ConsoleInputHelper.ReadRequiredString("New category: ");
         decimal price = ConsoleInputHelper.ReadNonNegativeDecimal("New price: ");
 
         _productService.UpdateProduct(selectedProduct.Id, name, description, category, price);
-        Console.WriteLine("Product updated successfully.");
+        ConsoleTheme.WriteSuccess("Product updated successfully.");
     }
 
     private void DeleteProduct()
     {
-        Product selectedProduct = SelectProductForAction("=== Select Product To Delete ===");
+        ConsoleTheme.WriteSection("Admin > Catalog > Delete Product");
+
+        Product selectedProduct = SelectProductForAction("Select Product To Delete");
+
+        if (!ConfirmationPrompt.AskYesNo($"Delete '{selectedProduct.Name}' from catalog?", false))
+        {
+            ConsoleTheme.WriteInfo("Delete cancelled.");
+            return;
+        }
+
         _productService.DeleteProduct(selectedProduct.Id);
-        Console.WriteLine("Product deleted successfully.");
+        ConsoleTheme.WriteSuccess("Product deleted successfully.");
     }
 
     private void RestockProduct()
     {
-        Product selectedProduct = SelectProductForAction("=== Select Product To Restock ===");
+        ConsoleTheme.WriteSection("Admin > Catalog > Restock Product");
+
+        Product selectedProduct = SelectProductForAction("Select Product To Restock");
         int quantity = ConsoleInputHelper.ReadPositiveInt("Restock quantity: ");
 
         _productService.RestockProduct(selectedProduct.Id, quantity);
-        Console.WriteLine("Product restocked successfully.");
+        ConsoleTheme.WriteSuccess("Product restocked successfully.");
     }
 
     private void ViewProducts()
     {
+        ConsoleTheme.WriteSection("Admin > Catalog > View Products");
         List<Product> products = _productService.GetAllProducts();
-        ProductDisplayHelper.ShowProducts("=== Product Catalog ===", products);
+        ProductDisplayHelper.ShowProducts("Product Catalog", products);
     }
 
     private void ViewLowStockProducts()
     {
+        ConsoleTheme.WriteSection("Admin > Catalog > Low Stock");
+
         int threshold = ConsoleInputHelper.ReadNonNegativeInt("Low-stock threshold: ");
         List<Product> products = _productService.GetLowStockProducts(threshold);
-        ProductDisplayHelper.ShowProducts($"=== Low Stock Products (<= {threshold}) ===", products);
+        ProductDisplayHelper.ShowProducts($"Low Stock Products (<= {threshold})", products);
     }
 
     private void ViewAllOrders()
     {
+        ConsoleTheme.WriteSection("Admin > Orders > View All");
         List<Order> orders = _orderService.GetAllOrders();
-        OrderDisplayHelper.ShowOrders("=== All Orders ===", orders);
+        OrderDisplayHelper.ShowOrders("All Orders", orders);
     }
 
     private void UpdateOrderStatus()
     {
+        ConsoleTheme.WriteSection("Admin > Orders > Update Status");
+
         List<Order> orders = _orderService.GetAllOrders();
         if (orders.Count == 0)
         {
-            Console.WriteLine("No orders available.");
+            ConsoleTheme.WriteInfo("No orders available.");
             return;
         }
 
-        OrderDisplayHelper.ShowSelectableOrders("=== Select Order To Update ===", orders);
+        OrderDisplayHelper.ShowSelectableOrders("Select Order To Update", orders);
         int orderSelection = ConsoleInputHelper.ReadSelection("Choose order number: ", orders.Count);
         Order selectedOrder = orders[orderSelection - 1];
 
         IReadOnlyList<OrderStatus> allowedTransitions = _orderService.GetAllowedTransitions(selectedOrder.Status);
         if (allowedTransitions.Count == 0)
         {
-            Console.WriteLine("This order is in a terminal state and cannot transition further.");
+            ConsoleTheme.WriteWarning("This order is in a terminal state and cannot transition further.");
             return;
         }
 
-        Console.WriteLine("=== Allowed Next Statuses ===");
+        ConsoleTheme.WriteSection("Allowed Next Statuses");
         for (int index = 0; index < allowedTransitions.Count; index++)
         {
             Console.WriteLine($"{index + 1}. {allowedTransitions[index]}");
@@ -186,12 +225,20 @@ public sealed class AdminMenu
         int statusSelection = ConsoleInputHelper.ReadSelection("Choose next status: ", allowedTransitions.Count);
         OrderStatus selectedStatus = allowedTransitions[statusSelection - 1];
 
+        if (!ConfirmationPrompt.AskYesNo($"Update status to '{selectedStatus}'?", false))
+        {
+            ConsoleTheme.WriteInfo("Status update cancelled.");
+            return;
+        }
+
         _orderService.UpdateOrderStatus(selectedOrder.Id, selectedStatus);
-        Console.WriteLine($"Order status updated to {selectedStatus}.");
+        ConsoleTheme.WriteSuccess($"Order status updated to {selectedStatus}.");
     }
 
     private void ViewSalesReport()
     {
+        ConsoleTheme.WriteSection("Admin > Reporting > Sales Dashboard");
+
         int topCount = ConsoleInputHelper.ReadPositiveInt("Top-selling products to show: ");
         int lowStockThreshold = ConsoleInputHelper.ReadNonNegativeInt("Low-stock threshold: ");
 

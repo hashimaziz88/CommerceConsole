@@ -17,45 +17,42 @@ public static class ReportDisplayHelper
         IReadOnlyList<ProductSalesReportItem> bestSellers,
         IReadOnlyList<LowStockReportItem> lowStockItems)
     {
-        Console.WriteLine("=== Sales Report ===");
-        Console.WriteLine($"Total Revenue: {totalRevenue:C}");
-        Console.WriteLine();
+        ConsoleTheme.WriteSection("Sales Report Dashboard");
+        ConsoleTheme.WriteInfo($"Total Revenue: {totalRevenue:C}");
 
-        Console.WriteLine("Orders By Status:");
+        ConsoleTheme.WriteSection("Orders By Status");
         foreach (OrderStatus status in Enum.GetValues<OrderStatus>())
         {
             int count = ordersByStatus.TryGetValue(status, out int value) ? value : 0;
             Console.WriteLine($"- {status}: {count}");
         }
 
-        Console.WriteLine();
-        Console.WriteLine("Best-Selling Products:");
+        ConsoleTheme.WriteSection("Best-Selling Products");
         if (bestSellers.Count == 0)
         {
-            Console.WriteLine("No sales data available.");
+            ConsoleTheme.WriteInfo("No sales data available.");
         }
         else
         {
             for (int index = 0; index < bestSellers.Count; index++)
             {
                 ProductSalesReportItem item = bestSellers[index];
-                Console.WriteLine(
-                    $"{index + 1}. {item.ProductName} | Qty Sold: {item.TotalQuantitySold} | Revenue: {item.TotalRevenue:C}");
+                Console.WriteLine($"{index + 1}. {item.ProductName} | Qty Sold: {item.TotalQuantitySold} | Revenue: {item.TotalRevenue:C}");
             }
         }
 
-        Console.WriteLine();
-        Console.WriteLine("Low-Stock Products:");
+        ConsoleTheme.WriteSection("Low-Stock Products");
         if (lowStockItems.Count == 0)
         {
-            Console.WriteLine("No products at or below threshold.");
+            ConsoleTheme.WriteInfo("No products at or below threshold.");
         }
         else
         {
             foreach (LowStockReportItem item in lowStockItems)
             {
-                Console.WriteLine(
-                    $"- {item.ProductName} | {item.Category} | Stock: {item.StockQuantity} | Price: {item.UnitPrice:C} | Status: {(item.IsActive ? "Active" : "Inactive")}");
+                string status = item.IsActive ? "ACTIVE" : "INACTIVE";
+                string stockTag = item.StockQuantity <= 3 ? "[LOW STOCK]" : "[STOCK OK]";
+                Console.WriteLine($"- {item.ProductName} | {item.Category} | Stock: {item.StockQuantity} {stockTag} | Price: {item.UnitPrice:C} | {status}");
             }
         }
     }
