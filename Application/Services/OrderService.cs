@@ -89,6 +89,11 @@ public sealed class OrderService : IOrderService
     /// <inheritdoc />
     public List<Order> GetCustomerOrders(Guid customerId)
     {
+        if (customerId == Guid.Empty)
+        {
+            throw new ValidationException("Customer ID must be valid.");
+        }
+
         return _orderRepository
             .GetByCustomerId(customerId)
             .OrderByDescending(order => order.CreatedAt)
@@ -115,6 +120,11 @@ public sealed class OrderService : IOrderService
     /// <inheritdoc />
     public void UpdateOrderStatus(Guid orderId, OrderStatus status)
     {
+        if (orderId == Guid.Empty)
+        {
+            throw new ValidationException("Order ID must be valid.");
+        }
+
         Order order = GetOrderOrThrow(orderId);
 
         if (order.Status == status)

@@ -24,11 +24,14 @@ Current classes:
 - `Presentation/Helpers/OrderDisplayHelper.cs`
 - `Presentation/Helpers/ReportDisplayHelper.cs`
 - `Presentation/Helpers/ConsoleInputHelper.cs`
+- `Presentation/Helpers/MenuActionHelper.cs`
 
 Rules followed:
 - no repository access from menus
 - no domain mutation logic directly in menu handlers
 - no exposure of internal identifiers in user-facing screens
+- menu options use bounded numeric selection parsing
+- exception handling is centralized through `MenuActionHelper`
 
 ### Application layer
 
@@ -186,6 +189,15 @@ Service orchestration:
 Report definitions and examples:
 - `docs/reviews-reporting.md`
 
+
+## Quality Hardening Additions (Prompt 8)
+
+Implemented hardening updates:
+- shared presentation-boundary exception handling through `MenuActionHelper`
+- stricter typed input helpers (`ReadPositiveInt`, `ReadNonNegativeInt`, `ReadIntInRange`, `ReadPositiveDecimal`, `ReadNonNegativeDecimal`)
+- menu option handling switched to bounded numeric parsing instead of raw string switches
+- additional service guard clauses for null customer and empty-ID cases (`CartService`, `WalletService`, `OrderService`)
+- regression tests extended for helper parsing and new guard paths
 ## Persistence Design
 
 Persisted files:
@@ -232,6 +244,6 @@ Detailed mapping and use-cases are documented in:
 
 ## Next Evolution Steps
 
-- implement quality hardening and regression expansion (Issue 8)
+- continue quality hardening and regression expansion (Issue 8)
 - introduce explicit Factory/Strategy/State modules (Issue 9)
 

@@ -1,4 +1,5 @@
 using CommerceConsole.Application.Interfaces;
+using CommerceConsole.Application.Models;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
 using CommerceConsole.Domain.Exceptions;
@@ -40,44 +41,41 @@ public sealed class AdminMenu
         while (!done)
         {
             ShowMenuOptions();
-            Console.Write("Select an option: ");
+            int selection = ConsoleInputHelper.ReadSelection("Select an option: ", 10);
 
-            switch (Console.ReadLine())
+            switch (selection)
             {
-                case "1":
-                    ExecuteAction(AddProduct);
+                case 1:
+                    MenuActionHelper.Execute(AddProduct);
                     break;
-                case "2":
-                    ExecuteAction(UpdateProduct);
+                case 2:
+                    MenuActionHelper.Execute(UpdateProduct);
                     break;
-                case "3":
-                    ExecuteAction(DeleteProduct);
+                case 3:
+                    MenuActionHelper.Execute(DeleteProduct);
                     break;
-                case "4":
-                    ExecuteAction(RestockProduct);
+                case 4:
+                    MenuActionHelper.Execute(RestockProduct);
                     break;
-                case "5":
-                    ViewProducts();
+                case 5:
+                    MenuActionHelper.Execute(ViewProducts);
                     break;
-                case "6":
-                    ExecuteAction(ViewLowStockProducts);
+                case 6:
+                    MenuActionHelper.Execute(ViewLowStockProducts);
                     break;
-                case "7":
-                    ViewAllOrders();
+                case 7:
+                    MenuActionHelper.Execute(ViewAllOrders);
                     break;
-                case "8":
-                    ExecuteAction(UpdateOrderStatus);
+                case 8:
+                    MenuActionHelper.Execute(UpdateOrderStatus);
                     break;
-                case "9":
-                    ExecuteAction(ViewSalesReport);
+                case 9:
+                    MenuActionHelper.Execute(ViewSalesReport);
                     break;
-                case "10":
+                case 10:
                     sessionContext.SignOut();
                     done = true;
                     Console.WriteLine("You have been logged out.");
-                    break;
-                default:
-                    Console.WriteLine("Invalid option. Please enter 1 through 10.");
                     break;
             }
 
@@ -105,10 +103,10 @@ public sealed class AdminMenu
         string name = ConsoleInputHelper.ReadRequiredString("Name: ");
         string description = ConsoleInputHelper.ReadRequiredString("Description: ");
         string category = ConsoleInputHelper.ReadRequiredString("Category: ");
-        decimal price = ConsoleInputHelper.ReadDecimal("Price: ");
-        int stock = ConsoleInputHelper.ReadInt("Initial stock quantity: ");
+        decimal price = ConsoleInputHelper.ReadNonNegativeDecimal("Price: ");
+        int stock = ConsoleInputHelper.ReadNonNegativeInt("Initial stock quantity: ");
 
-        var product = _productService.AddProduct(name, description, category, price, stock);
+        Product product = _productService.AddProduct(name, description, category, price, stock);
         Console.WriteLine($"Product '{product.Name}' added successfully.");
     }
 
@@ -118,7 +116,7 @@ public sealed class AdminMenu
         string name = ConsoleInputHelper.ReadRequiredString("New name: ");
         string description = ConsoleInputHelper.ReadRequiredString("New description: ");
         string category = ConsoleInputHelper.ReadRequiredString("New category: ");
-        decimal price = ConsoleInputHelper.ReadDecimal("New price: ");
+        decimal price = ConsoleInputHelper.ReadNonNegativeDecimal("New price: ");
 
         _productService.UpdateProduct(selectedProduct.Id, name, description, category, price);
         Console.WriteLine("Product updated successfully.");
@@ -134,7 +132,7 @@ public sealed class AdminMenu
     private void RestockProduct()
     {
         Product selectedProduct = SelectProductForAction("=== Select Product To Restock ===");
-        int quantity = ConsoleInputHelper.ReadInt("Restock quantity: ");
+        int quantity = ConsoleInputHelper.ReadPositiveInt("Restock quantity: ");
 
         _productService.RestockProduct(selectedProduct.Id, quantity);
         Console.WriteLine("Product restocked successfully.");
@@ -142,14 +140,14 @@ public sealed class AdminMenu
 
     private void ViewProducts()
     {
-        var products = _productService.GetAllProducts();
+        List<Product> products = _productService.GetAllProducts();
         ProductDisplayHelper.ShowProducts("=== Product Catalog ===", products);
     }
 
     private void ViewLowStockProducts()
     {
-        int threshold = ConsoleInputHelper.ReadInt("Low-stock threshold: ");
-        var products = _productService.GetLowStockProducts(threshold);
+        int threshold = ConsoleInputHelper.ReadNonNegativeInt("Low-stock threshold: ");
+        List<Product> products = _productService.GetLowStockProducts(threshold);
         ProductDisplayHelper.ShowProducts($"=== Low Stock Products (<= {threshold}) ===", products);
     }
 
@@ -194,13 +192,13 @@ public sealed class AdminMenu
 
     private void ViewSalesReport()
     {
-        int topCount = ConsoleInputHelper.ReadInt("Top-selling products to show: ");
-        int lowStockThreshold = ConsoleInputHelper.ReadInt("Low-stock threshold: ");
+        int topCount = ConsoleInputHelper.ReadPositiveInt("Top-selling products to show: ");
+        int lowStockThreshold = ConsoleInputHelper.ReadNonNegativeInt("Low-stock threshold: ");
 
         decimal totalRevenue = _reportService.GetTotalRevenue();
         Dictionary<OrderStatus, int> ordersByStatus = _reportService.GetOrdersByStatus();
-        var bestSellingProducts = _reportService.GetBestSellingProducts(topCount);
-        var lowStockProducts = _reportService.GetLowStockProducts(lowStockThreshold);
+        IReadOnlyList<ProductSalesReportItem> bestSellingProducts = _reportService.GetBestSellingProducts(topCount);
+        IReadOnlyList<LowStockReportItem> lowStockProducts = _reportService.GetLowStockProducts(lowStockThreshold);
 
         ReportDisplayHelper.ShowSalesReport(totalRevenue, ordersByStatus, bestSellingProducts, lowStockProducts);
     }
@@ -216,21 +214,5 @@ public sealed class AdminMenu
         ProductDisplayHelper.ShowSelectableProducts(heading, products);
         int selection = ConsoleInputHelper.ReadSelection("Choose product number: ", products.Count);
         return products[selection - 1];
-    }
-
-    private static void ExecuteAction(Action action)
-    {
-        try
-        {
-            action();
-        }
-        catch (ValidationException ex)
-        {
-            Console.WriteLine($"Validation error: {ex.Message}");
-        }
-        catch (NotFoundException ex)
-        {
-            Console.WriteLine($"Not found: {ex.Message}");
-        }
     }
 }

@@ -1,5 +1,6 @@
 using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Domain.Entities;
+using CommerceConsole.Domain.Exceptions;
 
 namespace CommerceConsole.Application.Services;
 
@@ -21,6 +22,7 @@ public sealed class WalletService : IWalletService
     /// <inheritdoc />
     public void AddFunds(Customer customer, decimal amount)
     {
+        EnsureCustomer(customer);
         customer.AddFunds(amount);
         _userRepository.Update(customer);
     }
@@ -28,6 +30,15 @@ public sealed class WalletService : IWalletService
     /// <inheritdoc />
     public decimal GetBalance(Customer customer)
     {
+        EnsureCustomer(customer);
         return customer.WalletBalance;
+    }
+
+    private static void EnsureCustomer(Customer customer)
+    {
+        if (customer is null)
+        {
+            throw new ValidationException("Customer is required.");
+        }
     }
 }
