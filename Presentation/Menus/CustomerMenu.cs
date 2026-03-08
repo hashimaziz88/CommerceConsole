@@ -1,7 +1,6 @@
 using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
-using CommerceConsole.Domain.Exceptions;
 using CommerceConsole.Presentation.Helpers;
 
 namespace CommerceConsole.Presentation.Menus;
@@ -49,50 +48,47 @@ public sealed class CustomerMenu
         while (!done)
         {
             ShowMenuOptions();
-            Console.Write("Select an option: ");
+            int selection = ConsoleInputHelper.ReadSelection("Select an option: ", 12);
 
-            switch (Console.ReadLine())
+            switch (selection)
             {
-                case "1":
-                    BrowseProducts();
+                case 1:
+                    MenuActionHelper.Execute(BrowseProducts);
                     break;
-                case "2":
-                    SearchProducts();
+                case 2:
+                    MenuActionHelper.Execute(SearchProducts);
                     break;
-                case "3":
-                    ExecuteAction(() => AddToCart(customer));
+                case 3:
+                    MenuActionHelper.Execute(() => AddToCart(customer));
                     break;
-                case "4":
-                    ViewCart(customer);
+                case 4:
+                    MenuActionHelper.Execute(() => ViewCart(customer));
                     break;
-                case "5":
-                    ExecuteAction(() => UpdateCartItem(customer));
+                case 5:
+                    MenuActionHelper.Execute(() => UpdateCartItem(customer));
                     break;
-                case "6":
-                    ViewWalletBalance(customer);
+                case 6:
+                    MenuActionHelper.Execute(() => ViewWalletBalance(customer));
                     break;
-                case "7":
-                    ExecuteAction(() => AddWalletFunds(customer));
+                case 7:
+                    MenuActionHelper.Execute(() => AddWalletFunds(customer));
                     break;
-                case "8":
-                    ExecuteAction(() => Checkout(customer));
+                case 8:
+                    MenuActionHelper.Execute(() => Checkout(customer));
                     break;
-                case "9":
-                    ViewOrderHistory(customer);
+                case 9:
+                    MenuActionHelper.Execute(() => ViewOrderHistory(customer));
                     break;
-                case "10":
-                    TrackOrderStatus(customer);
+                case 10:
+                    MenuActionHelper.Execute(() => TrackOrderStatus(customer));
                     break;
-                case "11":
-                    ExecuteAction(() => AddReview(customer));
+                case 11:
+                    MenuActionHelper.Execute(() => AddReview(customer));
                     break;
-                case "12":
+                case 12:
                     sessionContext.SignOut();
                     done = true;
                     Console.WriteLine("You have been logged out.");
-                    break;
-                default:
-                    Console.WriteLine("Invalid option. Please enter 1 through 12.");
                     break;
             }
 
@@ -119,14 +115,14 @@ public sealed class CustomerMenu
 
     private void BrowseProducts()
     {
-        var products = _productService.GetActiveProducts();
+        List<Product> products = _productService.GetActiveProducts();
         ProductDisplayHelper.ShowProducts("=== Active Products ===", products);
     }
 
     private void SearchProducts()
     {
         string term = ConsoleInputHelper.ReadRequiredString("Search term (name/category): ");
-        var products = _productService.SearchProducts(term);
+        List<Product> products = _productService.SearchProducts(term);
         ProductDisplayHelper.ShowProducts($"=== Search Results for '{term}' ===", products);
     }
 
@@ -141,7 +137,7 @@ public sealed class CustomerMenu
 
         ProductDisplayHelper.ShowSelectableProducts("=== Select Product To Add ===", products);
         int selection = ConsoleInputHelper.ReadSelection("Choose product number: ", products.Count);
-        int quantity = ConsoleInputHelper.ReadInt("Quantity to add: ");
+        int quantity = ConsoleInputHelper.ReadPositiveInt("Quantity to add: ");
 
         Product selectedProduct = products[selection - 1];
         _cartService.AddToCart(customer, selectedProduct.Id, quantity);
@@ -150,14 +146,14 @@ public sealed class CustomerMenu
 
     private void ViewCart(Customer customer)
     {
-        var items = _cartService.GetCartItems(customer);
+        IReadOnlyList<CartItem> items = _cartService.GetCartItems(customer);
         decimal total = _cartService.GetCartTotal(customer);
         CartDisplayHelper.ShowCart(items, total);
     }
 
     private void UpdateCartItem(Customer customer)
     {
-        var items = _cartService.GetCartItems(customer);
+        IReadOnlyList<CartItem> items = _cartService.GetCartItems(customer);
         if (items.Count == 0)
         {
             Console.WriteLine("Your cart is empty.");
@@ -167,12 +163,12 @@ public sealed class CustomerMenu
         decimal total = _cartService.GetCartTotal(customer);
         CartDisplayHelper.ShowSelectableCart(items, total);
         int selection = ConsoleInputHelper.ReadSelection("Choose cart item number: ", items.Count);
-        int quantity = ConsoleInputHelper.ReadInt("New quantity (0 removes item): ");
+        int quantity = ConsoleInputHelper.ReadNonNegativeInt("New quantity (0 removes item): ");
 
         CartItem selectedItem = items[selection - 1];
         _cartService.UpdateCartItem(customer, selectedItem.ProductId, quantity);
 
-        if (quantity <= 0)
+        if (quantity == 0)
         {
             Console.WriteLine("Item removed from cart.");
         }
@@ -190,7 +186,7 @@ public sealed class CustomerMenu
 
     private void AddWalletFunds(Customer customer)
     {
-        decimal amount = ConsoleInputHelper.ReadDecimal("Amount to add: ");
+        decimal amount = ConsoleInputHelper.ReadPositiveDecimal("Amount to add: ");
         _walletService.AddFunds(customer, amount);
         Console.WriteLine("Funds added successfully.");
     }
@@ -240,35 +236,11 @@ public sealed class CustomerMenu
         ProductDisplayHelper.ShowSelectableProducts("=== Select Product To Review ===", products);
         int selection = ConsoleInputHelper.ReadSelection("Choose product number: ", products.Count);
 
-        int rating = ConsoleInputHelper.ReadInt("Rating (1-5): ");
+        int rating = ConsoleInputHelper.ReadIntInRange("Rating (1-5): ", 1, 5);
         string comment = ConsoleInputHelper.ReadRequiredString("Comment: ");
 
         Product selectedProduct = products[selection - 1];
         _reviewService.AddReview(customer, selectedProduct.Id, rating, comment);
         Console.WriteLine("Review submitted successfully.");
-    }
-
-    private static void ExecuteAction(Action action)
-    {
-        try
-        {
-            action();
-        }
-        catch (ValidationException ex)
-        {
-            Console.WriteLine($"Validation error: {ex.Message}");
-        }
-        catch (NotFoundException ex)
-        {
-            Console.WriteLine($"Not found: {ex.Message}");
-        }
-        catch (InsufficientStockException ex)
-        {
-            Console.WriteLine($"Stock error: {ex.Message}");
-        }
-        catch (InsufficientFundsException ex)
-        {
-            Console.WriteLine($"Funds error: {ex.Message}");
-        }
     }
 }

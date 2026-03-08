@@ -1,5 +1,6 @@
 using CommerceConsole.Application.Interfaces;
-using CommerceConsole.Domain.Exceptions;
+using CommerceConsole.Domain.Enums;
+using CommerceConsole.Presentation.Helpers;
 
 namespace CommerceConsole.Presentation.Menus;
 
@@ -38,22 +39,18 @@ public sealed class MainMenu
         while (!exitRequested)
         {
             ShowMenuOptions();
-            Console.Write("Select an option: ");
-            string? input = Console.ReadLine();
+            int selection = ConsoleInputHelper.ReadSelection("Select an option: ", 3);
 
-            switch (input)
+            switch (selection)
             {
-                case "1":
-                    RegisterCustomer();
+                case 1:
+                    MenuActionHelper.Execute(RegisterCustomer);
                     break;
-                case "2":
-                    LoginAndRoute();
+                case 2:
+                    MenuActionHelper.Execute(LoginAndRoute);
                     break;
-                case "3":
+                case 3:
                     exitRequested = true;
-                    break;
-                default:
-                    Console.WriteLine("Invalid option. Please enter 1, 2, or 3.");
                     break;
             }
 
@@ -71,53 +68,23 @@ public sealed class MainMenu
 
     private void RegisterCustomer()
     {
-        Console.Write("Full name: ");
-        string fullName = Console.ReadLine() ?? string.Empty;
+        string fullName = ConsoleInputHelper.ReadRequiredString("Full name: ");
+        string email = ConsoleInputHelper.ReadRequiredString("Email: ");
+        string password = ConsoleInputHelper.ReadRequiredString("Password: ");
 
-        Console.Write("Email: ");
-        string email = Console.ReadLine() ?? string.Empty;
-
-        Console.Write("Password: ");
-        string password = Console.ReadLine() ?? string.Empty;
-
-        try
-        {
-            _authService.RegisterCustomer(fullName, email, password);
-            Console.WriteLine("Registration successful. You can now log in.");
-        }
-        catch (ValidationException ex)
-        {
-            Console.WriteLine($"Validation error: {ex.Message}");
-        }
-        catch (DuplicateEmailException ex)
-        {
-            Console.WriteLine($"Registration error: {ex.Message}");
-        }
+        _authService.RegisterCustomer(fullName, email, password);
+        Console.WriteLine("Registration successful. You can now log in.");
     }
 
     private void LoginAndRoute()
     {
-        Console.Write("Email: ");
-        string email = Console.ReadLine() ?? string.Empty;
+        string email = ConsoleInputHelper.ReadRequiredString("Email: ");
+        string password = ConsoleInputHelper.ReadRequiredString("Password: ");
 
-        Console.Write("Password: ");
-        string password = Console.ReadLine() ?? string.Empty;
-
-        try
-        {
-            var user = _authService.Login(email, password);
-            _sessionContext.SignIn(user);
-            Console.WriteLine($"Welcome, {user.FullName} ({user.Role}).");
-            RouteByRole();
-        }
-        catch (ValidationException ex)
-        {
-            Console.WriteLine($"Validation error: {ex.Message}");
-        }
-        catch (AuthenticationException ex)
-        {
-            Console.WriteLine($"Login error: {ex.Message}");
-        }
+        var user = _authService.Login(email, password);
+        _sessionContext.SignIn(user);
+        Console.WriteLine($"Welcome, {user.FullName} ({user.Role}).");
+        RouteByRole();
     }
 
     private void RouteByRole()
@@ -129,10 +96,10 @@ public sealed class MainMenu
 
         switch (_sessionContext.CurrentUser.Role)
         {
-            case Domain.Enums.UserRole.Customer:
+            case UserRole.Customer:
                 _customerMenu.Run(_sessionContext);
                 break;
-            case Domain.Enums.UserRole.Administrator:
+            case UserRole.Administrator:
                 _adminMenu.Run(_sessionContext);
                 break;
             default:
