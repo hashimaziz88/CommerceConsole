@@ -2,7 +2,7 @@
 
 ## Goal
 
-Ensure core authentication, catalog, cart/wallet, checkout/order lifecycle, reviews/reporting, persistence, and presentation input handling remain correct and stable while features evolve.
+Ensure core authentication, catalog, cart/wallet, checkout/order lifecycle, reviews/reporting, persistence, presentation handling, and bonus features remain correct and stable while features evolve.
 
 ## Test Projects and Structure
 
@@ -63,11 +63,17 @@ Current test folders:
 - report orders-by-status calculation
 - report best-selling product aggregation/ranking
 - report low-stock filtering/sorting
+- bonus recommendation filtering/ranking and purchase exclusion
+- bonus recommendation validation (invalid max count)
+- bonus admin insight summary generation
+- bonus export orchestration delegates snapshot to exporter
 
 ### Infrastructure tests
 - seed persistence to JSON files
-- idempotent reseeding behavior
+- idempotent reseeding behavior for expanded catalog
 - persisted user reload across repository instances
+- bonus PDF exporter file creation and header validation
+- bonus PDF exporter validation guard for blank output directory
 
 ### Presentation tests
 - menu selection range validation/retry behavior
@@ -76,12 +82,14 @@ Current test folders:
 - positive decimal input retry behavior
 - invalid input-range configuration guard
 - confirmation prompt yes/no/default behavior
+- paged product rendering for larger lists
+- global index visibility in selectable product views
 
 ## Test Data Strategy
 
 - each test creates its own temporary data directory where repository persistence is involved
 - tests clean up temp directories after execution
-- console input tests isolate `Console.In`/`Console.Out` per case with synchronization
+- console input/output tests isolate `Console.In`/`Console.Out` per case with synchronization
 
 ## How to Run
 
@@ -92,10 +100,11 @@ Current test folders:
 
 Not yet covered (planned in next phases):
 - full end-to-end interactive console script regression suite
-- advanced reporting variants (future strategy extraction)
 - multi-process file concurrency behavior
+- multi-page PDF export rendering behavior
 
-## Expansion Plan by Issue
+## Expansion Plan
 
-- Issue 8: continue regression and edge-case hardening as behavior evolves
-- Issue 9: add explicit design-pattern parity tests
+1. Continue regression coverage as UX and bonus options evolve.
+2. Add tests for future export formats (for example CSV) if introduced.
+3. Expand pattern-focused tests during Monday pattern milestone work.

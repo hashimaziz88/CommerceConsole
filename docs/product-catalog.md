@@ -7,6 +7,7 @@ This document explains Prompt 3 implementation for:
 - customer product search
 - administrator product management
 - low-stock reporting behavior
+- larger seeded catalog UX handling
 
 ## Customer Features
 
@@ -24,6 +25,7 @@ This document explains Prompt 3 implementation for:
 - Data source: `IProductService.SearchProducts(term)`
 - Search implementation uses LINQ via repository search + active-product filtering
 - Empty search term falls back to active product list
+- UX hint guides users to narrow large catalogs quickly
 
 ## Administrator Features
 
@@ -75,6 +77,25 @@ Shows all products for admin oversight, including active/inactive state and stoc
 - repository returns products with `StockQuantity <= threshold`
 - results are sorted by stock ascending then name
 
+## Larger Catalog UX Behavior
+
+When product lists are long:
+- `ProductDisplayHelper` renders paged sections (`Page X/Y`)
+- numbering remains global across pages to keep selection simple
+- selection menus include hints explaining the index usage
+
+This preserves index-based UX and avoids exposing internal IDs.
+
+## Seed Catalog Behavior
+
+`SeedData` now provides a broader starter catalog across multiple categories.
+
+Idempotency rule:
+- missing seeded product names are added
+- existing product names are not duplicated
+
+This means older data files can be upgraded with new defaults safely on startup.
+
 ## Validation Centralization
 
 Validation sources:
@@ -89,6 +110,7 @@ Any mutable product action (`add`, `update`, `delete`, `restock`) persists to:
 
 ## Key Classes
 
+- `Infrastructure/Data/SeedData.cs`
 - `Application/Services/ProductService.cs`
 - `Presentation/Menus/CustomerMenu.cs`
 - `Presentation/Menus/AdminMenu.cs`
@@ -99,9 +121,13 @@ Any mutable product action (`add`, `update`, `delete`, `restock`) persists to:
 
 Covered in:
 - `Tests/CommerceConsole.Tests/Application/ProductServiceTests.cs`
+- `Tests/CommerceConsole.Tests/Infrastructure/JsonPersistenceTests.cs`
+- `Tests/CommerceConsole.Tests/Presentation/ProductDisplayHelperTests.cs`
 
 Coverage includes:
 - add validation
 - search behavior
 - update/delete/restock mutations
 - low-stock threshold behavior
+- idempotent multi-product seeding behavior
+- paged product-view rendering for larger catalogs

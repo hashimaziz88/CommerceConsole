@@ -16,7 +16,7 @@ The project follows layered separation:
 - Presentation: menus + console helpers (`Presentation/*`)
 - Application: use-case orchestration via interfaces/services (`Application/*`)
 - Domain: entities, invariants, exceptions (`Domain/*`)
-- Infrastructure: repositories + JSON persistence (`Infrastructure/*`)
+- Infrastructure: repositories + JSON persistence + export adapters (`Infrastructure/*`)
 
 OOP choices were made to keep each layer cohesive and minimize cross-layer leakage.
 
@@ -30,6 +30,7 @@ The codebase already includes concrete pattern usage (not just planned refactors
 - Data Mapper methods (`ToDomain` / `FromDomain`) in repositories
 - Rich Domain Model with guard clauses in entities
 - Session Context pattern for process-level authenticated user state
+- Strategy-style export seam (`IReportExporter` + `PdfReportExporter`) for bonus report formatting extension
 
 For the full pattern inventory and usage mapping, see:
 - `docs/design-patterns-current.md`
@@ -438,5 +439,7 @@ If asked to justify design quickly:
 - specialized methods are intent-driven (`AddFunds`, `Restock`, `FindProductOrThrow`) and keep rules centralized
 - LINQ is used in services/repositories for readable filtering/ordering/aggregation, with `ToList()` for deterministic snapshots
 - presentation remains thin and identifier-safe, while business logic stays in domain/application
+
+
 
 

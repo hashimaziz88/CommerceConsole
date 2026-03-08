@@ -8,10 +8,10 @@ It is structured as a layered, maintainable codebase for coursework delivery, wi
 - Presentation layer (menus and console UX)
 - Application layer (services and interfaces)
 - Domain layer (entities, enums, exceptions, invariants)
-- Infrastructure layer (JSON-backed in-memory repositories and seed data)
-- Test project (domain and application validation)
+- Infrastructure layer (JSON-backed repositories, seed data, export implementations)
+- Test project (domain/application/infrastructure/presentation coverage)
 
-The project is being delivered with Submission 2 quality standards from the start, then enhanced with explicit design patterns in the Monday phase.
+The project is delivered with Submission 2-quality engineering practices from the start, then extended with optional bonus features.
 
 ## Why Choose CommerceConsole?
 
@@ -20,8 +20,8 @@ The project is being delivered with Submission 2 quality standards from the star
 - Testability: workflow logic is service-driven and covered by automated tests.
 - Practical persistence: mutable data is stored in JSON files for console-level persistence.
 - Security-aware presentation: user-facing screens avoid exposing internal identifiers.
-- Incremental delivery: milestones are scoped to reduce rewrite risk.
 - Demo-friendly terminal UX: framed menus, confirmations, breadcrumbs, and consistent message styling.
+- Bonus-ready design: export and insights functionality is isolated behind interfaces.
 
 ## Documentation
 
@@ -34,9 +34,11 @@ The project is being delivered with Submission 2 quality standards from the star
 - `docs/checkout-orders.md`
 - `docs/order-lifecycle.md`
 - `docs/reviews-reporting.md`
+- `docs/persistence.md`
 - `docs/oop-design-notes.md`
 - `docs/design-patterns-current.md`
 - `docs/test-plan.md`
+- `docs/bonus-features.md`
 
 ### Planning and Delivery Docs
 
@@ -45,13 +47,9 @@ The project is being delivered with Submission 2 quality standards from the star
 - `.codex/05_Submission_2_Design_Pattern_Upgrade.md`
 - `.codex/09_GitHub_Feature_Issues.md`
 
-## Software Requirement Specification (SRS) Snapshot
+## Software Requirement Snapshot
 
-### Overview
-
-CommerceConsole simulates an online shopping backend with role-based access for customers and administrators. The current scope includes authentication, catalog management, cart and wallet workflows, checkout and order processing, order lifecycle management, reviews, reporting, and JSON persistence.
-
-### Components and Functional Requirements
+### Baseline Scope (Submission 1)
 
 1. Authentication and authorization management
 - customer registration
@@ -71,6 +69,7 @@ Status: Implemented
 - search products by name/category (LINQ)
 - admin add/update/delete/restock
 - low-stock query support
+- paged product-list rendering for larger catalogs
 Status: Implemented
 
 4. Cart and wallet subsystem
@@ -87,17 +86,15 @@ Status: Implemented
 - cart clear after successful checkout
 Status: Implemented
 
-6. Order history, tracking, and admin order status updates
+6. Order history, tracking, and admin status updates
 - customer order history view
 - customer order status tracking
 - admin all-order visibility
-- admin order status updates with transition-rule enforcement
+- admin status updates with transition-rule enforcement
 Status: Implemented
 
 7. Reviews and reporting
 - customer product reviews with rating/comment (purchased products only)
-- review menu only displays purchased products as selectable options
-- rating validation (1 to 5)
 - average rating display
 - admin sales report: total revenue, orders by status, best sellers, low stock
 Status: Implemented
@@ -105,41 +102,24 @@ Status: Implemented
 8. Quality hardening
 - stronger validation/exception UX paths
 - regression coverage and docs alignment
-Status: In progress across features
+Status: Implemented
 
-9. Design pattern enrichment
-- explicit Factory/Strategy/State-style enhancements
-- pattern-focused tests and architecture updates
-Status: Planned for Monday phase (Milestone 4)
+### Bonus Scope (Above Submission 1)
 
-## Architecture and Design Artefacts
+1. PDF sales report export (admin)
+- generates one-page PDF report files
+- uses `IReportExporter` abstraction and `PdfReportExporter` implementation
+Status: Implemented
 
-### Current Artefacts
+2. Heuristic smart insights (admin)
+- rule-based operational insight lines (revenue/category/restock/sentiment/fulfillment)
+- no external AI dependency required
+Status: Implemented
 
-- Layered architecture notes: `docs/architecture.md`
-- OOP design rationale: `docs/oop-design-notes.md`
-- Current design pattern inventory: `docs/design-patterns-current.md`
-- Checkout invariants and behavior: `docs/checkout-orders.md`
-- Order lifecycle and transition rules: `docs/order-lifecycle.md`
-- Review/report definitions and examples: `docs/reviews-reporting.md`
-- Domain and submission planning references: `.codex/03_Domain_Model.md`, `.codex/04_Submission_1_Implementation_Blueprint.md`
-
-### Planned Artefacts (when required by submission pack)
-
-- use-case diagrams
-- architecture diagram visual
-- state diagrams
-- additional design visuals/wireframes where applicable
-
-## Terminal UX Highlights
-
-Recent presentation-layer UX enhancements include:
-- welcome banner and role-aware workspace headers
-- breadcrumb-style menu framing and grouped action layout
-- consistent message tone with `[INFO]`, `[OK]`, `[WARN]`, `[ERROR]`, and `[TIP]`
-- confirmation prompts before high-impact actions (delete, checkout, status updates, exit)
-- improved product/cart/order/report rendering for cleaner demos
-- optional pause points to support guided walkthrough pacing
+3. Customer recommendations
+- suggests active, in-stock, not-yet-purchased products
+- prioritizes preferred categories and rating signals
+Status: Implemented
 
 ## Running the Application
 
@@ -174,8 +154,11 @@ Mutable runtime data is persisted to JSON files in `data/`:
 - `data/orders.json`
 
 Seed behavior:
-- default admin and sample products are seeded only when missing
-- seeding is idempotent to avoid duplicate bootstrap records
+- default admin and expanded starter catalog are seeded on startup
+- missing seeded products are added idempotently by product name (no duplicates)
+
+Bonus export files:
+- report PDFs are generated on demand under a chosen output directory (default `./exports`)
 
 ## Milestone Plan (Locked)
 
@@ -198,7 +181,7 @@ Seed behavior:
 
 ## Current Limitations
 
-- advanced report strategy variants are not extracted yet
+- PDF exporter is intentionally simple one-page output
 - password storage is plain text (coursework scope trade-off)
 - JSON persistence is designed for single-process console use
 
@@ -207,4 +190,5 @@ Seed behavior:
 - Coding standards: `.codex/06_Coding_Standards.md`
 - Git workflow and branching: `.codex/07_Git_Workflow_and_Branching.md`
 - Prompt pack and issue mapping: `.codex/08_Codex_Prompt_Pack.md`, `.codex/09_GitHub_Feature_Issues.md`
+
 

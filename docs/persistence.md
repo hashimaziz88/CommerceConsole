@@ -55,6 +55,16 @@ If JSON is malformed:
 - if persisted admin/products already exist, duplicates are not inserted
 - first run creates baseline admin and products and persists them
 
+
+## Bonus Export Artifacts
+
+Bonus PDF reports are generated on demand by `PdfReportExporter`.
+
+Notes:
+- default export location is `./exports` when admin chooses default
+- export files are read-only artifacts for sharing/demo evidence
+- these files do not change repository JSON contracts
+
 ## Assumptions
 
 - single process writes to data files in normal usage
@@ -72,3 +82,5 @@ If JSON is malformed:
 - password hashing + migration strategy
 - optimistic concurrency tokens for writes
 - explicit schema version + migration pipeline
+
+

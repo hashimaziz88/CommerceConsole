@@ -9,6 +9,10 @@ This document explains Prompt 7 implementation for:
 - average rating display
 - administrator sales reporting
 
+It also records Prompt 11 bonus additions:
+- smart heuristic insights
+- PDF sales-report export
+
 ## Review Workflow
 
 Customer capability:
@@ -37,7 +41,7 @@ Persistence:
 ## Average Rating
 
 Average ratings are calculated with LINQ:
-- `ProductDisplayHelper.CalculateAverageRating(...)` uses `Average(review => review.Rating)`
+- `ProductDisplayHelper` uses `Average(review => review.Rating)`
 - `ReviewService.GetAverageRating(...)` also provides service-level calculation
 
 Display behavior:
@@ -80,6 +84,46 @@ Report includes:
 - Definition: products with `StockQuantity <= threshold`
 - LINQ: `Where` + `OrderBy` + `ThenBy` + projection to report rows
 
+## Bonus: Smart Insights
+
+Admin bonus capability:
+- view rule-based operational insights from the reporting section
+
+Service:
+- `InsightsService.GetAdminInsights(int lowStockThreshold)`
+
+Insight examples:
+- revenue snapshot
+- top category by units sold
+- restock watch summary
+- review sentiment summary
+- fulfillment alert for paid/processing orders
+
+Design choice:
+- this is heuristic and local (no external AI dependency)
+- it remains deterministic and demo-friendly in offline environments
+
+## Bonus: PDF Report Export
+
+Admin bonus capability:
+- export a PDF version of the report from the reporting section
+
+Architecture:
+- orchestration: `ReportExportService`
+- exporter abstraction: `IReportExporter`
+- concrete implementation: `PdfReportExporter`
+
+Export content:
+- title and generation timestamp
+- total revenue
+- order counts by status
+- best-selling products
+- low-stock products
+
+Constraints:
+- report aggregation remains in `ReportService`
+- export formatting logic stays outside domain entities
+
 ## Example Output Interpretation
 
 Given historical orders:
@@ -95,10 +139,17 @@ Report interpretation:
 
 - `Application/Services/ReviewService.cs`
 - `Application/Services/ReportService.cs`
+- `Application/Services/InsightsService.cs` (bonus)
+- `Application/Services/ReportExportService.cs` (bonus)
 - `Application/Interfaces/IReviewService.cs`
 - `Application/Interfaces/IReportService.cs`
+- `Application/Interfaces/IInsightsService.cs` (bonus)
+- `Application/Interfaces/IReportExporter.cs` (bonus)
+- `Infrastructure/Export/PdfReportExporter.cs` (bonus)
 - `Application/Models/ProductSalesReportItem.cs`
 - `Application/Models/LowStockReportItem.cs`
+- `Application/Models/ProductRecommendationItem.cs` (bonus)
+- `Application/Models/SalesReportSnapshot.cs` (bonus)
 - `Presentation/Menus/CustomerMenu.cs`
 - `Presentation/Menus/AdminMenu.cs`
 - `Presentation/Helpers/ReportDisplayHelper.cs`
@@ -107,6 +158,8 @@ Report interpretation:
 
 Covered in:
 - `Tests/CommerceConsole.Tests/Application/ReviewAndReportServiceTests.cs`
+- `Tests/CommerceConsole.Tests/Application/BonusFeaturesServiceTests.cs` (bonus)
+- `Tests/CommerceConsole.Tests/Infrastructure/PdfReportExporterTests.cs` (bonus)
 
 Scenarios:
 - valid review add for purchased product + persistence + average rating
@@ -116,3 +169,6 @@ Scenarios:
 - orders-by-status calculation
 - best-selling aggregation/ranking
 - low-stock filtering/sorting
+- bonus recommendation filtering/ranking
+- bonus admin insight generation
+- bonus PDF export orchestration and file output

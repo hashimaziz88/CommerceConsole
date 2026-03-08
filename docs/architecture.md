@@ -45,6 +45,8 @@ Responsible for:
 - service contracts and abstractions
 - authentication/session coordination
 - catalog, cart, wallet, checkout, order lifecycle, review, and report rules
+- bonus insights/recommendation generation
+- bonus report export orchestration
 
 Current contracts:
 - `Application/Interfaces/*`
@@ -58,6 +60,8 @@ Current services:
 - `OrderService`
 - `ReviewService`
 - `ReportService`
+- `InsightsService` (bonus)
+- `ReportExportService` (bonus)
 
 ### Domain layer
 
@@ -79,6 +83,7 @@ Responsible for:
 - repository implementations
 - JSON persistence
 - seed data
+- export-format implementation details
 
 Current data access:
 - `InMemoryUserRepository`
@@ -91,14 +96,18 @@ Persistence utility:
 Repository persistence model files:
 - `Infrastructure/Repositories/Models/*.cs`
 
+Bonus export implementation:
+- `Infrastructure/Export/PdfReportExporter.cs`
+
 ## Startup Flow
 
 1. `Program.Main()` creates repository instances.
 2. Repositories load persisted JSON from `./data` (if files exist).
-3. `SeedData.Seed(...)` ensures baseline admin and products exist.
+3. `SeedData.Seed(...)` ensures baseline admin and expanded starter catalog entries exist (idempotent by product name).
 4. Application services are created.
-5. `SessionContext` is created.
-6. `MainMenu.Run()` starts register/login navigation.
+5. Bonus services are created (`InsightsService`, `ReportExportService`).
+6. `SessionContext` is created.
+7. `MainMenu.Run()` starts register/login navigation.
 
 ## Authentication and Routing Flow
 
@@ -116,6 +125,7 @@ Repository persistence model files:
 Customer:
 - browse active products
 - search products by name/category
+- paged product rendering for larger lists while preserving index-based selection
 
 Administrator:
 - add product
@@ -194,7 +204,6 @@ Service orchestration:
 Report definitions and examples:
 - `docs/reviews-reporting.md`
 
-
 ## Quality Hardening Additions (Prompt 8)
 
 Implemented hardening updates:
@@ -214,6 +223,20 @@ Implemented UX-focused presentation improvements:
 - optional pause points between menu actions for guided walkthroughs
 - role-aware workspace headers and welcome banner
 
+## Bonus Features Above Submission 1 (Prompt 11)
+
+Implemented bonus additions (modular and optional):
+- PDF sales report export through `IReportExporter` -> `PdfReportExporter`
+- report export orchestration through `ReportExportService`
+- heuristic admin insights through `InsightsService`
+- customer recommendations through `InsightsService` and product-display helpers
+
+Architecture boundaries preserved:
+- menus route and display only
+- business logic remains in services
+- exporter formatting remains in infrastructure
+- no repository access from menus
+
 ## Persistence Design
 
 Persisted files:
@@ -229,6 +252,10 @@ Behavior:
 - checkout/order workflows persist wallet/cart, stock, and order/payment records
 - review additions persist through product repository updates
 
+Bonus export files:
+- generated on-demand under chosen output folder (default `./exports`)
+- export files are optional artifacts and do not alter baseline JSON persistence contracts
+
 ## Design Decisions and Rationale
 
 - Repository APIs were kept stable to avoid cascading service changes.
@@ -237,6 +264,7 @@ Behavior:
 - Seed logic is idempotent so restarts do not duplicate baseline data.
 - Core workflow rules are centralized in services to keep menus thin.
 - Report rows are represented by dedicated models for future strategy extraction.
+- Bonus export and insight logic were isolated behind interfaces to preserve maintainability.
 
 ## Current Design Patterns
 
@@ -248,18 +276,21 @@ Patterns already implemented in the current baseline:
 - Data Mapper (`ToDomain` / `FromDomain` in repositories)
 - Rich Domain Model with Guard Clauses (`Domain/Entities/*`)
 - Session Context pattern (`SessionContext`)
+- Export Strategy seam (`IReportExporter` + `PdfReportExporter`)
 
 Detailed mapping and use-cases are documented in:
 - `docs/design-patterns-current.md`
 
 ## Known Limitations (Current Scope)
 
-- reporting and review menus are implemented, but advanced analytics variants are not yet extracted into strategies
+- PDF exporter intentionally targets simple one-page report output
 - historical timestamps are not fully hydrated from persistence records yet
 - no file locking across multiple app instances (single-process assumption)
 
 ## Next Evolution Steps
 
-- continue quality hardening and regression expansion (Issue 8)
-- introduce explicit Factory/Strategy/State modules (Issue 9)
+- continue quality hardening and regression expansion
+- extend bonus exports (for example CSV) behind `IReportExporter`
+- continue Monday-focused pattern formalization in milestone 4
+
 
