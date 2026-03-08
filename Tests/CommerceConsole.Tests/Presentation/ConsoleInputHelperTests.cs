@@ -8,8 +8,6 @@ namespace CommerceConsole.Tests.Presentation;
 /// </summary>
 public sealed class ConsoleInputHelperTests
 {
-    private static readonly object ConsoleSync = new();
-
     /// <summary>
     /// Verifies selection parsing retries until an in-range value is provided.
     /// </summary>
@@ -18,7 +16,8 @@ public sealed class ConsoleInputHelperTests
     {
         string input = string.Join(Environment.NewLine, "0", "4", "2") + Environment.NewLine;
 
-        int selection = RunWithInput(input, () => ConsoleInputHelper.ReadSelection("Select: ", 3));
+        int selection = ConsoleTestHarness.RunWithInput(input, () =>
+            ConsoleInputHelper.ReadSelection("Select: ", 3));
 
         Assert.Equal(2, selection);
     }
@@ -31,7 +30,8 @@ public sealed class ConsoleInputHelperTests
     {
         string input = string.Join(Environment.NewLine, "text", "0", "-2", "5") + Environment.NewLine;
 
-        int quantity = RunWithInput(input, () => ConsoleInputHelper.ReadPositiveInt("Quantity: "));
+        int quantity = ConsoleTestHarness.RunWithInput(input, () =>
+            ConsoleInputHelper.ReadPositiveInt("Quantity: "));
 
         Assert.Equal(5, quantity);
     }
@@ -44,7 +44,8 @@ public sealed class ConsoleInputHelperTests
     {
         string input = string.Join(Environment.NewLine, "-1", "0") + Environment.NewLine;
 
-        int quantity = RunWithInput(input, () => ConsoleInputHelper.ReadNonNegativeInt("Quantity: "));
+        int quantity = ConsoleTestHarness.RunWithInput(input, () =>
+            ConsoleInputHelper.ReadNonNegativeInt("Quantity: "));
 
         Assert.Equal(0, quantity);
     }
@@ -57,7 +58,8 @@ public sealed class ConsoleInputHelperTests
     {
         string input = string.Join(Environment.NewLine, "0", "-15", "9") + Environment.NewLine;
 
-        decimal amount = RunWithInput(input, () => ConsoleInputHelper.ReadPositiveDecimal("Amount: "));
+        decimal amount = ConsoleTestHarness.RunWithInput(input, () =>
+            ConsoleInputHelper.ReadPositiveDecimal("Amount: "));
 
         Assert.Equal(9m, amount);
     }
@@ -70,30 +72,5 @@ public sealed class ConsoleInputHelperTests
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             ConsoleInputHelper.ReadIntInRange("Select: ", 5, 1));
-    }
-
-    private static T RunWithInput<T>(string input, Func<T> readOperation)
-    {
-        lock (ConsoleSync)
-        {
-            TextReader originalIn = Console.In;
-            TextWriter originalOut = Console.Out;
-
-            try
-            {
-                using StringReader reader = new(input);
-                using StringWriter writer = new();
-
-                Console.SetIn(reader);
-                Console.SetOut(writer);
-
-                return readOperation();
-            }
-            finally
-            {
-                Console.SetIn(originalIn);
-                Console.SetOut(originalOut);
-            }
-        }
     }
 }
