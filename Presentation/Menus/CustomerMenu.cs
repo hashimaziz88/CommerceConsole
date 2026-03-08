@@ -1,4 +1,5 @@
 using CommerceConsole.Application.Interfaces;
+using CommerceConsole.Application.Models;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
 using CommerceConsole.Presentation.Helpers;
@@ -29,8 +30,11 @@ public sealed class CustomerMenu
         "10. Track Order Status",
         "11. Add Product Review",
         string.Empty,
+        "Bonus",
+        "12. View Recommended Products (Bonus)",
+        string.Empty,
         "Session",
-        "12. Logout to Main Menu"
+        "13. Logout to Main Menu"
     };
 
     private readonly IProductService _productService;
@@ -38,6 +42,7 @@ public sealed class CustomerMenu
     private readonly IWalletService _walletService;
     private readonly IOrderService _orderService;
     private readonly IReviewService _reviewService;
+    private readonly IInsightsService _insightsService;
 
     /// <summary>
     /// Initializes the customer menu.
@@ -47,13 +52,15 @@ public sealed class CustomerMenu
         ICartService cartService,
         IWalletService walletService,
         IOrderService orderService,
-        IReviewService reviewService)
+        IReviewService reviewService,
+        IInsightsService insightsService)
     {
         _productService = productService;
         _cartService = cartService;
         _walletService = walletService;
         _orderService = orderService;
         _reviewService = reviewService;
+        _insightsService = insightsService;
     }
 
     /// <summary>
@@ -71,7 +78,7 @@ public sealed class CustomerMenu
         while (!done)
         {
             ShowMenuOptions(customer.FullName);
-            int selection = ConsoleInputHelper.ReadSelection("Choose option (1-12): ", 12);
+            int selection = ConsoleInputHelper.ReadSelection("Choose option (1-13): ", 13);
 
             switch (selection)
             {
@@ -109,6 +116,9 @@ public sealed class CustomerMenu
                     MenuActionHelper.Execute(() => AddReview(customer));
                     break;
                 case 12:
+                    MenuActionHelper.Execute(() => ViewRecommendations(customer));
+                    break;
+                case 13:
                     sessionContext.SignOut();
                     done = true;
                     ConsoleTheme.WriteInfo("You have been logged out and returned to the main menu.");
@@ -141,7 +151,7 @@ public sealed class CustomerMenu
     private void SearchProducts()
     {
         ConsoleTheme.WriteSection("Customer > Catalog > Search");
-        ConsoleTheme.WriteHint("Search by product name or category.");
+        ConsoleTheme.WriteHint("Search by product name or category. Use search to narrow larger catalogs quickly.");
 
         string term = ConsoleInputHelper.ReadRequiredString("Search term: ");
         List<Product> products = _productService.SearchProducts(term);
@@ -160,6 +170,7 @@ public sealed class CustomerMenu
         }
 
         ProductDisplayHelper.ShowSelectableProducts("Select Product To Add", products);
+        ConsoleTheme.WriteHint("Choose the product number shown on the left (global index across pages).");
         int selection = ConsoleInputHelper.ReadSelection("Choose product number: ", products.Count);
         int quantity = ConsoleInputHelper.ReadPositiveInt("Quantity to add: ");
 
@@ -309,6 +320,7 @@ public sealed class CustomerMenu
         }
 
         ProductDisplayHelper.ShowSelectableProducts("Select Product To Review", products);
+        ConsoleTheme.WriteHint("Choose the product number shown on the left (global index across pages).");
         int selection = ConsoleInputHelper.ReadSelection("Choose product number: ", products.Count);
 
         int rating = ConsoleInputHelper.ReadIntInRange("Rating (1-5): ", 1, 5);
@@ -318,4 +330,16 @@ public sealed class CustomerMenu
         _reviewService.AddReview(customer, selectedProduct.Id, rating, comment);
         ConsoleTheme.WriteSuccess("Review submitted successfully.");
     }
+
+    private void ViewRecommendations(Customer customer)
+    {
+        ConsoleTheme.WriteSection("Customer > Bonus > Recommendations");
+        int maxCount = ConsoleInputHelper.ReadIntInRange("How many recommendations (1-10): ", 1, 10);
+
+        IReadOnlyList<ProductRecommendationItem> recommendations =
+            _insightsService.GetCustomerRecommendations(customer, maxCount);
+
+        ProductDisplayHelper.ShowRecommendations("Recommended For You", recommendations);
+    }
 }
+

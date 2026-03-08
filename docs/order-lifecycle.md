@@ -1,79 +1,123 @@
-# Order History, Tracking, and Status Lifecycle
+# Order Lifecycle: History, Tracking, and Status Transitions
 
-## Scope
+## Purpose
 
-This document explains Prompt 6 implementation for:
-- customer order history view
-- customer order status tracking
-- administrator all-order visibility
-- administrator status updates with enforced transition rules
+This document explains order visibility and lifecycle control for customers and administrators, including transition governance.
 
-## Customer Order Management
+## Architecture Ownership
 
-Customer capabilities:
-- view order history (`CustomerMenu` -> `View Order History`)
-- track one order status (`CustomerMenu` -> `Track Order Status`)
+Presentation:
+- show history/tracking screens
+- collect selection and confirmation inputs
 
-Data source:
+Application:
+- provide ordered views
+- enforce status transition policy
+
+Domain:
+- hold current order status and update operation
+
+Infrastructure:
+- persist updated order state
+
+## Customer Capabilities
+
+## 1. View Order History
+
+Service call:
 - `OrderService.GetCustomerOrders(customerId)`
 
-Presentation behavior:
-- orders are shown with index-based selection
-- internal identifiers are not displayed
-- tracking view shows current order/payment status, totals, item count, and placed time
+Behavior:
+- validates non-empty customer ID
+- returns orders sorted by `CreatedAt` descending
+- rendered with index-based rows
 
-## Administrator Order Management
+## 2. Track Specific Order
 
-Administrator capabilities:
-- view all orders (`AdminMenu` -> `View All Orders`)
-- update order status (`AdminMenu` -> `Update Order Status`)
+Flow:
+1. customer views selectable order list by index
+2. selects one order
+3. tracking view displays status, payment status, total, placed time
 
-Data source:
+No GUIDs are shown.
+
+## Administrator Capabilities
+
+## 1. View All Orders
+
+Service call:
 - `OrderService.GetAllOrders()`
 
-Update behavior:
-- admin selects order by index
-- menu shows only allowed next statuses for the selected order
-- chosen status is applied through `OrderService.UpdateOrderStatus(...)`
+Behavior:
+- returns all orders sorted newest first
 
-## Centralized Transition Rules
+## 2. Update Order Status
 
-Transition rules are centralized in:
-- `Application/Services/OrderService.cs`
+Flow:
+1. admin selects order by index
+2. service returns allowed next statuses for current state
+3. UI only displays valid options
+4. admin confirms and applies update
+
+Result:
+- status change persisted to repository
+
+## Transition Policy (Centralized)
+
+Policy source:
+- `OrderService` static transition map
 
 Allowed transitions:
-- `Pending` -> `Paid`, `Cancelled`
-- `Paid` -> `Processing`, `Cancelled`
-- `Processing` -> `Shipped`, `Cancelled`
-- `Shipped` -> `Delivered`
-- `Delivered` -> terminal (no further transitions)
-- `Cancelled` -> terminal (no further transitions)
+- `Pending -> Paid | Cancelled`
+- `Paid -> Processing | Cancelled`
+- `Processing -> Shipped | Cancelled`
+- `Shipped -> Delivered`
+- `Delivered ->` terminal
+- `Cancelled ->` terminal
 
-Rule enforcement:
-- invalid transitions throw `ValidationException`
-- missing orders throw `NotFoundException`
+Why centralized policy is good now:
+- single source of truth
+- easy to test
+- menu remains free of business-state logic
 
-## Lifecycle Invariants
+## Terminal-State Behavior
 
-- terminal statuses (`Delivered`, `Cancelled`) cannot transition further
-- status transitions are deterministic and validated in one place
-- menus do not implement transition logic directly
+For terminal states (`Delivered`, `Cancelled`):
+- no further transitions are allowed
+- UI warns admin and stops flow
 
-## Thin Menu Design
+## Validation and Failure Modes
 
-Menu handlers only:
-- route to service methods
-- display lists and status summaries
-- handle exceptions with user-friendly messages
+- empty order ID -> `ValidationException`
+- missing order -> `NotFoundException`
+- invalid transition -> `ValidationException`
 
-Business logic stays in application/domain layers.
+Behavioral note:
+- no-op when target status equals current status
 
-## Test Coverage
+## Why This Is Not Yet Full State Pattern
 
-Covered in:
+Current approach:
+- transition map dictionary in service
+
+Why acceptable now:
+- small lifecycle with clear progression
+- simpler for baseline scope
+
+Future upgrade path:
+- extract `IOrderStateTransitionPolicy`/state objects per status
+- keep same menu/service contract with internal refactor
+
+## Tests
+
+Primary file:
 - `Tests/CommerceConsole.Tests/Application/OrderStatusTransitionTests.cs`
 
-Scenarios:
-- valid transition sequence (`Paid` -> `Processing` -> `Shipped` -> `Delivered`)
-- invalid transition rejection (`Paid` -> `Delivered`)
-- terminal-state transition rejection (`Cancelled` -> `Processing`)
+Covered scenarios:
+- valid progression sequence
+- invalid jump rejection
+- terminal-state transition rejection
+
+## Quick Viva Script
+
+"Order lifecycle rules are centralized in `OrderService` so policy is consistent and testable. Admin UI only shows allowed next statuses, preventing invalid updates at source. Customers only track orders through read-only views."

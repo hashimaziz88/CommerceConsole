@@ -1,5 +1,6 @@
 using CommerceConsole.Application.Services;
 using CommerceConsole.Infrastructure.Data;
+using CommerceConsole.Infrastructure.Export;
 using CommerceConsole.Infrastructure.Repositories;
 using CommerceConsole.Presentation.Menus;
 
@@ -29,9 +30,25 @@ public static class Program
         ReviewService reviewService = new(orderRepository, productRepository, userRepository);
         ReportService reportService = new(orderRepository, productRepository);
 
+        InsightsService insightsService = new(orderRepository, productRepository);
+        PdfReportExporter reportExporter = new();
+        ReportExportService reportExportService = new(reportService, reportExporter);
+
         SessionContext sessionContext = new();
-        CustomerMenu customerMenu = new(productService, cartService, walletService, orderService, reviewService);
-        AdminMenu adminMenu = new(productService, orderService, reportService);
+        CustomerMenu customerMenu = new(
+            productService,
+            cartService,
+            walletService,
+            orderService,
+            reviewService,
+            insightsService);
+
+        AdminMenu adminMenu = new(
+            productService,
+            orderService,
+            reportService,
+            reportExportService,
+            insightsService);
 
         MainMenu mainMenu = new(authService, sessionContext, customerMenu, adminMenu);
         mainMenu.Run();

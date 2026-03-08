@@ -1,84 +1,152 @@
 # Authentication Flow and Assumptions
 
-## Objective
+## Purpose
 
-Provide role-aware authentication for customer and administrator users while keeping UI logic thin and business logic centralized.
+This document explains how registration, login, role-routing, and session handling work end-to-end in CommerceConsole.
+
+## Architecture Position of Auth
+
+Presentation responsibilities:
+- collect credentials and user input
+- display success/error messages
+- route to role-specific menu after login
+
+Application responsibilities:
+- validate auth inputs
+- enforce unique email rule on registration
+- verify credentials on login
+- return authenticated domain user
+
+Infrastructure responsibilities:
+- persist/retrieve users via repository JSON storage
+
+Domain responsibilities:
+- user identity model and role type
+- invariant checks for user construction
 
 ## Actors
 
-- Guest (not authenticated)
-- Customer (authenticated role)
-- Administrator (authenticated role)
+- Guest (unauthenticated)
+- Customer (authenticated)
+- Administrator (authenticated)
 
-## Seeded Administrator
+## Seeded Administrator Account
 
-Default admin is created by `SeedData` only when missing:
+Created via `SeedData` if none exists:
 - Email: `admin@commerce.local`
 - Password: `admin123`
+- Name: `System Admin`
 
-This seed record is persisted in `data/users.json`.
+Design intent:
+- guaranteed admin path for demos
+- idempotent seed behavior to avoid duplicates
 
 ## Registration Flow
 
-1. User selects `Register` in `MainMenu` (bounded menu selection parsing).
-2. UI captures full name, email, and password.
-3. `AuthService.RegisterCustomer(...)` validates:
-- non-empty full name
-- non-empty email
-- basic email format
-- non-empty password
-4. Service checks for duplicate email via `IUserRepository.GetByEmail(...)`.
-5. On success, new `Customer` is saved and persisted.
-6. UI prints a success message.
+Entry point:
+- `MainMenu` option `Register New Customer`
 
-Exceptions surfaced to UI through `MenuActionHelper`:
-- `ValidationException`
-- `DuplicateEmailException`
+Sequence:
+1. Presentation collects full name, email, password.
+2. `AuthService.RegisterCustomer` validates required fields.
+3. Basic email regex validation is applied.
+4. `IUserRepository.GetByEmail` checks uniqueness.
+5. `Customer` entity is created and persisted.
+6. Success message is shown.
+
+Rules enforced:
+- name cannot be empty
+- email cannot be empty
+- email must match basic format
+- password cannot be empty
+- email must be unique (case-insensitive lookup)
+
+Failure outcomes:
+- invalid data -> `ValidationException`
+- duplicate email -> `DuplicateEmailException`
 
 ## Login Flow
 
-1. User selects `Login` in `MainMenu` (bounded menu selection parsing).
-2. UI captures email and password.
-3. `AuthService.Login(...)` validates non-empty inputs.
-4. Repository lookup confirms user exists and password matches.
-5. On success, `SessionContext.SignIn(...)` stores current user.
-6. Main menu routes by role.
+Entry point:
+- `MainMenu` option `Login`
 
-Exceptions surfaced to UI through `MenuActionHelper`:
-- `ValidationException`
-- `AuthenticationException`
+Sequence:
+1. Presentation collects email and password.
+2. `AuthService.Login` validates non-empty inputs.
+3. Repository retrieves user by email.
+4. Password is verified by `User.VerifyPassword`.
+5. `SessionContext.SignIn` stores active user.
+6. Menu routes by `UserRole`.
+
+Failure outcomes:
+- invalid input -> `ValidationException`
+- wrong credentials -> `AuthenticationException`
 
 ## Role-Based Routing
 
-Routing happens in `MainMenu.RouteByRole()`:
-- `UserRole.Customer` -> `CustomerMenu.Run(...)`
-- `UserRole.Administrator` -> `AdminMenu.Run(...)`
+`MainMenu.RouteByRole` routes immediately after successful login:
+- `Customer` -> `CustomerMenu.Run`
+- `Administrator` -> `AdminMenu.Run`
 
-Each role menu validates the expected role before continuing.
+Defense-in-depth check:
+- each menu verifies expected role before entering loop
 
-## Session Lifecycle
+## Session Model
 
-`SessionContext` behavior:
-- `CurrentUser` set on login
-- `IsAuthenticated` derived from `CurrentUser`
-- `SignOut()` clears session
+Component:
+- `SessionContext` (`ISessionContext` implementation)
 
-Session is process-local and non-persistent by current design.
+Behavior:
+- `CurrentUser` is set on sign-in
+- `IsAuthenticated` derives from `CurrentUser != null`
+- sign-out clears current user
 
-## Security and Scope Notes
+Scope:
+- process-local session only
+- not persisted to JSON
 
-Current implementation is demo-oriented:
-- passwords are stored in plain text
-- no account lockout/throttling
+Why this is correct for current scope:
+- simple console runtime model
+- explicit session state without global static leakage
+
+## Exception Handling Boundary
+
+Where exceptions are translated for UX:
+- `MenuActionHelper.Execute`
+
+Mapping examples:
+- `ValidationException` -> validation error output
+- `AuthenticationException` -> login error output
+- `DuplicateEmailException` -> registration error output
+
+Why this pattern helps:
+- services stay free of presentation text concerns
+- user gets consistent error format
+
+## Security Notes (Current Scope)
+
+Current constraints:
+- passwords are stored in plain text for coursework scope
+- no lockout/rate limiting
 - no password reset
-- no multi-session support
 
-These are acceptable for current console coursework scope and can be upgraded later.
+How to explain this in viva:
+"Security hardening is acknowledged and isolated for future work; architecture already supports adding hashing at auth/service/repository boundaries without rewriting menus."
 
-## Traceability to Code
+## Tests Covering Auth
 
-- Service logic: `Application/Services/AuthService.cs`
-- Session state: `Application/Services/SessionContext.cs`
-- UI routing: `Presentation/Menus/MainMenu.cs`
-- Menu boundary handling: `Presentation/Helpers/MenuActionHelper.cs`
-- Admin bootstrap: `Infrastructure/Data/SeedData.cs`
+Primary test file:
+- `Tests/CommerceConsole.Tests/Application/AuthServiceTests.cs`
+
+Covered scenarios:
+- successful registration
+- duplicate email rejection
+- invalid email rejection
+- customer login success
+- seeded admin login success
+- wrong-password rejection
+- session sign-in/sign-out behavior
+
+## Quick Viva Script
+
+"Auth is menu-triggered but service-owned. Registration and login validation live in `AuthService`, persistence lives in repositories, session state lives in `SessionContext`, and role routing is handled in main menu with role checks inside each workspace."

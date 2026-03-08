@@ -1,74 +1,117 @@
-# JSON Persistence Notes
+# Persistence Model (JSON)
 
 ## Purpose
 
-Provide lightweight runtime persistence so key data survives app restarts without introducing a database.
+This document explains how data persistence works in CommerceConsole, why JSON was chosen, and what consistency guarantees and limitations currently exist.
 
-## Persisted Files
+## Persistence Strategy Overview
 
-Default directory: `./data`
+CommerceConsole uses JSON file persistence through repository adapters.
+
+Design goals:
+- keep setup simple for coursework/demo
+- preserve state across restarts
+- keep persistence behind interfaces so it can be swapped later
+
+## Persisted Runtime Files
+
+Default folder:
+- `./data`
 
 Files:
-- `users.json`
-- `products.json`
-- `orders.json`
+- `users.json` (users, wallet balances, cart snapshots)
+- `products.json` (catalog, stock, reviews)
+- `orders.json` (orders, order items, payment status)
 
-## Repository Ownership
+## Ownership by Repository
 
-- `InMemoryUserRepository` owns `users.json`
-- `InMemoryProductRepository` owns `products.json`
-- `InMemoryOrderRepository` owns `orders.json`
+- `InMemoryUserRepository` -> `users.json`
+- `InMemoryProductRepository` -> `products.json`
+- `InMemoryOrderRepository` -> `orders.json`
 
-Each repository:
-- loads JSON into memory at construction time
-- writes full list back to file on add/update/remove
+Each repository loads once at construction and writes-through on mutation.
 
-## Serialization Models
+## Why "InMemory + JSON" Naming Is Accurate
 
-Persistence models are defined separately in:
-- `Infrastructure/Repositories/Models/UserRecord.cs`
-- `Infrastructure/Repositories/Models/ProductRecord.cs`
-- `Infrastructure/Repositories/Models/ProductReviewRecord.cs`
-- `Infrastructure/Repositories/Models/OrderRecord.cs`
-- `Infrastructure/Repositories/Models/OrderItemRecord.cs`
-- `Infrastructure/Repositories/Models/PaymentRecord.cs`
+Behavior model:
+- live state is held in in-memory lists during runtime
+- mutations persist list snapshots to JSON immediately
 
-This separation avoids nested classes and keeps repository logic easier to maintain.
+So this is:
+- in-memory primary working set
+- file-backed durability layer
 
-## Write Strategy
+## Record Model Separation (Data Mapper Pattern)
 
-`JsonFileStore` writes to a unique temp file and then replaces the target file.
+Persistence models are separate from domain entities:
+- `UserRecord`, `ProductRecord`, `OrderRecord`, etc.
 
-Benefits:
-- avoids partially-written target files
-- reduces file-collision risk across rapid writes
+Why this matters:
+- storage schema can evolve without forcing domain redesign
+- domain invariants stay in domain, not in serialization DTOs
+- mapping logic is explicit in repository `ToDomain` / `FromDomain`
 
-## Recovery Behavior
+## JsonFileStore Behavior
 
-If JSON is malformed:
-- load falls back to empty list for that file
-- app remains usable instead of crashing
+Core utility:
+- `Infrastructure/Persistence/JsonFileStore.cs`
 
-## Seeding Behavior with Persistence
+Load behavior:
+- if file missing -> returns empty list
+- if file malformed -> catches `JsonException` and returns empty list
 
-- seeding runs at startup
-- if persisted admin/products already exist, duplicates are not inserted
-- first run creates baseline admin and products and persists them
+Save behavior:
+1. serialize list to JSON
+2. write to temp file
+3. atomically replace target file
 
-## Assumptions
+Benefit:
+- reduces partial-write risk
 
-- single process writes to data files in normal usage
-- file path is writable by the app runtime
-- persistence scope is local machine only
+## Seeding and Persistence Interaction
 
-## Known Limitations
+`SeedData.Seed(...)` runs on startup after repositories initialize.
 
-- no cross-process file locking policy yet
-- no schema versioning/migration yet
-- no encryption for persisted credentials in current phase
+Idempotency rules:
+- admin seeded only if missing
+- products seeded only if missing by product name
 
-## Suggested Future Improvements
+Effect:
+- safe repeated app launches
+- expanded seed catalog can be introduced without duplicate growth
 
-- password hashing + migration strategy
-- optimistic concurrency tokens for writes
-- explicit schema version + migration pipeline
+## Consistency Model and Limits
+
+Current consistency assumptions:
+- single-process normal usage
+- immediate write-through after repository mutation
+
+Limitations:
+- no cross-process locking coordination
+- no schema versioning/migration pipeline
+- no cryptographic protection for sensitive user fields
+
+## Why This Is Still Architecturally Strong
+
+Even with simple JSON storage:
+- application/domain logic is not coupled to JSON APIs
+- storage can be replaced by DB repositories behind same interfaces
+- tests can run deterministically with temp data directories
+
+## Practical Data Reset Guidance
+
+For clean demo resets:
+1. close app
+2. remove `data/users.json`, `data/products.json`, `data/orders.json` (or clear folder)
+3. restart app to reseed baseline admin/products
+
+## Future Upgrades (Low-Risk)
+
+1. add password hashing migration path
+2. add file-level lock policy or move to DB backend
+3. add schema version metadata and migration steps
+4. add audit trail records for operational events
+
+## Quick Viva Script
+
+"Persistence is implemented as repository adapters over JSON files. Runtime state lives in memory for speed, and each mutation writes-through to file for durability. Domain and application remain storage-agnostic because mapping and file concerns are isolated in infrastructure."

@@ -1,112 +1,79 @@
-# 05. Monday Design Pattern Implementation Plan
+# 05. Submission 2 Design Pattern Upgrade
 
-## Goal
+## Goal (Monday 2026-03-09)
 
-Implement design patterns on Monday (2026-03-09) after the baseline system is already feature-complete, tested, and documented.
+Introduce explicit design patterns on top of the stable baseline without adding new business scope.
 
-This is a targeted architectural enhancement, not a rewrite and not a catch-up phase.
+This phase is a controlled refactor for extensibility and architecture marks.
 
-## Pattern choices and scope
+## Non-negotiable constraints
+
+- preserve current user-visible behavior
+- do not move business logic into menus
+- do not introduce feature backlog catch-up
+- do not break persistence contracts without migration notes
+- add pattern-focused tests and docs for every pattern change
+
+## Priority pattern targets
 
 ### 1. Factory Pattern
-Use for creating role-based users or menu handlers.
 
-**Where to apply**
-- create `Customer` or `Administrator` based on role
-- optionally create menu objects by role
+Candidate uses:
+- role-based menu creation/routing
+- user object creation abstraction if beneficial
 
-**Why it helps**
-- removes role-based object construction from UI code
-- centralizes object creation decisions
+Expected benefit:
+- centralize creation logic and reduce switch branching in UI composition points
 
 ### 2. Strategy Pattern
-Use for pluggable behaviors.
 
-**Best choices**
-- payment processing strategy
-- report generation strategy
-- optional product search strategy
+Candidate uses:
+- payment processing strategy abstraction
+- report generation/export variant strategy
 
-**Suggested first implementation**
-Start with payment:
-- `IPaymentStrategy`
-- `WalletPaymentStrategy`
+Current seam already available:
+- `IReportExporter` -> `PdfReportExporter`
+
+Suggested extension:
+- add payment strategy contract and wallet strategy implementation while keeping behavior same
 
 ### 3. State-style transition handling
-Use for order status transitions.
 
-**Why it fits**
-Order statuses naturally move through controlled stages such as Pending, Paid, Processing, Shipped, Delivered, and Cancelled.
+Candidate uses:
+- extract order status transitions from map-based rule checks into dedicated transition policy/state objects
 
-**How to scope safely**
-A lightweight transition policy is enough; avoid framework-heavy state engines.
+Expected benefit:
+- clearer transition rules and easier extension/audit of lifecycle logic
 
-### 4. Repository formalization
-If not already complete, tighten repository contracts and dependency injection boundaries.
+### 4. Repository formalization (if needed)
 
-### 5. Builder Pattern (optional)
-Only if it clearly improves report result construction or complex seeded object creation.
+Candidate uses:
+- refine repository abstractions only where extension clarity improves
+- avoid needless abstraction churn
 
-## Monday execution sequence
+## Execution sequence
 
-### Step 1
-Freeze baseline behavior.
-- run regression tests
-- capture expected outputs for critical flows
-
-### Step 2
-Introduce pattern interfaces around selected variation points.
-- payment
-- report generation
-- role-based creation
-
-### Step 3
-Move branching logic into factories and strategies.
-
-### Step 4
-Introduce explicit order status transition rules.
-
-### Step 5
-Add pattern-focused tests and update docs.
-- tests prove behavior parity and new extensibility seams
-- docs explain pattern intent, boundaries, and trade-offs
-
-## Non-goals for Monday
-
-- adding missing core features
-- catching up missing baseline tests
-- rewriting menu UX
-- introducing unnecessary complexity
-
-## Recommended pattern story for presentation
-
-- Factory centralizes role-based object creation.
-- Strategy makes payment and report behavior replaceable without changing core workflows.
-- Repository abstractions isolate storage concerns.
-- State-style transition handling improves correctness around order status changes.
-
-## Suggested interfaces
-
-```csharp
-public interface IPaymentStrategy
-{
-    Payment Process(Customer customer, decimal amount);
-}
-
-public interface IUserFactory
-{
-    User Create(string fullName, string email, string password, UserRole role);
-}
-
-public interface IReportStrategy<T>
-{
-    T Generate(List<Order> orders, List<Product> products);
-}
-```
+1. Freeze baseline behavior with passing regression tests.
+2. Add pattern interfaces and adapters around existing seams.
+3. Move branching logic into factories/strategies incrementally.
+4. Extract transition policy objects for order lifecycle.
+5. Verify parity with focused tests.
+6. Document architecture delta and trade-offs.
 
 ## Verification checklist
 
-- existing user-visible flows remain unchanged
-- new pattern abstractions are covered by tests
-- no business rules leaked into menu classes
-- docs include an architecture delta for pattern changes
+- baseline tests remain green
+- new pattern tests cover extension points
+- no UI/business boundary regression
+- no GUID exposure regression
+- docs updated (`architecture`, `design-patterns`, `oop notes`, `study guide`)
+
+## Anti-goals
+
+- no full rewrite
+- no framework-heavy pattern overengineering
+- no feature expansion hidden inside refactor
+
+## Viva explanation script
+
+"Submission 2 pattern work is an incremental extension of existing seams: we formalize creation and algorithm variation points while preserving baseline behavior, so the refactor improves extensibility without destabilizing delivery."

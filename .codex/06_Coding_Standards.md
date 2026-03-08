@@ -1,126 +1,79 @@
 # 06. Coding Standards
 
-This document adapts the provided Boxfusion C# coding guidance to this console shopping project.
+## Purpose
 
-## Core standards to follow
+This is the mandatory coding standard for CommerceConsole. It extends the original standards with project-specific constraints from implementation history.
 
-### 1. Write code that is easy to read
-Favor clarity over cleverness.
+## Core coding quality rules
 
-### 2. Add comments where intent is not obvious
-- All classes should have a purpose comment unless their role is obvious.
-- All public methods should have a short summary comment.
-- Non-obvious logic should be explained briefly above the code.
+1. Prefer clarity over cleverness.
+2. Keep classes small and focused.
+3. Keep methods short and intention-revealing.
+4. Use guard clauses for invalid inputs/states.
+5. Use clear names; avoid ambiguous abbreviations.
+6. Remove duplication through helper extraction.
+7. Keep member ordering consistent (constants, fields, constructors, public members, private helpers).
+8. Use comments for non-obvious intent only.
 
-### 3. Keep classes short
-Avoid god classes. Split responsibilities into services, repositories, helpers, and entities.
+## Layering rules (strict)
 
-### 4. Keep methods short
-If a method is hard to scan, extract helpers.
+- Presentation must not contain business rules.
+- Presentation must not access repositories directly.
+- Application services must orchestrate workflows.
+- Domain must hold invariants and mutation rules.
+- Infrastructure must hold persistence/export details only.
 
-### 5. Order class members logically
-Suggested order:
-1. constants
-2. fields
-3. constructors
-4. public properties
-5. public methods
-6. private helper methods
+## Presentation safety rules
 
-### 6. Use guard clauses
-Fail fast for invalid arguments and invalid states.
+1. Never expose internal GUIDs in user-facing screens.
+2. Use index-based selections for menus and entity picking.
+3. Keep input recovery loops friendly and deterministic.
+4. Catch custom exceptions at presentation boundaries and render clear messages.
 
-```csharp
-if (quantity <= 0)
-{
-    throw new ValidationException("Quantity must be greater than zero.");
-}
-```
+## Repository and persistence rules
 
-### 7. Avoid excessive nesting
-Prefer early returns and extracted methods.
+1. Repositories must not contain nested helper/model classes.
+2. Persistence models must live as standalone files under repository model folders.
+3. Mutable data workflows must persist through repository updates.
+4. JSON schema mapping must be explicit (`ToDomain` / `FromDomain` style).
 
-### 8. Use clear naming
-- `GetProductById` not `FetchP`
-- `UpdateOrderStatus` not `DoUpdate`
-- `walletAmountToAdd` not `x`
+## OOP and modifier rules
 
-### 9. Replace magic numbers with constants or enums
-Examples:
-- low stock threshold
-- max review rating
-- menu option numbers when reused
+- prefer `private readonly` for dependencies
+- prefer `private set` for mutable domain properties
+- use `protected` only when inheritance boundaries require it
+- use `sealed` for stable concrete types unless extensibility is intentional
+- use `static` only for stateless utility concerns
 
-### 10. Do not repeat yourself
-Extract shared prompts, validation logic, and display formatting.
+## LINQ usage rules
 
-### 11. Keep it simple
-Do not build an unnecessary framework.
+Use LINQ when it improves readability and query intent:
+- filtering active/low-stock products
+- grouping orders by status
+- aggregating revenue and ratings
+- ranking products/reports
 
-### 12. Format code consistently
-Keep braces and spacing consistent.
+Do not force LINQ where loops are clearer for index-based rendering.
 
-### 13. Remove dead code
-Delete unused helpers, stale paths, and commented-out code.
+## Testing rules
 
-## Project-specific rules
+1. Add/update tests in the same change as behavior updates.
+2. Cover both happy and negative paths.
+3. Use deterministic fixtures and isolated temp directories.
+4. Keep presentation helper tests isolated via console harness patterns.
 
-### Naming conventions
-- Classes: `PascalCase`
-- Methods: `PascalCase`
-- Public properties: `PascalCase`
-- Private fields: `_camelCase`
-- Local variables and parameters: `camelCase`
-- Interfaces: prefix with `I`
-- Enums: singular names where possible
+## Documentation rules
 
-### Layering rules
-- no domain logic in presentation/menu classes
-- no DTOs inside domain folder
-- repositories should not print to console
-- services should not ask for console input directly
+1. Update docs whenever behavior/architecture/tests change.
+2. Keep docs accurate enough for live code walkthrough and viva defense.
+3. Avoid vague placeholders; include concrete rationale and trade-offs.
+4. Keep `.codex` and `docs` synchronized to prevent process drift.
 
-### File and folder rules
-- one public class per file
-- keep folders aligned to architecture
-- do not mix entities and services in the same folder
+## Definition of done
 
-### Error handling rules
-- throw domain/application exceptions with useful messages
-- catch exceptions at menu/screen boundary
-- never swallow exceptions silently
-
-### LINQ rules
-Use LINQ where it improves readability, not to tick a box.
-
-Good fits:
-- filtering products
-- grouping orders
-- calculating averages and totals
-- sorting history or reports
-
-## Test standards (from day one)
-
-- add or update tests in the same feature PR where behavior changes
-- cover domain invariants and core service workflows first
-- include negative-path tests for validation and exceptions
-- keep tests deterministic with explicit seed data
-- do not postpone baseline tests to a later phase
-
-## Documentation standards (from day one)
-
-- update docs when behavior, architecture, or assumptions change
-- keep `docs/test-plan.md` aligned with actual coverage focus
-- record intentional trade-offs in short, explicit notes
-- avoid stale TODO docs that are not actioned
-
-## Definition of done for each class/feature
-
-- clear single responsibility
-- meaningful name
-- no duplicated logic
-- validation present where needed
-- comments added for non-obvious behavior
-- methods small enough to scan quickly
-- tests updated for changed behavior
-- docs updated where relevant
+A change is complete only when:
+- architecture boundaries are respected
+- no GUID exposure is introduced
+- tests are updated and passing
+- docs are updated and accurate
+- code remains readable and maintainable

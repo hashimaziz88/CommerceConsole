@@ -1,118 +1,158 @@
 # Reviews and Reporting
 
-## Scope
+## Purpose
 
-This document explains Prompt 7 implementation for:
-- customer product reviews
-- review rating validation
-- purchase eligibility validation for reviews
-- average rating display
-- administrator sales reporting
+This document explains:
+- purchased-only review flow
+- rating validation
+- average-rating display
+- admin reporting aggregates via LINQ
+- bonus insight and export alignment
 
 ## Review Workflow
 
-Customer capability:
-- submit a product review with rating and comment from `CustomerMenu`
-- review selection menu only lists products previously purchased by the current customer
-- if no purchased products are reviewable, the menu exits with a friendly message
+## Business Rule: Review Only What You Bought
 
-Service:
-- `ReviewService.AddReview(Customer customer, Guid productId, int rating, string comment)`
+Enforcement location:
+- `ReviewService`
+
+How it works:
+1. service gathers customer orders from repository
+2. only purchase-eligible statuses are considered (`Paid`, `Processing`, `Shipped`, `Delivered`)
+3. product IDs from those orders become review-eligible set
+4. customer review menu displays only that filtered set
+
+Result:
+- users are not even shown non-purchased products to review
+- rule is enforced in both selection list and add-review validation
+
+## Add Review Flow
+
+Inputs:
+- selected purchased product
+- rating (1-5)
+- comment
 
 Validation:
-- customer must have purchased the product before reviewing
-- `rating` must be between `1` and `5` (enforced by `Review` domain entity)
-- product must exist (`NotFoundException`)
-- customer must be valid (`ValidationException`)
+- customer required
+- product must exist
+- purchase eligibility must be true
+- rating must be within 1..5 (domain invariant in `Review`)
 
-Purchase eligibility rule:
-- review eligibility is derived from customer order history in `IOrderRepository`
-- only orders in customer-paid lifecycle states are considered valid purchases
-- users cannot review products they never bought
-
-Persistence:
-- product reviews are persisted through `InMemoryProductRepository.Update(...)`
-- review is also attached to the in-memory customer review collection
+Persistence effects:
+- review is added to product review collection and product persisted
+- review is added to customer review list and user persisted
 
 ## Average Rating
 
-Average ratings are calculated with LINQ:
-- `ProductDisplayHelper.CalculateAverageRating(...)` uses `Average(review => review.Rating)`
-- `ReviewService.GetAverageRating(...)` also provides service-level calculation
+Displayed in product views.
 
-Display behavior:
-- customer and admin product views show average rating per product
+Calculation:
+- average of `Review.Rating`
+- if no reviews, defaults to `0`
 
-## Sales Reporting Workflow
+Used in:
+- `ProductDisplayHelper` rows
+- recommendation ranking tie-breaks
 
-Administrator capability:
-- view consolidated sales report from `AdminMenu`
+## Reporting Workflow
 
 Service:
 - `ReportService`
 
-Report includes:
-- total revenue
-- orders grouped by status
-- best-selling products
-- low-stock products
+Report outputs:
+1. total revenue
+2. orders by status
+3. best-selling products
+4. low-stock products
 
-### Report Definitions
+## LINQ Reasoning by Report Type
 
-1. Total revenue
-- Definition: sum of all `Order.TotalAmount`
-- LINQ: `Sum(order => order.TotalAmount)`
+## Total Revenue
 
-2. Orders by status
-- Definition: count of orders per `OrderStatus`
-- LINQ: `GroupBy(order => order.Status)` + `ToDictionary(...)`
-- includes zero-count statuses for complete visibility
+Question answered:
+- "How much money has the system processed?"
 
-3. Best-selling products
-- Definition: products ranked by total quantity sold (then revenue)
-- LINQ:
-- flatten order items with `SelectMany`
-- group by product with `GroupBy`
-- aggregate quantity/revenue with `Sum`
-- rank with `OrderByDescending`/`ThenByDescending`
+Query shape:
+- `Sum(order => order.TotalAmount)`
 
-4. Low-stock products
-- Definition: products with `StockQuantity <= threshold`
-- LINQ: `Where` + `OrderBy` + `ThenBy` + projection to report rows
+## Orders By Status
 
-## Example Output Interpretation
+Question answered:
+- "How many orders are in each lifecycle stage?"
 
-Given historical orders:
-- Order A: Laptop x2, Mouse x1
-- Order B: Laptop x1, Mouse x1
+Query shape:
+- `GroupBy(order => order.Status)` + dictionary projection
+- fills missing enum states with zero for complete dashboard visibility
 
-Report interpretation:
-- total revenue = sum of both order totals
-- best-seller ranking = Laptop first (qty 3), Mouse second (qty 2)
-- order status counts reflect current stored statuses
+## Best-Selling Products
 
-## Key Files
+Question answered:
+- "Which products sold the highest quantity and generated most revenue?"
 
-- `Application/Services/ReviewService.cs`
-- `Application/Services/ReportService.cs`
-- `Application/Interfaces/IReviewService.cs`
-- `Application/Interfaces/IReportService.cs`
-- `Application/Models/ProductSalesReportItem.cs`
-- `Application/Models/LowStockReportItem.cs`
-- `Presentation/Menus/CustomerMenu.cs`
-- `Presentation/Menus/AdminMenu.cs`
-- `Presentation/Helpers/ReportDisplayHelper.cs`
+Query shape:
+- flatten with `SelectMany(order => order.Items)`
+- group by product ID
+- aggregate quantity and revenue with `Sum`
+- rank by quantity desc, revenue desc, name asc
+
+## Low-Stock Products
+
+Question answered:
+- "What needs restocking soon?"
+
+Query shape:
+- `Where(stock <= threshold)`
+- sorted by stock asc then name
+
+## Bonus Alignment
+
+## Smart Insights (Heuristic, Not External AI)
+
+Service:
+- `InsightsService.GetAdminInsights(...)`
+
+Examples produced:
+- revenue snapshot
+- top category by units sold
+- restock watch list
+- review sentiment summary
+- fulfillment queue count
+
+Design note:
+- deterministic rule-based insights
+- works offline
+- clearly explainable in demo
+
+## PDF Export
+
+Orchestration:
+- `ReportExportService`
+
+Abstraction:
+- `IReportExporter`
+
+Concrete implementation:
+- `PdfReportExporter`
+
+Why this separation is good:
+- aggregation remains in `ReportService`
+- formatting/export stays outside domain/service aggregation core
 
 ## Test Coverage
 
-Covered in:
+Main files:
 - `Tests/CommerceConsole.Tests/Application/ReviewAndReportServiceTests.cs`
+- `Tests/CommerceConsole.Tests/Application/BonusFeaturesServiceTests.cs`
+- `Tests/CommerceConsole.Tests/Infrastructure/PdfReportExporterTests.cs`
 
-Scenarios:
-- valid review add for purchased product + persistence + average rating
-- blocked review for unpurchased product
-- invalid review rating rejection
-- revenue calculation
-- orders-by-status calculation
-- best-selling aggregation/ranking
-- low-stock filtering/sorting
+Covered themes:
+- purchased-only review eligibility
+- rating invariants and rejection paths
+- revenue/status/best-seller/low-stock correctness
+- recommendation and insight behavior
+- PDF export output/validation
+
+## Quick Viva Script
+
+"Review eligibility is enforced by order history, not by UI trust. Reporting uses LINQ to express business questions directly, and export/insight features are layered on top without polluting domain entities."

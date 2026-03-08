@@ -1,107 +1,170 @@
 # Product Catalog and Inventory Rules
 
-## Scope
+## Purpose
 
-This document explains Prompt 3 implementation for:
-- customer product browsing
-- customer product search
-- administrator product management
-- low-stock reporting behavior
+This document explains product browsing/search for customers and catalog management for administrators, including validation, low-stock behavior, persistence, and UX conventions.
 
-## Customer Features
+## Architecture Ownership
 
-### Browse active products
+Presentation:
+- shows product lists and selection menus
+- uses index-based selection (no GUID input)
 
-- Customer menu option: `Browse Active Products`
-- Data source: `IProductService.GetActiveProducts()`
-- Visibility rule: only `IsActive == true` products are shown
-- Output includes name, category, price, stock, status, and average rating
-- Internal identifiers are never displayed in presentation output
+Application:
+- `ProductService` enforces use-case level logic
+- sorting/filtering orchestration and rule checks
 
-### Search by name/category
+Domain:
+- `Product` entity enforces invariants (name/category required, no negative price/stock)
 
-- Customer menu option: `Search Products`
-- Data source: `IProductService.SearchProducts(term)`
-- Search implementation uses LINQ via repository search + active-product filtering
-- Empty search term falls back to active product list
+Infrastructure:
+- product repository persists updates to JSON
 
-## Administrator Features
+## Customer Capabilities
 
-### Add product
+## 1. Browse Active Products
 
-Menu action collects:
-- name
-- description
-- category
-- price
-- initial stock
-
-Validation is centralized in domain constructor (`Product`) and surfaced through `ValidationException`.
-
-### Update product
-
-Menu action uses numbered product selection + updated fields.
+Service call:
+- `ProductService.GetActiveProducts()`
 
 Behavior:
-- product must exist (`NotFoundException` if missing)
-- details updated through `Product.UpdateDetails(...)`
-- repository persists update to JSON
+- returns only `IsActive == true`
+- sorts by name
+- rendered via paged helper for large catalogs
 
-### Delete product
+UX details:
+- active/inactive and low-stock markers are visible
+- average rating shown per product row
+
+## 2. Search By Name or Category
+
+Service call:
+- `ProductService.SearchProducts(term)`
 
 Behavior:
-- product is selected by number from the product list
-- product must exist (`NotFoundException` if missing)
-- repository removes product row
-- persisted file is updated immediately
+- empty term falls back to active browse results
+- repository search matches name/category case-insensitively
+- results still filtered to active products
+- sorted by product name
 
-### Restock product
+LINQ intent:
+- express user question "find matching products" using concise filter logic
 
-Behavior:
-- product is selected by number from the product list
-- product must exist
-- restock quantity must be positive
-- `Product.Restock(...)` applies guard clause
-- repository persists updated stock
+## Administrator Capabilities
 
-### View products
+## 1. Add Product
 
-Shows all products for admin oversight, including active/inactive state and stock.
-
-### View low-stock products
-
-- Admin provides threshold
-- service validates threshold is non-negative
-- repository returns products with `StockQuantity <= threshold`
-- results are sorted by stock ascending then name
-
-## Validation Centralization
+Menu inputs:
+- name, description, category, price, opening stock
 
 Validation sources:
-- Domain (`Product`) for business invariants
-- Application (`ProductService`) for missing entity and threshold checks
-- Presentation catches and prints friendly error messages
+- domain constructor blocks invalid values
+- menu input helpers enforce numeric types/ranges
 
-## Persistence Notes
+Persistence:
+- repository `Add` writes-through to `products.json`
 
-Any mutable product action (`add`, `update`, `delete`, `restock`) persists to:
+## 2. Update Product
+
+Selection:
+- admin selects from numbered list
+
+Behavior:
+- service resolves product by ID internally
+- domain mutator `UpdateDetails` applies validation
+- repository persists updated entity
+
+## 3. Delete Product
+
+Selection + confirmation:
+- admin selects index
+- confirmation prompt required
+
+Behavior:
+- service confirms existence and removes item
+- repository persists removal
+
+## 4. Restock Product
+
+Selection:
+- admin selects by index
+
+Behavior:
+- positive quantity required
+- `Product.Restock` updates stock with validation
+- repository persists immediately
+
+## 5. View Products and Low-Stock View
+
+View products:
+- full catalog list for admin oversight
+
+Low-stock view:
+- threshold input required (non-negative)
+- service returns items with `StockQuantity <= threshold`
+- sorted by stock ascending, then name
+
+## Validation Model
+
+Where validation occurs:
+- presentation: input parsing and range loops
+- application: threshold/entity existence checks
+- domain: invariant checks for entity state
+
+Why layered validation is intentional:
+- input hygiene at boundary
+- business correctness near state
+- workflow safety in orchestration
+
+## Index-Based UX and No-ID Exposure
+
+Internal reality:
+- products have GUID identifiers
+
+User experience:
+- users/admins choose by index from rendered lists
+- no GUIDs shown or typed
+
+Why this matters:
+- less user error
+- better demo flow
+- avoids exposing internal identifiers
+
+## Seed Catalog and Scalability
+
+Seed strategy:
+- expanded starter catalog across multiple categories
+- idempotent insert by product name
+
+Rendering strategy for larger sets:
+- pagination (`ItemsPerPage = 6`)
+- global numbering across pages for consistent selection
+
+## Persistence Behavior
+
+Mutable operations persisted:
+- add
+- update
+- delete
+- restock
+
+File:
 - `data/products.json`
-
-## Key Classes
-
-- `Application/Services/ProductService.cs`
-- `Presentation/Menus/CustomerMenu.cs`
-- `Presentation/Menus/AdminMenu.cs`
-- `Presentation/Helpers/ProductDisplayHelper.cs`
-- `Infrastructure/Repositories/InMemoryProductRepository.cs`
 
 ## Test Coverage
 
-Covered in:
+Main test files:
 - `Tests/CommerceConsole.Tests/Application/ProductServiceTests.cs`
+- `Tests/CommerceConsole.Tests/Infrastructure/JsonPersistenceTests.cs`
+- `Tests/CommerceConsole.Tests/Presentation/ProductDisplayHelperTests.cs`
 
-Coverage includes:
-- add validation
-- search behavior
-- update/delete/restock mutations
+Representative scenarios:
+- add/update/delete/restock correctness
+- search/filter behavior
 - low-stock threshold behavior
+- idempotent reseeding
+- paginated rendering and global index visibility
+
+## Quick Viva Script
+
+"Catalog workflows are orchestrated by `ProductService`, product invariants are enforced by the `Product` entity, and JSON persistence is handled by repository adapters. UI uses index-based selection for safer and cleaner user interaction without exposing internal IDs."

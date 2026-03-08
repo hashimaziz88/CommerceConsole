@@ -1,185 +1,93 @@
-# 04. Baseline Implementation Blueprint
+# 04. Submission 1 Implementation Blueprint
 
 ## Objective
 
-Deliver the full required system with Submission 2-quality engineering practices from the start:
-- complete feature scope
-- clean architecture
-- tests as work progresses
-- documentation kept current
+Deliver the full baseline scope with Submission 2-level quality practices from the beginning:
+- complete required features
+- clean architecture boundaries
+- regression tests updated as features evolve
+- documentation synchronized with implementation
 
-Monday (2026-03-09) is reserved for design pattern implementation only.
+Monday (2026-03-09) remains pattern-upgrade day only.
 
-## Build order
+## Execution phases
 
-### Phase 1 - bootstrap and architecture
-- Create solution and folder structure
-- Add domain entities and enums
-- Add custom exceptions
-- Add repository interfaces and in-memory implementations
-- Add seed data for products and admin account
-- Create test project and initial smoke tests
-- Create `docs/architecture.md` and `docs/test-plan.md`
+### Phase 1 - bootstrap
+- establish layered solution structure
+- add domain entities/enums/exceptions
+- add repository contracts and JSON-backed in-memory repositories
+- seed admin and starter catalog data
+- add smoke tests and starter docs
 
-### Phase 2 - authentication and role navigation
-- Registration flow
-- Login flow
-- Role-based routing to customer or administrator menus
-- Session tracking for current logged-in user
-- Add auth service tests
-- Update docs with auth flow and assumptions
+### Phase 2 - authentication and roles
+- customer registration
+- customer/admin login
+- session tracking
+- role-based routing to customer/admin menus
+- auth tests + auth flow docs
 
-### Phase 3 - product catalog
-- Browse products
-- Search products
-- Admin add/update/delete/restock products
-- View low-stock products
-- Add product service tests and repository tests
-- Update docs with catalog behavior and validation rules
+### Phase 3 - catalog management
+- browse/search active products
+- admin add/update/delete/restock/view products
+- low-stock listing
+- product tests + catalog docs
 
 ### Phase 4 - cart and wallet
-- Add to cart
-- View cart
-- Update cart quantity
-- Remove from cart
-- Add wallet funds
-- View balance
-- Add cart and wallet tests
-- Update docs with cart rules and wallet behavior
+- add/view/update/remove cart items
+- stock-aware cart validations
+- wallet balance + top-up
+- cart/wallet tests + docs
 
 ### Phase 5 - checkout and orders
-- Validate stock
-- Validate wallet funds
-- Debit wallet
-- Create payment record
-- Create order record
-- Reduce stock
-- Clear cart
-- Customer order history
-- Customer order tracking
-- Admin order viewing
-- Admin order status updates
-- Add order workflow tests (happy path and failure paths)
-- Update docs with checkout and status transition rules
+- wallet-only checkout
+- stock/funds validations
+- payment + order record creation
+- stock deduction + cart clear
+- order history + tracking + admin status updates
+- order tests + lifecycle docs
 
-### Phase 6 - reviews and reports
-- Customer review products
-- Product average rating display
-- Sales reports using LINQ
-- Revenue totals
-- Top products
-- Low-stock analytics
-- Add review/report tests with deterministic data fixtures
-- Update docs with report definitions and formulas
+### Phase 6 - reviews and reporting
+- review submission for purchased products only
+- average rating behavior
+- sales reporting via LINQ aggregates
+- review/report tests + docs
 
-### Phase 7 - hardening and release readiness
-- Improve validation messages
-- Protect against invalid menu input
-- Add helper methods for console formatting
-- Refactor long methods
-- Run full regression test pass
-- Complete user-facing and developer docs
-- Prepare release branch/tag for pattern day
+### Phase 7 - hardening and UX
+- input validation loops and boundary exception handling
+- consistent console helper usage
+- index-based selection UX across user/admin flows
+- no GUID exposure in presentation
+- regression + docs drift fix
 
-### Phase 8 - Monday pattern implementation (2026-03-09)
-- Implement Factory, Strategy, and State-oriented abstractions
-- Keep user-visible behavior unchanged
-- Add pattern-focused tests
-- Update docs with pattern rationale and trade-offs
+### Phase 8 - pattern day (Monday 2026-03-09)
+- introduce explicit Factory/Strategy/State-style abstractions
+- preserve behavior parity
+- add pattern-focused tests and docs delta
 
-## Menu design recommendation
+## Mandatory quality gates
 
-### Main menu
-1. Register
-2. Login
-3. Exit
+1. Menu handlers remain thin (routing/display only).
+2. `Program.cs` remains composition root only.
+3. Repositories use standalone model files (no nested classes).
+4. Mutable data persists to JSON where required.
+5. Tests updated in same feature change.
+6. Docs updated in same feature change.
 
-### Customer menu
-1. Browse Products
-2. Search Products
-3. Add Product to Cart
-4. View Cart
-5. Update Cart
-6. Checkout
-7. View Wallet Balance
-8. Add Wallet Funds
-9. View Order History
-10. Track Orders
-11. Review Products
-12. Logout
+## Baseline acceptance checklist
 
-### Administrator menu
-1. Add Product
-2. Update Product
-3. Delete Product
-4. Restock Product
-5. View Products
-6. View Orders
-7. Update Order Status
-8. View Low Stock Products
-9. Generate Sales Reports
-10. Logout
+- registration/login/role routing works
+- catalog operations work for both roles
+- cart and wallet rules enforce correctly
+- checkout updates wallet/stock/order/cart correctly
+- status transitions enforce allowed matrix only
+- reviews restricted to purchased products
+- reporting outputs expected aggregates
+- invalid input does not crash app
+- no user-facing internal IDs
+- all relevant tests pass
 
-## Example use-case flow: Checkout
+## Current status snapshot (as of 2026-03-08)
 
-1. Read current customer cart
-2. Ensure cart is not empty
-3. Re-fetch products for stock verification
-4. Validate every cart item against current stock
-5. Calculate total amount
-6. Ensure wallet balance is sufficient
-7. Deduct wallet funds
-8. Create payment record with status completed
-9. Create order with order item snapshot
-10. Reduce product inventory
-11. Save changes to repositories
-12. Clear cart
-13. Show success message and order summary
-
-## Exception strategy
-
-Create custom exceptions such as:
-- `ValidationException`
-- `AuthenticationException`
-- `NotFoundException`
-- `InsufficientFundsException`
-- `InsufficientStockException`
-- `DuplicateEmailException`
-
-Catch them in the presentation layer and show friendly console messages.
-
-## Validation checklist
-
-- no empty strings for names and categories
-- valid email format or basic email check
-- positive product price
-- non-negative stock quantity
-- valid numeric menu choices
-- valid product ID selection
-- quantity must be positive integer
-- wallet top-up amount must be positive
-- review rating must be 1-5
-
-## Minimum evidence of LINQ
-
-Use LINQ in at least these areas:
-- product search
-- product sorting
-- average product rating
-- customer order history
-- low-stock report
-- sales totals grouped by product
-
-## Baseline quality checklist
-
-Before sign-off confirm:
-- every menu item works
-- no unhandled crash on bad input
-- role separation works correctly
-- stock changes after checkout
-- wallet balance changes after checkout and top-up
-- reports run without errors
-- tests cover core domain and service workflows
-- docs reflect the actual behavior and architecture
-- code is organized by responsibility
-- class and method names are clear
+- Baseline phases 1-7: implemented
+- Bonus extensions (PDF export, insights, recommendations): implemented
+- Pattern day (phase 8): pending targeted refactor phase

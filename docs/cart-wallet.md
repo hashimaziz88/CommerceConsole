@@ -1,118 +1,152 @@
 # Cart and Wallet Workflows
 
-## Scope
+## Purpose
 
-This document explains Prompt 4 implementation for:
-- add/view/update cart
-- stock-aware cart quantity validation
-- remove cart item via zero quantity update
-- wallet balance view
-- wallet fund top-up
-- bounded numeric input and friendly menu-boundary exception handling
+This document details cart and wallet behavior, validation rules, persistence effects, and architecture ownership.
+
+## Architecture Ownership
+
+Presentation owns:
+- cart/menu navigation
+- index-based item selection
+- numeric input loops and confirmations
+
+Application owns:
+- cart workflow orchestration (`CartService`)
+- wallet workflow orchestration (`WalletService`)
+
+Domain owns:
+- cart mutation rules (`Cart`, `CartItem`)
+- wallet balance mutation rules (`Customer`)
+
+Infrastructure owns:
+- user persistence (`users.json`) for wallet/cart state
 
 ## Cart Workflow
 
-### Add to cart
+## 1. Add to Cart
 
-Input:
-- pick a product from a numbered active-product list
-- quantity (must be a positive integer)
+Entry:
+- customer selects product from numbered active-product list
 
 Rules:
 - customer must be valid
-- product must exist
-- product must be active
-- requested quantity + existing cart quantity must not exceed available stock
+- quantity must be > 0
+- product must exist and be active
+- requested quantity + existing cart quantity <= current stock
 
-Service:
-- `CartService.AddToCart(...)`
+Implementation:
+- `CartService.AddToCart(customer, productId, quantity)`
 
-Exceptions:
-- `ValidationException` for invalid customer, inactive product, or invalid quantity
-- `NotFoundException` if product does not exist
-- `InsufficientStockException` if stock threshold is exceeded
+Effects:
+- line is inserted or increased
+- user repository persists updated customer cart snapshot
 
-### View cart
+## 2. View Cart
 
-Service calls:
-- `CartService.GetCartItems(...)`
-- `CartService.GetCartTotal(...)`
+Calls:
+- `GetCartItems`
+- `GetCartTotal`
+- wallet balance retrieval for context
 
-Rendering:
-- handled by `Presentation/Helpers/CartDisplayHelper.cs`
+Display:
+- itemized rows with quantity, unit, subtotal
+- cart total and wallet balance
+- warning if wallet < cart total
 
-### Update cart quantity
+## 3. Update Cart Item Quantity
+
+Selection:
+- user selects cart line by index
+
+Rules:
+- quantity < 0 -> invalid
+- quantity == 0 -> remove item
+- quantity > stock -> invalid
+- quantity > 0 and <= stock -> update quantity
+
+Implementation:
+- `CartService.UpdateCartItem(...)`
+
+UX behavior:
+- remove operation prompts confirmation when quantity is zero
+
+## 4. Remove From Cart
 
 Behavior:
-- customer selects cart item by number (no internal identifier input)
-- quantity > 0 updates line quantity
-- quantity == 0 removes the item
-- quantity < 0 is rejected
-- requested quantity must not exceed current product stock
+- removal can happen explicitly or via update-to-zero path
+- operation persists in user repository
 
-Service:
-- `CartService.UpdateCartItem(...)`
+## 5. Cart Total Calculation
+
+Domain method:
+- `Cart.CalculateTotal()` sums line totals
+
+Reason this is domain-owned:
+- total is cart state behavior, not UI concern
 
 ## Wallet Workflow
 
-### View balance
+## 1. View Wallet Balance
 
-Service:
-- `WalletService.GetBalance(...)`
+Implementation:
+- `WalletService.GetBalance(customer)`
 
-### Add funds
+## 2. Add Wallet Funds
 
-Service:
-- `WalletService.AddFunds(...)`
+Implementation:
+- `WalletService.AddFunds(customer, amount)`
 
 Rules:
 - customer must be valid
-- amount must be greater than zero
-- balance update is persisted via user repository update
+- amount must be > 0 (`Customer.AddFunds` guard)
 
-Exceptions:
-- `ValidationException` on invalid customer or amount
+Persistence effect:
+- updated customer wallet balance is saved to `users.json`
 
-## Thin Presentation Design
+## Error/Exception Model
 
-Menus only:
-- collect input using numbered selections and bounded helpers from `ConsoleInputHelper`
-- call service methods
-- handle exceptions with friendly output through `MenuActionHelper`
+Possible exceptions:
+- `ValidationException` (invalid quantity/amount/customer, inactive product)
+- `NotFoundException` (missing product)
+- `InsufficientStockException` (stock violation)
 
-All cart/wallet business rules remain in services/domain.
+Boundary handling:
+- `MenuActionHelper` maps exceptions to friendly UI messages
 
-## Persistence Notes
+## Consistency Guarantees
 
-User repository persists:
-- wallet balance
-- cart item snapshots
+After successful cart/wallet mutation:
+- customer state is persisted immediately
+- next app run restores wallet and cart state from JSON
 
-File:
-- `data/users.json`
+If validation fails:
+- cart/wallet remain unchanged
+- no partial write should be introduced by service flow
 
-## Key Files
+## Index-Based UX Rules
 
-- `Application/Services/CartService.cs`
-- `Application/Services/WalletService.cs`
-- `Presentation/Menus/CustomerMenu.cs`
-- `Presentation/Helpers/ConsoleInputHelper.cs`
-- `Presentation/Helpers/MenuActionHelper.cs`
-- `Presentation/Helpers/CartDisplayHelper.cs`
-- `Infrastructure/Repositories/InMemoryUserRepository.cs`
+- users never type internal product IDs
+- cart operations select by rendered list index
+- selection range is validated before service calls
+
+This improves usability and keeps internal IDs private.
 
 ## Test Coverage
 
-Covered in:
+Main file:
 - `Tests/CommerceConsole.Tests/Application/CartWalletServiceTests.cs`
 
-Scenarios:
-- add-to-cart success
-- add-to-cart stock violation
-- add-to-cart null-customer guard
+Covered scenarios include:
+- add to cart success
+- stock overflow rejection
+- null-customer guard
 - update-to-zero removes item
-- update negative quantity rejection
-- update quantity stock violation
-- wallet top-up success + persistence
+- negative quantity rejection
+- quantity > stock rejection
+- wallet top-up success and persistence
 - wallet top-up validation failure
-- wallet balance null-customer guard
+
+## Quick Viva Script
+
+"Cart and wallet logic is kept out of menus. Menus only gather input and display output, while services and domain objects enforce stock, quantity, and balance rules. All mutable customer state is persisted through the user repository."

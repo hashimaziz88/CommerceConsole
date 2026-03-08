@@ -24,6 +24,7 @@ public sealed class JsonPersistenceTests
             InMemoryUserRepository userRepositoryFirstRun = new(dataDirectory);
             InMemoryProductRepository productRepositoryFirstRun = new(dataDirectory);
             SeedData.Seed(userRepositoryFirstRun, productRepositoryFirstRun);
+            int firstSeededProductCount = productRepositoryFirstRun.GetAll().Count;
 
             InMemoryUserRepository userRepositorySecondRun = new(dataDirectory);
             InMemoryProductRepository productRepositorySecondRun = new(dataDirectory);
@@ -33,8 +34,11 @@ public sealed class JsonPersistenceTests
                 .GetAll()
                 .Count(user => user.Role == UserRole.Administrator);
 
+            int secondSeededProductCount = productRepositorySecondRun.GetAll().Count;
+
             Assert.Equal(1, adminCount);
-            Assert.Equal(3, productRepositorySecondRun.GetAll().Count);
+            Assert.Equal(firstSeededProductCount, secondSeededProductCount);
+            Assert.True(secondSeededProductCount >= 10);
             Assert.True(File.Exists(Path.Combine(dataDirectory, "users.json")));
             Assert.True(File.Exists(Path.Combine(dataDirectory, "products.json")));
         }

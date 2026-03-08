@@ -56,4 +56,23 @@ public static class ReportDisplayHelper
             }
         }
     }
+
+    /// <summary>
+    /// Displays heuristic admin insights.
+    /// </summary>
+    public static void ShowInsights(IReadOnlyList<string> insights)
+    {
+        ConsoleTheme.WriteSection("Smart Insights");
+
+        if (insights.Count == 0)
+        {
+            ConsoleTheme.WriteInfo("No insights available right now.");
+            return;
+        }
+
+        for (int index = 0; index < insights.Count; index++)
+        {
+            Console.WriteLine($"{index + 1}. {insights[index]}");
+        }
+    }
 }

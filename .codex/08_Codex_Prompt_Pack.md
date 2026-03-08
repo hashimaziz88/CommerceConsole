@@ -1,8 +1,10 @@
 # 08. Codex Prompt Pack
 
-Use the following prompts with ChatGPT Codex or any coding agent. Paste one prompt at a time.
+Use these prompts with Codex or similar coding agents.
 
-Prompt-to-issue mapping:
+## Prompt-to-issue mapping
+
+Core milestone mapping:
 - Prompt 1 -> Issue 1
 - Prompt 2 -> Issue 2
 - Prompt 3 -> Issue 3
@@ -13,7 +15,12 @@ Prompt-to-issue mapping:
 - Prompt 8 -> Issue 8
 - Prompt 9 -> Issue 9
 
-## Prompt 1 - Bootstrap clean solution architecture with tests and docs scaffolding
+Extension prompts (post-issue enhancement prompts):
+- Prompt 10 -> terminal UX enhancement
+- Prompt 11 -> bonus features above Submission 1
+- Prompt 12 -> full documentation expansion for demo/viva
+
+## Prompt 1 - Bootstrap solution architecture
 
 ```text
 Create a C# console application called CommerceConsole for an Online Shopping Backend System.
@@ -43,11 +50,11 @@ Rules:
 - Use comments on classes and public methods
 - Keep classes small and responsibilities clear
 - Use guard clauses and meaningful names
-- Add short starter notes in docs/architecture.md and docs/test-plan.md
-- Add short starter notes in docs/oop-design-notes.md covering access modifiers, static usage, polymorphism, SoC, and inheritance choices
+- Add starter notes in docs/architecture.md and docs/test-plan.md
+- Add starter notes in docs/oop-design-notes.md covering access modifiers, static usage, polymorphism, SoC, and inheritance choices
 ```
 
-## Prompt 2 - Implement registration, login, and role-based navigation with tests
+## Prompt 2 - Registration, login, role routing
 
 ```text
 Implement registration and login for the CommerceConsole project.
@@ -66,11 +73,9 @@ Requirements:
 Also:
 - Add service tests for registration/login scenarios
 - Update docs with auth flow and assumptions
-
-Return code for required services, repositories, menu integration, and tests.
 ```
 
-## Prompt 3 - Build product browsing, searching, and admin catalog management
+## Prompt 3 - Product catalog and admin management
 
 ```text
 Implement product browsing, searching, and administrator product management.
@@ -98,7 +103,7 @@ Also:
 - Update docs with product rules and low-stock behavior
 ```
 
-## Prompt 4 - Implement shopping cart and wallet workflows
+## Prompt 4 - Cart and wallet workflows
 
 ```text
 Implement cart and wallet workflows for the CommerceConsole project.
@@ -116,13 +121,14 @@ Rules:
 - Keep presentation layer thin
 - Use custom exceptions for invalid operations
 - Keep cart and wallet logic in services/domain, not menus
+- Use index-based item selection (no GUID typing in user flows)
 
 Also:
 - Add tests for cart mutations and wallet top-up validation
 - Update docs with cart and wallet behavior
 ```
 
-## Prompt 5 - Add checkout, payments, and order processing
+## Prompt 5 - Checkout, payments, order processing
 
 ```text
 Implement checkout, payment simulation, and order processing for the CommerceConsole project.
@@ -146,7 +152,7 @@ Also:
 - Update docs with checkout behavior and invariants
 ```
 
-## Prompt 6 - Implement order history, tracking, and admin order status updates
+## Prompt 6 - Order history, tracking, admin status updates
 
 ```text
 Implement order management views and status updates for the CommerceConsole project.
@@ -161,13 +167,14 @@ Requirements:
 Rules:
 - Keep transition rules centralized
 - Keep menu handlers thin and focused on routing/display
+- Keep status selection index-based and user-friendly
 
 Also:
 - Add tests for valid and invalid order status transitions
 - Update docs with order lifecycle rules
 ```
 
-## Prompt 7 - Add reviews, reporting, and documentation alignment
+## Prompt 7 - Reviews and reporting
 
 ```text
 Implement product review and reporting features for the CommerceConsole project.
@@ -175,6 +182,8 @@ Implement product review and reporting features for the CommerceConsole project.
 Requirements:
 - Customers can add reviews with rating and comment
 - Review rating must be between 1 and 5
+- Users can review only products they purchased
+- Review menu should display only purchased products
 - Show average product rating using LINQ
 - Generate sales reports for admin using LINQ
 - Include total revenue, orders by status, best-selling products, and low-stock products
@@ -182,11 +191,9 @@ Requirements:
 Also:
 - Add tests for review validation and report calculations
 - Update docs with report definitions and examples
-
-Keep code modular and ready for future strategy extraction.
 ```
 
-## Prompt 8 - Complete quality hardening (validation, exceptions, UX, tests, docs)
+## Prompt 8 - Quality hardening pass
 
 ```text
 Perform a quality-hardening pass on CommerceConsole.
@@ -203,7 +210,7 @@ Focus areas:
 Then provide a focused improvement patch with code, tests, and docs updates.
 ```
 
-## Prompt 9 - Monday design-pattern implementation (no feature expansion)
+## Prompt 9 - Monday design pattern implementation
 
 ```text
 Implement design patterns in the CommerceConsole project on top of existing behavior.
@@ -223,6 +230,62 @@ Constraints:
 - Do not over-engineer the solution
 ```
 
+## Prompt 10 - Terminal UX enhancement
 
+```text
+Improve the current terminal UX of CommerceConsole without breaking layered architecture, service boundaries, persistence behavior, or baseline functionality.
 
+Goals:
+- cleaner menu framing and grouped actions
+- consistent section headers, breadcrumbs, spacing, separators
+- stronger index-based selection UX
+- friendly empty states and invalid-input recovery loops
+- confirmation prompts for destructive/high-impact actions
+- cleaner rendering for products/cart/orders/reports
+- role-aware landing screens and demo polish
 
+Constraints:
+- no business logic in presentation
+- no repository calls from menus
+- no internal IDs in user-facing screens
+- preserve current service contracts and tests unless legitimately updated
+```
+
+## Prompt 11 - Bonus features above Submission 1
+
+```text
+Design and implement bonus features that sit above Submission 1 scope without destabilizing the baseline.
+
+Preferred candidates:
+- PDF sales report export behind IReportExporter
+- heuristic AI-style insights/recommendations service
+- richer filtering/analytics outputs
+- lightweight audit-style activity log
+
+Constraints:
+- keep architecture clean and modular
+- keep bonus features optional and low-risk
+- preserve baseline behavior
+- add tests and docs for bonus behavior
+```
+
+## Prompt 12 - Full documentation expansion for demo and viva
+
+```text
+Expand and deepen the documentation into a study pack for demo, viva, and rubric defense.
+
+Must cover:
+- folder structure rationale
+- access modifiers and encapsulation choices
+- class shape rationale (abstract/sealed/static/records)
+- current design pattern mapping with trade-offs
+- redesign-friendly architecture path for Submission 2
+- likely viva questions with model answers and quick scripts
+
+Outputs:
+- enhanced README/architecture/oop/pattern docs
+- folder rationale doc
+- access/class-design doc
+- demo study guide
+- viva Q&A doc
+```
