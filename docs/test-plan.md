@@ -2,7 +2,7 @@
 
 ## Goal
 
-Ensure core authentication, product catalog workflows, cart/wallet workflows, checkout/order processing behavior, order lifecycle transitions, review/report calculations, domain safety checks, and persistence behavior are correct and stable while features are incrementally added.
+Ensure core authentication, catalog, cart/wallet, checkout/order lifecycle, reviews/reporting, persistence, and presentation input handling remain correct and stable while features evolve.
 
 ## Test Projects and Structure
 
@@ -13,6 +13,7 @@ Current test folders:
 - `Tests/CommerceConsole.Tests/Domain`
 - `Tests/CommerceConsole.Tests/Application`
 - `Tests/CommerceConsole.Tests/Infrastructure`
+- `Tests/CommerceConsole.Tests/Presentation`
 
 ## Current Coverage Summary
 
@@ -37,19 +38,26 @@ Current test folders:
 - low-stock filtering by threshold
 - cart add success
 - cart add stock violation
+- cart null-customer guard
 - cart update-to-zero removal
+- cart negative quantity rejection
 - cart update stock violation
 - wallet top-up success + persistence
 - wallet top-up validation failure
+- wallet null-customer guard
 - checkout happy path (wallet debit + stock deduction + order/payment creation + cart clear)
 - checkout failure on insufficient funds
 - checkout failure on insufficient stock
 - checkout failure on missing product in cart
 - checkout snapshot integrity for order items
+- customer-order lookup empty-ID guard
+- status update empty-ID guard
 - valid order status transition sequence
 - invalid order status transition rejection
 - terminal-state transition rejection
 - review add success + persistence + average rating
+- review blocked for unpurchased product
+- reviewable-products list contains purchased products only
 - review rating validation failure
 - report total revenue calculation
 - report orders-by-status calculation
@@ -61,11 +69,18 @@ Current test folders:
 - idempotent reseeding behavior
 - persisted user reload across repository instances
 
+### Presentation tests
+- menu selection range validation/retry behavior
+- positive integer input retry behavior
+- non-negative integer input behavior
+- positive decimal input retry behavior
+- invalid input-range configuration guard
+
 ## Test Data Strategy
 
-- each auth/product/cart/wallet/checkout/order-transition/review/report/persistence test creates its own temporary data directory
+- each test creates its own temporary data directory where repository persistence is involved
 - tests clean up temp directories after execution
-- this avoids shared state and file-lock collisions
+- console input tests isolate `Console.In`/`Console.Out` per case with synchronization
 
 ## How to Run
 
@@ -75,11 +90,11 @@ Current test folders:
 ## Current Risks and Gaps
 
 Not yet covered (planned in next phases):
-- menu-driven input parsing behavior tests
-- full end-to-end console interaction regression suite
+- full end-to-end interactive console script regression suite
 - advanced reporting variants (future strategy extraction)
+- multi-process file concurrency behavior
 
 ## Expansion Plan by Issue
 
-- Issue 8: regression and edge-case hardening tests
-- Issue 9: design-pattern parity tests
+- Issue 8: continue regression and edge-case hardening as behavior evolves
+- Issue 9: add explicit design-pattern parity tests

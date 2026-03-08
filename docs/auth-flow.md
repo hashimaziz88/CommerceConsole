@@ -20,7 +20,7 @@ This seed record is persisted in `data/users.json`.
 
 ## Registration Flow
 
-1. User selects `Register` in `MainMenu`.
+1. User selects `Register` in `MainMenu` (bounded menu selection parsing).
 2. UI captures full name, email, and password.
 3. `AuthService.RegisterCustomer(...)` validates:
 - non-empty full name
@@ -31,20 +31,20 @@ This seed record is persisted in `data/users.json`.
 5. On success, new `Customer` is saved and persisted.
 6. UI prints a success message.
 
-Exceptions surfaced to UI:
+Exceptions surfaced to UI through `MenuActionHelper`:
 - `ValidationException`
 - `DuplicateEmailException`
 
 ## Login Flow
 
-1. User selects `Login` in `MainMenu`.
+1. User selects `Login` in `MainMenu` (bounded menu selection parsing).
 2. UI captures email and password.
 3. `AuthService.Login(...)` validates non-empty inputs.
 4. Repository lookup confirms user exists and password matches.
 5. On success, `SessionContext.SignIn(...)` stores current user.
 6. Main menu routes by role.
 
-Exceptions surfaced to UI:
+Exceptions surfaced to UI through `MenuActionHelper`:
 - `ValidationException`
 - `AuthenticationException`
 
@@ -80,4 +80,5 @@ These are acceptable for current console coursework scope and can be upgraded la
 - Service logic: `Application/Services/AuthService.cs`
 - Session state: `Application/Services/SessionContext.cs`
 - UI routing: `Presentation/Menus/MainMenu.cs`
+- Menu boundary handling: `Presentation/Helpers/MenuActionHelper.cs`
 - Admin bootstrap: `Infrastructure/Data/SeedData.cs`
