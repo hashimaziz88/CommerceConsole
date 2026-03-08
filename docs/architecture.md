@@ -25,6 +25,9 @@ Current classes:
 - `Presentation/Helpers/ReportDisplayHelper.cs`
 - `Presentation/Helpers/ConsoleInputHelper.cs`
 - `Presentation/Helpers/MenuActionHelper.cs`
+- `Presentation/Helpers/ConsoleTheme.cs`
+- `Presentation/Helpers/MenuFrameRenderer.cs`
+- `Presentation/Helpers/ConfirmationPrompt.cs`
 
 Rules followed:
 - no repository access from menus
@@ -32,6 +35,8 @@ Rules followed:
 - no exposure of internal identifiers in user-facing screens
 - menu options use bounded numeric selection parsing
 - exception handling is centralized through `MenuActionHelper`
+- menu layout framing is centralized through `MenuFrameRenderer`
+- confirmations use `ConfirmationPrompt` and consistent theming uses `ConsoleTheme`
 
 ### Application layer
 
@@ -198,6 +203,17 @@ Implemented hardening updates:
 - menu option handling switched to bounded numeric parsing instead of raw string switches
 - additional service guard clauses for null customer and empty-ID cases (`CartService`, `WalletService`, `OrderService`)
 - regression tests extended for helper parsing and new guard paths
+
+## Terminal UX Enhancement Additions (Prompt 10)
+
+Implemented UX-focused presentation improvements:
+- framed menus with breadcrumb-style paths and grouped action sections
+- consistent message conventions (`[INFO]`, `[OK]`, `[WARN]`, `[ERROR]`, `[TIP]`)
+- confirmation prompts before destructive or high-impact actions (delete, checkout, status updates, exit)
+- improved product/cart/order/report rendering for demo readability
+- optional pause points between menu actions for guided walkthroughs
+- role-aware workspace headers and welcome banner
+
 ## Persistence Design
 
 Persisted files:

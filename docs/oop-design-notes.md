@@ -248,14 +248,28 @@ Why:
 
 `ConsoleInputHelper` has dedicated methods:
 - `ReadRequiredString`
-- `ReadDecimal`
-- `ReadInt`
+- `ReadDecimal`, `ReadPositiveDecimal`, `ReadNonNegativeDecimal`
+- `ReadInt`, `ReadPositiveInt`, `ReadNonNegativeInt`, `ReadIntInRange`
 - `ReadSelection`
 
 Why:
 - centralizes parsing/validation loops
 - removes duplicated input logic from menus
 - supports secure index-based selection UX
+- keeps menu handlers small while improving recovery from invalid input
+
+### Presentation UX helper specialization
+
+The presentation layer now uses focused static helpers for UX concerns:
+- `ConsoleTheme` for message tone, banners, section headers, separators, and pause behavior
+- `MenuFrameRenderer` for consistent menu framing and breadcrumb-like context
+- `ConfirmationPrompt` for reusable yes/no confirmation loops
+- `MenuActionHelper` for boundary exception-to-message mapping
+
+Why:
+- enforces separation of concerns (UX mechanics remain presentation-only)
+- removes duplicated formatting/prompt code across menus
+- improves demo polish without moving business rules out of application/domain
 
 ### Compiled regex for email validation
 
@@ -410,7 +424,7 @@ This keeps domain/application free from console concerns while still producing g
 
 ## Trade-offs and Current Limitations
 
-- `OrderService.Checkout(...)` remains a placeholder pending Issue 5.
+- terminal UX helper flow is console-focused and intentionally avoids external UI frameworks.
 - Session state is in-memory process state only.
 - Repository persistence is single-process oriented (no cross-process locking policy).
 

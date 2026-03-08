@@ -9,6 +9,13 @@ namespace CommerceConsole.Presentation.Menus;
 /// </summary>
 public sealed class MainMenu
 {
+    private static readonly IReadOnlyList<string> MenuOptions = new List<string>
+    {
+        "1. Register New Customer",
+        "2. Login",
+        "3. Exit Application"
+    };
+
     private readonly IAuthService _authService;
     private readonly ISessionContext _sessionContext;
     private readonly CustomerMenu _customerMenu;
@@ -35,11 +42,18 @@ public sealed class MainMenu
     public void Run()
     {
         bool exitRequested = false;
+        bool bannerShown = false;
 
         while (!exitRequested)
         {
+            if (!bannerShown)
+            {
+                ConsoleTheme.WriteBanner("CommerceConsole", "Online Shopping Backend Demo Experience");
+                bannerShown = true;
+            }
+
             ShowMenuOptions();
-            int selection = ConsoleInputHelper.ReadSelection("Select an option: ", 3);
+            int selection = ConsoleInputHelper.ReadSelection("Choose option (1-3): ", 3);
 
             switch (selection)
             {
@@ -50,40 +64,58 @@ public sealed class MainMenu
                     MenuActionHelper.Execute(LoginAndRoute);
                     break;
                 case 3:
-                    exitRequested = true;
+                    if (ConfirmationPrompt.AskYesNo("Exit CommerceConsole now?", false))
+                    {
+                        exitRequested = true;
+                        ConsoleTheme.WriteInfo("Session ended. Goodbye.");
+                    }
+                    else
+                    {
+                        ConsoleTheme.WriteInfo("Exit cancelled.");
+                    }
+
                     break;
             }
 
-            Console.WriteLine();
+            if (!exitRequested)
+            {
+                ConsoleTheme.Pause();
+            }
         }
     }
 
     private static void ShowMenuOptions()
     {
-        Console.WriteLine("=== Commerce Console ===");
-        Console.WriteLine("1. Register");
-        Console.WriteLine("2. Login");
-        Console.WriteLine("3. Exit");
+        MenuFrameRenderer.ShowMenu(
+            "Main Menu",
+            "Home",
+            MenuOptions,
+            "Use number selection. Register or login to access role-based workspaces.");
     }
 
     private void RegisterCustomer()
     {
+        ConsoleTheme.WriteSection("Register Customer");
+        ConsoleTheme.WriteHint("Example email format: learner@example.com");
+
         string fullName = ConsoleInputHelper.ReadRequiredString("Full name: ");
         string email = ConsoleInputHelper.ReadRequiredString("Email: ");
         string password = ConsoleInputHelper.ReadRequiredString("Password: ");
 
         _authService.RegisterCustomer(fullName, email, password);
-        Console.WriteLine("Registration successful. You can now log in.");
+        ConsoleTheme.WriteSuccess("Registration successful. You can now log in.");
     }
 
     private void LoginAndRoute()
     {
+        ConsoleTheme.WriteSection("Login");
+
         string email = ConsoleInputHelper.ReadRequiredString("Email: ");
         string password = ConsoleInputHelper.ReadRequiredString("Password: ");
 
         var user = _authService.Login(email, password);
         _sessionContext.SignIn(user);
-        Console.WriteLine($"Welcome, {user.FullName} ({user.Role}).");
+        ConsoleTheme.WriteSuccess($"Welcome, {user.FullName} ({user.Role}).");
         RouteByRole();
     }
 
@@ -97,13 +129,15 @@ public sealed class MainMenu
         switch (_sessionContext.CurrentUser.Role)
         {
             case UserRole.Customer:
+                ConsoleTheme.WriteInfo("Opening customer workspace...");
                 _customerMenu.Run(_sessionContext);
                 break;
             case UserRole.Administrator:
+                ConsoleTheme.WriteInfo("Opening administrator workspace...");
                 _adminMenu.Run(_sessionContext);
                 break;
             default:
-                Console.WriteLine("Unsupported user role.");
+                ConsoleTheme.WriteWarning("Unsupported user role. Signing out.");
                 _sessionContext.SignOut();
                 break;
         }

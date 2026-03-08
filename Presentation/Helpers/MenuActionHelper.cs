@@ -18,31 +18,31 @@ public static class MenuActionHelper
         }
         catch (ValidationException ex)
         {
-            Console.WriteLine($"Validation error: {ex.Message}");
+            ConsoleTheme.WriteError($"Validation: {ex.Message}");
         }
         catch (DuplicateEmailException ex)
         {
-            Console.WriteLine($"Registration error: {ex.Message}");
+            ConsoleTheme.WriteError($"Registration: {ex.Message}");
         }
         catch (AuthenticationException ex)
         {
-            Console.WriteLine($"Login error: {ex.Message}");
+            ConsoleTheme.WriteError($"Login: {ex.Message}");
         }
         catch (NotFoundException ex)
         {
-            Console.WriteLine($"Not found: {ex.Message}");
+            ConsoleTheme.WriteError($"Not found: {ex.Message}");
         }
         catch (InsufficientStockException ex)
         {
-            Console.WriteLine($"Stock error: {ex.Message}");
+            ConsoleTheme.WriteError($"Stock: {ex.Message}");
         }
         catch (InsufficientFundsException ex)
         {
-            Console.WriteLine($"Funds error: {ex.Message}");
+            ConsoleTheme.WriteError($"Funds: {ex.Message}");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Unexpected error: {ex.Message}");
+            ConsoleTheme.WriteError("Unexpected error occurred. Please try again.");
         }
     }
 }
