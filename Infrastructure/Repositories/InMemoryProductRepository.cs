@@ -1,5 +1,6 @@
 using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Domain.Entities;
+using CommerceConsole.Domain.Specifications;
 using CommerceConsole.Infrastructure.Persistence;
 using CommerceConsole.Infrastructure.Repositories.Models;
 
@@ -84,6 +85,13 @@ public sealed class InMemoryProductRepository : IProductRepository
             _products.Remove(existing);
             Persist();
         }
+    }
+
+    /// <inheritdoc />
+    public List<Product> Find(ISpecification<Product> specification)
+    {
+        ArgumentNullException.ThrowIfNull(specification);
+        return _products.Where(specification.IsSatisfiedBy).ToList();
     }
 
     private List<Product> LoadProducts()

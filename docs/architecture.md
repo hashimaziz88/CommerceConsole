@@ -2,226 +2,129 @@
 
 ## Purpose
 
-This document explains exactly what architectural style CommerceConsole uses, why the folders are arranged this way, and how to defend these choices in a demo or viva.
-
-If you only remember one line, remember this:
-
-"CommerceConsole is a layered, DDD-inspired console architecture with rich domain entities, service-layer orchestration, and infrastructure adapters for persistence/export concerns."
+This document explains CommerceConsole architecture and how the Monday Submission 2 refactor changed extension points while preserving behavior.
 
 ## Architecture Identity
 
-## Is this Domain-Driven Design (DDD)?
+CommerceConsole remains:
+- Layered architecture
+- DDD-inspired (rich domain + invariants)
+- not full tactical DDD
 
-Short answer:
-- **Partly yes (DDD-inspired)**
-- **Not full tactical DDD**
+Layer boundaries are unchanged:
+- Presentation -> Application -> Domain
+- Infrastructure implements application contracts and persists data
 
-What is DDD-like in this project:
-- business language is explicit in domain types (`Customer`, `Order`, `Payment`, `Review`)
-- invariants live in the model (constructor/mutator guard clauses)
-- behavior is attached to entities (`Product.Restock`, `Customer.DebitFunds`, `Cart.UpdateQuantity`)
-- application services express use cases, not raw CRUD scripts
+## Monday Refactor Delta (What Changed)
 
-What is not yet full tactical DDD:
-- no explicit aggregate root boundaries formally modeled
-- no domain events
-- no dedicated value-object catalog
-- no bounded-context split
-- repository contracts are in `Application/Interfaces` for pragmatic coursework layering
+The Monday work formalized five missing pattern areas:
+1. Factory for role/workspace routing
+2. Strategy for payment processing (wallet)
+3. State-style transition policies for order lifecycle
+4. Command for menu action dispatch
+5. Specification pattern for reusable query rules
 
-Conclusion:
-- This is best described as **Layered Architecture + Rich Domain Model + DDD-inspired modeling discipline**.
+What did not change:
+- business scope
+- persistence format contracts (JSON files)
+- no-GUID user-facing UX rule
+- service/domain responsibility split
 
-## Architectural Style in Practical Terms
+## Current Layer Responsibilities
 
-Primary style:
-- Layered architecture with inward dependency flow
+## Presentation
 
-Supporting principles:
-- separation of concerns
-- composition root wiring
-- repository abstraction
-- explicit mapping between domain and persistence models
+Now contains:
+- menus
+- render/input helpers
+- command abstractions (`IMenuCommand`, dispatcher)
+- workspace abstractions and role factory
 
-Dependency direction:
+Still must not contain:
+- repository access
+- business-policy logic
 
-```text
-Presentation -> Application -> Domain
-Infrastructure -> (implements Application interfaces, uses Domain)
-Domain -> (no dependency on higher layers)
-```
+## Application
 
-## Layer Responsibilities (With Real Project Examples)
+Now contains:
+- service orchestration
+- payment strategy contracts/implementation
+- order transition state contracts/factory
 
-## 1. Presentation Layer
-
-Folders:
-- `Presentation/Menus`
-- `Presentation/Helpers`
-
-Responsible for:
-- user navigation
-- input parsing and retry loops
-- index-based selection UX
-- user-facing messaging and formatting
-
-Must never do:
-- direct repository calls
-- business-policy decisions (stock, funds, lifecycle rules)
-- persistence/file/export behavior
-
-Examples:
-- `MainMenu` routes by authenticated role
-- `CustomerMenu` and `AdminMenu` only call services
-- `MenuActionHelper` catches exceptions at boundary
-
-## 2. Application Layer
-
-Folders:
-- `Application/Interfaces`
-- `Application/Services`
-- `Application/Models`
-
-Responsible for:
-- use-case orchestration
-- cross-entity workflow rules
-- querying, filtering, and aggregation logic
-- defining contracts for repositories and services
-
-Must never do:
+Still must not contain:
 - console I/O
-- direct JSON/file operations
+- low-level file persistence
 
-Examples:
-- `OrderService.Checkout` orchestrates checkout invariants and persistence writes
-- `ReviewService` enforces purchased-only review eligibility
-- `ReportService` computes revenue/status/best-seller/low-stock outputs via LINQ
+## Domain
 
-## 3. Domain Layer
+Now contains:
+- entities, enums, exceptions
+- specification contracts and product specifications
 
-Folders:
-- `Domain/Entities`
-- `Domain/Enums`
-- `Domain/Exceptions`
+Still must not contain:
+- repository implementation
+- presentation concerns
 
-Responsible for:
-- core business concepts
-- invariants and safe state transition methods
-- domain-specific error types
+## Infrastructure
 
-Must never do:
-- repository/file interactions
-- UI rendering/input
-- export formatting
+Now contains:
+- repository implementations including `Find(spec)` support
+- JSON persistence utilities
+- data mapping and exporter adapter
 
-Examples:
-- `Product` blocks negative price/stock
-- `Review` blocks ratings outside 1..5
-- `Cart` controls add/update/remove behavior
+## Composition Root
 
-## 4. Infrastructure Layer
-
-Folders:
-- `Infrastructure/Repositories`
-- `Infrastructure/Repositories/Models`
-- `Infrastructure/Persistence`
-- `Infrastructure/Data`
-- `Infrastructure/Export`
-
-Responsible for:
-- repository implementations
-- JSON storage mechanics
-- mapping between records and domain entities
-- seed data bootstrap
-- report export adapter implementation
-
-Must never do:
-- console interaction
-- core business orchestration
-
-Examples:
-- `InMemoryProductRepository` persists mutable catalog to `products.json`
-- `JsonFileStore` handles safe temp-file writes
-- `PdfReportExporter` generates PDF output from report snapshot
-
-## Composition Root and Runtime Wiring
-
-`Program.cs` is the composition root.
-
-Startup flow:
-1. Build repository instances.
-2. Seed missing admin/products.
-3. Build application services with constructor injection.
-4. Build menus with injected services.
-5. Run `MainMenu` loop.
-
-Why this matters:
-- no hidden object creation across menus
-- dependency graph is easy to read and explain
-- test setup mirrors production wiring cleanly
-
-## Folder and Naming Strategy
-
-Folder naming intent:
-- names represent responsibility, not technology hype
-- each folder is a boundary with "allowed" and "not allowed" behaviors
-
-Class naming intent:
-- contracts start with `I` (`IOrderService`, `IProductRepository`)
-- orchestration types end with `Service`
-- adapter implementations are explicit (`InMemory*Repository`, `PdfReportExporter`)
-- persistence transport types end in `Record`
-- read/report transport types use `*Item` and `*Snapshot`
+`Program.cs` now wires:
+- repositories
+- services
+- payment strategy
+- transition state factory
+- role/menu factory
+- menus and main menu
 
 Benefit:
-- reviewers can infer class purpose from name before reading code
-- onboarding becomes faster and less error-prone
+- new abstractions are still assembled in one place.
 
-## Why GUIDs Are Hidden in UI but Used Internally
+## Pattern-Driven Flow Examples
 
-Internally:
-- GUIDs provide identity stability and persistence safety.
+## Login and role routing
 
-User-facing screens:
-- only index-based selection is shown.
+- `MainMenu` authenticates user
+- role resolution uses `IRoleMenuFactory`
+- returned `IUserWorkspace` runs role-specific menu
 
-Why:
-- improves usability
-- avoids exposing internal identifiers
-- keeps workflows demo-friendly and less error-prone
+## Checkout
 
-## Architecture Constraints (Guardrails)
+- `OrderService` validates cart and stock
+- payment processing delegated to `IPaymentStrategy`
+- status transition rules resolved from state policy objects
+- order persisted and cart cleared
 
-Hard constraints enforced by standards:
-1. Menus do not call repositories.
-2. Menus do not host business rules.
-3. Domain state mutations go through validated methods.
-4. Repository record classes are separate files (no nested class anti-pattern).
-5. Mutable runtime data persists in JSON stores.
-6. Docs and tests must evolve when behavior changes.
+## Catalog/report filtering
 
-## Trade-Offs and Why They Are Acceptable
+- service query logic uses repository `Find(spec)` with domain specifications
 
-Trade-off 1: JSON over database
-- Pro: simple setup, deterministic demos, low operational overhead.
-- Con: limited concurrency controls and migration strategy.
+## Why this architecture is now more robust
 
-Trade-off 2: plain-text passwords in scope
-- Pro: keeps focus on architecture and workflow delivery.
-- Con: not production security posture.
+- less switch-heavy routing/dispatch logic
+- cleaner algorithm variation points
+- reusable, composable filtering rules
+- transition policy classes easier to extend and test
 
-Trade-off 3: centralized transition map in service
-- Pro: simple and testable now.
-- Con: eventually better extracted to State-style policy objects.
+## Trade-offs introduced
 
-## How This Architecture Supports Submission 2
+- more abstractions/classes to maintain
+- slightly larger wiring surface in composition root
 
-Ready seams already present:
-- Factory: role/menu creation can move from switch logic to factory classes.
-- Strategy: export/payment choices can be plugged via interfaces.
-- State-style transitions: lifecycle map can be extracted to transition handlers.
-- Persistence swap: repository contracts isolate data-store replacement risk.
+These trade-offs are intentional for extensibility and architecture marks.
 
-## Quick Viva Defense Script
+## Guardrails still enforced
 
-"The architecture is layered and intentionally strict: Presentation handles interaction, Application orchestrates use cases, Domain protects business invariants, and Infrastructure owns technical details like JSON persistence and PDF export. It is DDD-inspired through rich entities and explicit business language, but not full tactical DDD yet."
+- menus do not call repositories
+- business rules stay in domain/application
+- no internal GUID exposure in UI
+- docs and tests updated alongside behavior refactors
+
+## Quick Viva Script
+
+"The Monday refactor preserved layered boundaries but formalized key extension seams. Role routing is factory-driven, payment is strategy-driven, lifecycle transitions are state-policy-driven, menu dispatch is command-driven, and filtering is specification-driven. Behavior remained stable while extensibility improved significantly."

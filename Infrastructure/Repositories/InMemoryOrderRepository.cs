@@ -1,6 +1,7 @@
 using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
+using CommerceConsole.Domain.Specifications;
 using CommerceConsole.Infrastructure.Persistence;
 using CommerceConsole.Infrastructure.Repositories.Models;
 
@@ -70,6 +71,13 @@ public sealed class InMemoryOrderRepository : IOrderRepository
             _orders.Remove(existing);
             Persist();
         }
+    }
+
+    /// <inheritdoc />
+    public List<Order> Find(ISpecification<Order> specification)
+    {
+        ArgumentNullException.ThrowIfNull(specification);
+        return _orders.Where(specification.IsSatisfiedBy).ToList();
     }
 
     private List<Order> LoadOrders()

@@ -10,30 +10,27 @@ namespace CommerceConsole.Application.Services;
 /// </summary>
 public sealed class OrderService : IOrderService
 {
-    private const string WalletPaymentMethod = "Wallet";
-
-    private static readonly Dictionary<OrderStatus, IReadOnlyList<OrderStatus>> AllowedTransitions = new()
-    {
-        [OrderStatus.Pending] = new[] { OrderStatus.Paid, OrderStatus.Cancelled },
-        [OrderStatus.Paid] = new[] { OrderStatus.Processing, OrderStatus.Cancelled },
-        [OrderStatus.Processing] = new[] { OrderStatus.Shipped, OrderStatus.Cancelled },
-        [OrderStatus.Shipped] = new[] { OrderStatus.Delivered },
-        [OrderStatus.Delivered] = Array.Empty<OrderStatus>(),
-        [OrderStatus.Cancelled] = Array.Empty<OrderStatus>()
-    };
-
     private readonly IOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IPaymentStrategy _paymentStrategy;
+    private readonly IOrderTransitionStateFactory _transitionStateFactory;
 
     /// <summary>
     /// Initializes the order service.
     /// </summary>
-    public OrderService(IOrderRepository orderRepository, IProductRepository productRepository, IUserRepository userRepository)
+    public OrderService(
+        IOrderRepository orderRepository,
+        IProductRepository productRepository,
+        IUserRepository userRepository,
+        IPaymentStrategy paymentStrategy,
+        IOrderTransitionStateFactory transitionStateFactory)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
         _userRepository = userRepository;
+        _paymentStrategy = paymentStrategy;
+        _transitionStateFactory = transitionStateFactory;
     }
 
     /// <inheritdoc />
@@ -53,23 +50,15 @@ public sealed class OrderService : IOrderService
         List<ProductCheckoutLine> checkoutLines = BuildCheckoutLines(cartItems);
 
         decimal totalAmount = customer.Cart.CalculateTotal();
-        if (customer.WalletBalance < totalAmount)
-        {
-            throw new InsufficientFundsException("Insufficient wallet funds for checkout.");
-        }
-
         Guid orderId = Guid.NewGuid();
-        Payment payment = new(Guid.NewGuid(), orderId, totalAmount, WalletPaymentMethod);
 
-        customer.DebitFunds(totalAmount);
+        Payment payment = _paymentStrategy.Process(customer, orderId, totalAmount);
 
         foreach (ProductCheckoutLine line in checkoutLines)
         {
             line.Product.ReduceStock(line.Quantity);
             _productRepository.Update(line.Product);
         }
-
-        payment.MarkCompleted();
 
         List<OrderItem> orderItems = cartItems.Select(item =>
             new OrderItem(item.ProductId, item.ProductName, item.UnitPrice, item.Quantity)).ToList();
@@ -112,9 +101,7 @@ public sealed class OrderService : IOrderService
     /// <inheritdoc />
     public IReadOnlyList<OrderStatus> GetAllowedTransitions(OrderStatus currentStatus)
     {
-        return AllowedTransitions.TryGetValue(currentStatus, out IReadOnlyList<OrderStatus>? transitions)
-            ? transitions
-            : Array.Empty<OrderStatus>();
+        return _transitionStateFactory.Resolve(currentStatus).GetAllowedTransitions();
     }
 
     /// <inheritdoc />
@@ -132,8 +119,8 @@ public sealed class OrderService : IOrderService
             return;
         }
 
-        IReadOnlyList<OrderStatus> allowed = GetAllowedTransitions(order.Status);
-        if (!allowed.Contains(status))
+        IOrderTransitionState state = _transitionStateFactory.Resolve(order.Status);
+        if (!state.CanTransitionTo(status))
         {
             throw new ValidationException(
                 $"Invalid status transition from '{order.Status}' to '{status}'.");

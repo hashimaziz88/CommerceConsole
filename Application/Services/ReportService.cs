@@ -2,6 +2,7 @@ using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Application.Models;
 using CommerceConsole.Domain.Enums;
 using CommerceConsole.Domain.Exceptions;
+using CommerceConsole.Domain.Specifications;
 
 namespace CommerceConsole.Application.Services;
 
@@ -76,8 +77,9 @@ public sealed class ReportService : IReportService
             throw new ValidationException("Low-stock threshold cannot be negative.");
         }
 
-        return _productRepository.GetAll()
-            .Where(product => product.StockQuantity <= threshold)
+        LowStockProductSpecification specification = new(threshold);
+
+        return _productRepository.Find(specification)
             .OrderBy(product => product.StockQuantity)
             .ThenBy(product => product.Name)
             .Select(product => new LowStockReportItem(

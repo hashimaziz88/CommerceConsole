@@ -1,6 +1,7 @@
 using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Exceptions;
+using CommerceConsole.Domain.Specifications;
 
 namespace CommerceConsole.Application.Services;
 
@@ -22,9 +23,10 @@ public sealed class ProductService : IProductService
     /// <inheritdoc />
     public List<Product> GetActiveProducts()
     {
+        ActiveProductSpecification specification = new();
+
         return _productRepository
-            .GetAll()
-            .Where(product => product.IsActive)
+            .Find(specification)
             .OrderBy(product => product.Name)
             .ToList();
     }
@@ -37,9 +39,12 @@ public sealed class ProductService : IProductService
             return GetActiveProducts();
         }
 
+        ISpecification<Product> specification = new AndSpecification<Product>(
+            new ActiveProductSpecification(),
+            new SearchProductSpecification(term));
+
         return _productRepository
-            .Search(term)
-            .Where(product => product.IsActive)
+            .Find(specification)
             .OrderBy(product => product.Name)
             .ToList();
     }
@@ -61,8 +66,10 @@ public sealed class ProductService : IProductService
             throw new ValidationException("Low-stock threshold cannot be negative.");
         }
 
+        LowStockProductSpecification specification = new(threshold);
+
         return _productRepository
-            .GetLowStockProducts(threshold)
+            .Find(specification)
             .OrderBy(product => product.StockQuantity)
             .ThenBy(product => product.Name)
             .ToList();

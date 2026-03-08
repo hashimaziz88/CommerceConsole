@@ -2,150 +2,93 @@
 
 ## Goal
 
-Keep the console app clean, testable, and explainable by enforcing strict layer responsibilities and dependency direction.
+Keep the console app clean, testable, and refactor-friendly by enforcing strict layer boundaries and explicit extension seams.
 
-## Current solution structure
+## Current solution structure (post Submission 2 refactor)
 
 ```text
 CommerceConsole/
 |-- Program.cs
 |-- Application/
 |   |-- Interfaces/
-|   |   |-- IAuthService.cs
-|   |   |-- ICartService.cs
-|   |   |-- IInsightsService.cs
-|   |   |-- IOrderRepository.cs
-|   |   |-- IOrderService.cs
-|   |   |-- IProductRepository.cs
-|   |   |-- IProductService.cs
-|   |   |-- IReportExporter.cs
-|   |   |-- IReportExportService.cs
-|   |   |-- IReportService.cs
 |   |   |-- IRepository.cs
-|   |   |-- IReviewService.cs
-|   |   |-- ISessionContext.cs
-|   |   |-- IUserRepository.cs
-|   |   `-- IWalletService.cs
-|   |-- Models/
-|   |   |-- LowStockReportItem.cs
-|   |   |-- ProductRecommendationItem.cs
-|   |   |-- ProductSalesReportItem.cs
-|   |   `-- SalesReportSnapshot.cs
+|   |   |-- IPaymentStrategy.cs
+|   |   |-- IOrderTransitionState.cs
+|   |   |-- IOrderTransitionStateFactory.cs
+|   |   `-- existing service/repository contracts
 |   `-- Services/
-|       |-- AuthService.cs
-|       |-- CartService.cs
-|       |-- InsightsService.cs
-|       |-- OrderService.cs
-|       |-- ProductService.cs
-|       |-- ReportExportService.cs
-|       |-- ReportService.cs
-|       |-- ReviewService.cs
-|       |-- SessionContext.cs
-|       `-- WalletService.cs
+|       |-- Payments/
+|       |   `-- WalletPaymentStrategy.cs
+|       |-- OrderTransitions/
+|       |   |-- OrderTransitionStateFactory.cs
+|       |   `-- *OrderTransitionState.cs
+|       `-- existing services
 |-- Domain/
 |   |-- Entities/
 |   |-- Enums/
-|   `-- Exceptions/
+|   |-- Exceptions/
+|   `-- Specifications/
+|       |-- ISpecification.cs
+|       |-- And/Or/NotSpecification.cs
+|       `-- product specifications
 |-- Infrastructure/
-|   |-- Data/
-|   |   `-- SeedData.cs
-|   |-- Export/
-|   |   `-- PdfReportExporter.cs
+|   |-- Repositories/
+|   |   `-- in-memory repos implementing Find(spec)
 |   |-- Persistence/
-|   |   `-- JsonFileStore.cs
-|   `-- Repositories/
-|       |-- InMemoryOrderRepository.cs
-|       |-- InMemoryProductRepository.cs
-|       |-- InMemoryUserRepository.cs
-|       `-- Models/
+|   |-- Data/
+|   `-- Export/
 |-- Presentation/
+|   |-- Commands/
+|   |-- Factories/
+|   |-- Interfaces/
 |   |-- Helpers/
 |   `-- Menus/
 |-- Tests/
 |   `-- CommerceConsole.Tests/
-|       |-- Application/
-|       |-- Domain/
-|       |-- Infrastructure/
-|       `-- Presentation/
-|-- docs/
-`-- .codex/
+`-- docs/
 ```
 
-## Layer responsibilities
+## Layer responsibilities (unchanged principles)
 
 ### Presentation
 Allowed:
-- menu navigation
-- input parsing and prompt loops
-- formatting output
-- calling service methods
-- boundary exception messaging
+- menu routing and rendering
+- command dispatch and role workspace resolution
 
 Not allowed:
-- direct repository access
-- checkout/order/stock business policies
-- JSON/export technical concerns
-- user-facing GUID exposure
+- repository access
+- business-policy logic
 
 ### Application
 Allowed:
-- use-case orchestration
-- workflow validations
-- dependency on interfaces
-- service-level LINQ queries and aggregations
+- workflow orchestration
+- payment strategy and transition state policies
 
 Not allowed:
 - console input/output
-- low-level file I/O implementation
+- low-level file I/O
 
 ### Domain
 Allowed:
-- entities and value semantics
-- state-transition methods
-- guard clauses and invariants
-- domain enums and exceptions
+- entities and invariants
+- reusable domain specifications
 
 Not allowed:
-- repository or file operations
-- menu concerns
-- formatter/export details
+- persistence and UI concerns
 
 ### Infrastructure
 Allowed:
 - repository implementations
-- persistence records and data mapping
-- seed logic
-- exporter implementation details
+- JSON persistence and mapping
+- exporter adapters
 
 Not allowed:
-- UI routing/formatting
-- business policy branching that belongs in services
-
-## Dependency direction
-
-Required direction:
-- `Presentation -> Application -> Domain`
-- `Infrastructure -> Domain`
-- `Infrastructure` implements contracts from `Application/Interfaces`
-
-Forbidden direction:
-- `Domain -> Infrastructure`
-- `Presentation -> Infrastructure repositories`
-- `Domain -> Presentation`
+- UI and business-policy orchestration
 
 ## Boundary hard rules
 
-1. `Program.cs` remains a composition root, not a business workflow host.
-2. Menus are thin and index-based.
-3. Repository models stay in standalone files (no nested classes in repository files).
-4. Domain mutation must happen through validated methods.
-5. Docs and tests must update when behavior changes.
-
-## Why this structure is redesign-friendly
-
-This design supports low-risk incremental upgrades:
-- Factory extraction for role/menu creation
-- Strategy extraction for payment/report variants
-- State-style policy extraction for order transitions
-- repository backend swaps (JSON to DB) behind existing interfaces
-- UI replacement without rewriting domain workflows
+1. Program remains composition root.
+2. Menus remain thin and repository-free.
+3. User-facing flows stay index-based (no GUID exposure).
+4. Domain mutation remains method-driven with guards.
+5. Docs and tests must track behavior and architecture changes.

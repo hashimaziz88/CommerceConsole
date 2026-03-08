@@ -1,6 +1,7 @@
 using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
+using CommerceConsole.Domain.Specifications;
 using CommerceConsole.Infrastructure.Persistence;
 using CommerceConsole.Infrastructure.Repositories.Models;
 
@@ -71,6 +72,13 @@ public sealed class InMemoryUserRepository : IUserRepository
             _users.Remove(existing);
             Persist();
         }
+    }
+
+    /// <inheritdoc />
+    public List<User> Find(ISpecification<User> specification)
+    {
+        ArgumentNullException.ThrowIfNull(specification);
+        return _users.Where(specification.IsSatisfiedBy).ToList();
     }
 
     private List<User> LoadUsers()

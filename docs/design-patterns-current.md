@@ -2,16 +2,17 @@
 
 ## Purpose
 
-This document maps patterns currently present in code, explains why they were used, and clarifies which upgrades are still planned for Submission 2.
+This document captures the pattern footprint **after the Monday Submission 2 refactor**.
+It includes:
+- patterns that were already present
+- patterns that were missing before Monday
+- what was implemented in Monday refactor
+- why each pattern is used and what trade-off it introduces
 
-Important framing:
-- Not every pattern here is a Gang-of-Four pattern.
-- Some are architectural patterns or implementation techniques.
-- In viva, that is acceptable if you define the category clearly.
+## Pattern Audit Snapshot
 
-## Pattern Inventory at a Glance
+## Before Monday (already used)
 
-Implemented now:
 1. Repository Pattern
 2. Service Layer Pattern
 3. Constructor Injection
@@ -20,220 +21,176 @@ Implemented now:
 6. Rich Domain Model
 7. Guard Clauses
 8. Session Context Pattern
-9. Strategy-style Export Abstraction
-10. Idempotent Seed Pattern (startup reliability technique)
+9. Strategy-style report export seam (`IReportExporter`)
+10. Idempotent Seed Pattern
 
-Planned next (Submission 2 style):
-- Factory Pattern (menu/user creation extraction)
-- broader Strategy Pattern (payment/report variants)
-- State-style transition objects for orders
+## Before Monday (missing / not formalized)
+
+1. Factory Pattern for role/menu routing
+2. Payment Strategy formalization (wallet flow was inline in `OrderService`)
+3. State-style order transition policies (static transition map in service)
+4. Command Pattern for menu action dispatch
+5. Specification Pattern for reusable query/filter rules
+
+## Implemented in Monday refactor
+
+1. Factory Pattern (`IRoleMenuFactory`, `RoleMenuFactory`, `IUserWorkspace`)
+2. Strategy Pattern (formal `IPaymentStrategy` + `WalletPaymentStrategy`)
+3. State-style transitions (`IOrderTransitionState` + per-status states + factory)
+4. Command Pattern (`IMenuCommand`, `DelegateMenuCommand`, `MenuCommandDispatcher`)
+5. Specification Pattern (Domain `ISpecification<T>`, product specs, repository `Find(spec)`)
+
+## Pattern Details
 
 ## 1. Repository Pattern
 
-Definition:
-- Provides collection-like access to domain objects while hiding data-source details.
-
 Where:
-- contracts in `Application/Interfaces` (`IUserRepository`, `IProductRepository`, `IOrderRepository`)
-- implementations in `Infrastructure/Repositories`
+- `IRepository<T>` and specialized repository interfaces
+- in-memory repository implementations in infrastructure
 
-Why used:
-- services should reason about business operations, not JSON I/O internals.
-
-Problem solved:
-- decouples business workflows from storage technology.
+Why:
+- isolates persistence mechanics from business orchestration.
 
 Trade-off:
-- additional interfaces and mapping logic.
+- interface/mapping overhead.
 
 ## 2. Service Layer Pattern
-
-Definition:
-- Centralizes use-case orchestration in dedicated service classes.
 
 Where:
 - `Application/Services/*`
 
-Why used:
-- keeps menus thin and prevents workflow duplication across UI handlers.
-
-Problem solved:
-- avoids business logic leakage into presentation.
+Why:
+- centralizes use-case orchestration away from menus.
 
 Trade-off:
-- more service classes to maintain as scope grows.
+- increased service count with growth.
 
-## 3. Constructor Injection
-
-Definition:
-- dependencies are passed through constructors rather than created internally.
+## 3. Constructor Injection + Composition Root
 
 Where:
-- application services and menus
+- service/menu constructors and `Program.cs`
 
-Why used:
-- explicit dependency graphs
-- easy test construction
-
-Problem solved:
-- avoids hidden coupling and hard-wired implementation creation.
+Why:
+- explicit dependency graph and test-friendly setup.
 
 Trade-off:
-- constructors become longer for coordinator types.
+- longer constructors and startup wiring.
 
-## 4. Composition Root
-
-Definition:
-- single entry point where object graph is assembled.
+## 4. Data Mapper Pattern
 
 Where:
-- `Program.cs`
+- `ToDomain` / `FromDomain` mapping in repositories
+- standalone persistence `*Record` models
 
-Why used:
-- all runtime wiring is visible in one place.
-
-Problem solved:
-- avoids object creation scattered across menus/services.
+Why:
+- domain model independence from JSON schema.
 
 Trade-off:
-- startup file grows as dependencies increase.
+- explicit mapping maintenance.
 
-## 5. Data Mapper Pattern
-
-Definition:
-- maps between domain entities and storage record models.
+## 5. Rich Domain Model + Guard Clauses
 
 Where:
-- `ToDomain(...)` / `FromDomain(...)` methods in repositories
-- `Infrastructure/Repositories/Models/*Record.cs`
+- domain entities and invariants
 
-Why used:
-- domain model stays independent from JSON schema shape.
-
-Problem solved:
-- prevents persistence concerns from polluting domain entities.
+Why:
+- fail fast and protect business state.
 
 Trade-off:
-- explicit mapper code overhead.
+- repetitive validation if not organized.
 
-## 6. Rich Domain Model
-
-Definition:
-- entities contain both data and behavior/invariant enforcement.
+## 6. Session Context Pattern
 
 Where:
-- `Domain/Entities` (`Product`, `Cart`, `Customer`, `Order`, `Payment`, `Review`)
+- `ISessionContext` / `SessionContext`
 
-Why used:
-- business rules should be enforced by the object that owns state.
-
-Problem solved:
-- reduces invalid-state bugs from unrestricted property writes.
+Why:
+- central session state management for authenticated runtime.
 
 Trade-off:
-- requires disciplined method design to avoid entity bloat.
+- process-local session only.
 
-## 7. Guard Clauses
-
-Definition:
-- fail-fast validation at method/constructor boundaries.
+## 7. Factory Pattern (Monday)
 
 Where:
-- domain constructors/mutators
-- service entry methods
-
-Why used:
-- immediate feedback and simpler debugging.
+- `IUserWorkspace`
+- `IRoleMenuFactory`
+- `RoleMenuFactory`
+- `MainMenu` role routing now resolves workspace through factory
 
 Problem solved:
-- blocks invalid state early.
+- removes role-switch routing from main menu.
 
 Trade-off:
-- repetitive checks if not consistently organized.
+- additional abstraction layer.
 
-## 8. Session Context Pattern
-
-Definition:
-- dedicated holder for current authenticated runtime user state.
+## 8. Strategy Pattern (Monday formalization)
 
 Where:
-- `ISessionContext` + `SessionContext`
-
-Why used:
-- avoids passing user state through every call manually.
+- `IPaymentStrategy`
+- `WalletPaymentStrategy`
+- `OrderService` delegates payment execution to strategy
+- existing report export strategy seam retained (`IReportExporter`)
 
 Problem solved:
-- centralizes sign-in/sign-out state management.
+- decouples payment algorithm from checkout orchestration.
 
 Trade-off:
-- currently process-local only.
+- extra strategy contracts and wiring.
 
-## 9. Strategy-Style Export Abstraction
-
-Definition:
-- output/export behavior is hidden behind an interface and selected implementation.
+## 9. State-style transition handling (Monday)
 
 Where:
-- `IReportExporter`
-- `ReportExportService`
-- `PdfReportExporter`
-
-Why used:
-- report aggregation (`ReportService`) should not know PDF formatting details.
+- `IOrderTransitionState`
+- per-status state classes
+- `IOrderTransitionStateFactory`
+- `OrderService` transition validation via resolved state policy
 
 Problem solved:
-- separates what to export from how to export.
+- transitions are policy objects, not inline map logic.
 
 Trade-off:
-- one more abstraction for small scope.
+- more classes for lifecycle policy.
 
-Note:
-- this is a practical strategy seam, even if only one concrete exporter exists currently.
-
-## 10. Idempotent Seed Pattern
-
-Definition:
-- startup seed can run repeatedly without duplicate inserts.
+## 10. Command Pattern (Monday)
 
 Where:
-- `SeedData.Seed(...)`
-
-Why used:
-- predictable restarts and repeat demos.
+- `IMenuCommand`
+- `DelegateMenuCommand`
+- `MenuCommandDispatcher`
+- menu loops now dispatch via command map, not switch blocks
 
 Problem solved:
-- avoids duplicate admin/products after relaunch.
+- cleaner action dispatch and reduced switch complexity.
 
 Trade-off:
-- small startup check overhead.
+- command map setup overhead in menus.
 
-## Pattern Interactions (How They Work Together)
+## 11. Specification Pattern (Monday)
 
-Typical flow:
-1. Menu (Presentation) calls service.
-2. Service (Service Layer) uses repository interfaces.
-3. Repository implementation maps domain <-> record models (Data Mapper).
-4. File store persists JSON (Infrastructure detail).
-5. Domain entities enforce invariants via guard clauses throughout.
+Where:
+- Domain specs (`ISpecification<T>`, `AndSpecification`, etc.)
+- product-specific specs (`Active`, `Search`, `LowStock`, `InStock`)
+- repository `Find(spec)` contract and implementations
+- service query flows now use spec-based filtering where applicable
 
-This interaction is the core maintainability story of the project.
+Problem solved:
+- reusable, composable query rules without duplicated inline predicates.
 
-## What Is Not Fully Patternized Yet (Intentional)
+Trade-off:
+- additional abstractions and classes.
 
-Not yet extracted:
-- factory classes for role/menu creation
-- state objects for order transitions
-- multiple payment strategies
+## Why this pattern set is now stronger
 
-Reason:
-- baseline delivery and reliability first
-- pattern extraction planned as controlled refactor phase (Monday milestone)
+- Role routing is factory-driven.
+- Checkout payment is strategy-driven.
+- Lifecycle transitions are state-policy-driven.
+- Menu action loops are command-driven.
+- Catalog/report filtering is specification-driven.
 
-## How to Explain Pattern Choice in Viva
+Result:
+- cleaner extension points for future redesign with behavior parity preserved.
 
-Good phrasing:
-"We used patterns that solve immediate structural problems: Repository for storage decoupling, Service Layer for workflow centralization, Data Mapper for schema isolation, and composition root plus constructor injection for explicit wiring. Pattern adoption is incremental and driven by concrete needs, not overengineering."
+## Quick Viva Script
 
-## 30-Second Pattern Defense Script
-
-"Current patterns isolate responsibilities: repositories abstract storage, services own use-case orchestration, mappers separate domain from JSON schema, and composition root keeps wiring explicit. We intentionally added an exporter strategy seam and kept future factory/state extractions as low-risk next steps."
+"Before Monday, we had strong foundational patterns but missing explicit Factory, payment Strategy, State-style transitions, Command dispatch, and Specification-based query formalization. Monday refactor introduced all five in a controlled way, preserving baseline behavior while improving extensibility and architectural clarity."

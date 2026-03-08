@@ -1,4 +1,6 @@
 using CommerceConsole.Application.Services;
+using CommerceConsole.Application.Services.OrderTransitions;
+using CommerceConsole.Application.Services.Payments;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
 using CommerceConsole.Domain.Exceptions;
@@ -108,7 +110,9 @@ public sealed class OrderStatusTransitionTests
         order.UpdateStatus(OrderStatus.Paid);
         orderRepository.Add(order);
 
-        OrderService orderService = new(orderRepository, productRepository, userRepository);
+        WalletPaymentStrategy paymentStrategy = new();
+        OrderTransitionStateFactory transitionStateFactory = new();
+        OrderService orderService = new(orderRepository, productRepository, userRepository, paymentStrategy, transitionStateFactory);
 
         return new TransitionContext(orderService, orderRepository, order);
     }

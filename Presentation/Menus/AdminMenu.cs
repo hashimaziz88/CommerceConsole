@@ -3,14 +3,16 @@ using CommerceConsole.Application.Models;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
 using CommerceConsole.Domain.Exceptions;
+using CommerceConsole.Presentation.Commands;
 using CommerceConsole.Presentation.Helpers;
+using CommerceConsole.Presentation.Interfaces;
 
 namespace CommerceConsole.Presentation.Menus;
 
 /// <summary>
 /// Administrator catalog, order, and reporting management menu.
 /// </summary>
-public sealed class AdminMenu
+public sealed class AdminMenu : IUserWorkspace
 {
     private static readonly IReadOnlyList<string> MenuOptions = new List<string>
     {
@@ -58,70 +60,58 @@ public sealed class AdminMenu
         _insightsService = insightsService;
     }
 
-    /// <summary>
-    /// Runs the administrator menu loop.
-    /// </summary>
+    /// <inheritdoc />
+    public UserRole SupportedRole => UserRole.Administrator;
+
+    /// <inheritdoc />
     public void Run(ISessionContext sessionContext)
     {
-        if (sessionContext.CurrentUser?.Role != UserRole.Administrator)
+        if (sessionContext.CurrentUser?.Role != SupportedRole)
         {
             ConsoleTheme.WriteError("Access denied. Administrator login required.");
             return;
         }
 
         bool done = false;
+        IReadOnlyDictionary<int, IMenuCommand> commands = BuildCommands(sessionContext, () => done = true);
+
         while (!done)
         {
             ShowMenuOptions(sessionContext.CurrentUser.FullName);
             int selection = ConsoleInputHelper.ReadSelection("Choose option (1-12): ", 12);
-
-            switch (selection)
-            {
-                case 1:
-                    MenuActionHelper.Execute(AddProduct);
-                    break;
-                case 2:
-                    MenuActionHelper.Execute(UpdateProduct);
-                    break;
-                case 3:
-                    MenuActionHelper.Execute(DeleteProduct);
-                    break;
-                case 4:
-                    MenuActionHelper.Execute(RestockProduct);
-                    break;
-                case 5:
-                    MenuActionHelper.Execute(ViewProducts);
-                    break;
-                case 6:
-                    MenuActionHelper.Execute(ViewLowStockProducts);
-                    break;
-                case 7:
-                    MenuActionHelper.Execute(ViewAllOrders);
-                    break;
-                case 8:
-                    MenuActionHelper.Execute(UpdateOrderStatus);
-                    break;
-                case 9:
-                    MenuActionHelper.Execute(ViewSalesReport);
-                    break;
-                case 10:
-                    MenuActionHelper.Execute(ViewSmartInsights);
-                    break;
-                case 11:
-                    MenuActionHelper.Execute(ExportSalesReportPdf);
-                    break;
-                case 12:
-                    sessionContext.SignOut();
-                    done = true;
-                    ConsoleTheme.WriteInfo("Administrator session ended. Returning to main menu.");
-                    break;
-            }
+            MenuCommandDispatcher.Execute(commands, selection);
 
             if (!done)
             {
                 ConsoleTheme.Pause();
             }
         }
+    }
+
+    private IReadOnlyDictionary<int, IMenuCommand> BuildCommands(ISessionContext sessionContext, Action requestDone)
+    {
+        return new Dictionary<int, IMenuCommand>
+        {
+            [1] = new DelegateMenuCommand(() => MenuActionHelper.Execute(AddProduct)),
+            [2] = new DelegateMenuCommand(() => MenuActionHelper.Execute(UpdateProduct)),
+            [3] = new DelegateMenuCommand(() => MenuActionHelper.Execute(DeleteProduct)),
+            [4] = new DelegateMenuCommand(() => MenuActionHelper.Execute(RestockProduct)),
+            [5] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ViewProducts)),
+            [6] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ViewLowStockProducts)),
+            [7] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ViewAllOrders)),
+            [8] = new DelegateMenuCommand(() => MenuActionHelper.Execute(UpdateOrderStatus)),
+            [9] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ViewSalesReport)),
+            [10] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ViewSmartInsights)),
+            [11] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ExportSalesReportPdf)),
+            [12] = new DelegateMenuCommand(() => HandleLogout(sessionContext, requestDone))
+        };
+    }
+
+    private static void HandleLogout(ISessionContext sessionContext, Action requestDone)
+    {
+        sessionContext.SignOut();
+        requestDone();
+        ConsoleTheme.WriteInfo("Administrator session ended. Returning to main menu.");
     }
 
     private static void ShowMenuOptions(string adminName)

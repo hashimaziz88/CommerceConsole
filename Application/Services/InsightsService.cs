@@ -3,6 +3,7 @@ using CommerceConsole.Application.Models;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
 using CommerceConsole.Domain.Exceptions;
+using CommerceConsole.Domain.Specifications;
 
 namespace CommerceConsole.Application.Services;
 
@@ -62,9 +63,11 @@ public sealed class InsightsService : IInsightsService
             .Where(category => !string.IsNullOrWhiteSpace(category))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        IEnumerable<Product> baseCandidates = allProducts
-            .Where(product => product.IsActive)
-            .Where(product => product.StockQuantity > 0)
+        ISpecification<Product> activeInStockSpecification = new AndSpecification<Product>(
+            new ActiveProductSpecification(),
+            new InStockProductSpecification());
+
+        IEnumerable<Product> baseCandidates = _productRepository.Find(activeInStockSpecification)
             .Where(product => !purchasedProductIds.Contains(product.Id));
 
         IEnumerable<Product> rankedCandidates = baseCandidates
@@ -128,9 +131,11 @@ public sealed class InsightsService : IInsightsService
             insights.Add($"Top category by units sold: {topCategory.Category} ({topCategory.Quantity} units).");
         }
 
-        List<Product> lowStockActive = products
-            .Where(product => product.IsActive)
-            .Where(product => product.StockQuantity <= lowStockThreshold)
+        ISpecification<Product> activeLowStockSpecification = new AndSpecification<Product>(
+            new ActiveProductSpecification(),
+            new LowStockProductSpecification(lowStockThreshold));
+
+        List<Product> lowStockActive = _productRepository.Find(activeLowStockSpecification)
             .OrderBy(product => product.StockQuantity)
             .ThenBy(product => product.Name)
             .ToList();
@@ -141,7 +146,8 @@ public sealed class InsightsService : IInsightsService
         }
         else
         {
-            string watchList = string.Join(", ", lowStockActive.Take(3).Select(product => $"{product.Name} ({product.StockQuantity})"));
+            string watchList = string.Join(", ",
+                lowStockActive.Take(3).Select(product => $"{product.Name} ({product.StockQuantity})"));
             insights.Add($"Restock watch: {lowStockActive.Count} active products are low. Priority: {watchList}.");
         }
 

@@ -2,78 +2,81 @@
 
 ## Goal (Monday 2026-03-09)
 
-Introduce explicit design patterns on top of the stable baseline without adding new business scope.
+Implement explicit extension patterns on top of stable baseline behavior.
 
-This phase is a controlled refactor for extensibility and architecture marks.
+Status in this branch: **implemented**.
 
-## Non-negotiable constraints
-
-- preserve current user-visible behavior
-- do not move business logic into menus
-- do not introduce feature backlog catch-up
-- do not break persistence contracts without migration notes
-- add pattern-focused tests and docs for every pattern change
-
-## Priority pattern targets
+## Implemented pattern set
 
 ### 1. Factory Pattern
 
-Candidate uses:
-- role-based menu creation/routing
-- user object creation abstraction if beneficial
+Implemented:
+- `IUserWorkspace`
+- `IRoleMenuFactory`
+- `RoleMenuFactory`
 
-Expected benefit:
-- centralize creation logic and reduce switch branching in UI composition points
+Applied to:
+- role-based workspace routing in `MainMenu`
 
 ### 2. Strategy Pattern
 
-Candidate uses:
-- payment processing strategy abstraction
-- report generation/export variant strategy
+Implemented:
+- `IPaymentStrategy`
+- `WalletPaymentStrategy`
+- existing exporter strategy seam retained (`IReportExporter`)
 
-Current seam already available:
-- `IReportExporter` -> `PdfReportExporter`
-
-Suggested extension:
-- add payment strategy contract and wallet strategy implementation while keeping behavior same
+Applied to:
+- checkout payment step in `OrderService`
 
 ### 3. State-style transition handling
 
-Candidate uses:
-- extract order status transitions from map-based rule checks into dedicated transition policy/state objects
+Implemented:
+- `IOrderTransitionState`
+- per-status transition state classes
+- `IOrderTransitionStateFactory`
+- `OrderTransitionStateFactory`
 
-Expected benefit:
-- clearer transition rules and easier extension/audit of lifecycle logic
+Applied to:
+- order status validation in `OrderService`
 
-### 4. Repository formalization (if needed)
+### 4. Command Pattern (extra)
 
-Candidate uses:
-- refine repository abstractions only where extension clarity improves
-- avoid needless abstraction churn
+Implemented:
+- `IMenuCommand`
+- `DelegateMenuCommand`
+- `MenuCommandDispatcher`
 
-## Execution sequence
+Applied to:
+- main, customer, and admin menu action dispatch
 
-1. Freeze baseline behavior with passing regression tests.
-2. Add pattern interfaces and adapters around existing seams.
-3. Move branching logic into factories/strategies incrementally.
-4. Extract transition policy objects for order lifecycle.
-5. Verify parity with focused tests.
-6. Document architecture delta and trade-offs.
+### 5. Specification Pattern + repo formalization (extra)
 
-## Verification checklist
+Implemented:
+- domain `ISpecification<T>` and product specifications
+- repository contract `Find(spec)`
+- all in-memory repositories implement `Find(spec)`
 
-- baseline tests remain green
-- new pattern tests cover extension points
-- no UI/business boundary regression
-- no GUID exposure regression
-- docs updated (`architecture`, `design-patterns`, `oop notes`, `study guide`)
+Applied to:
+- product/report/insight filtering paths
 
-## Anti-goals
+## Behavior parity outcomes
 
-- no full rewrite
-- no framework-heavy pattern overengineering
-- no feature expansion hidden inside refactor
+Preserved:
+- business feature scope
+- role/menu capabilities
+- no GUID exposure policy
+- persistence contracts
 
-## Viva explanation script
+Allowed minor changes:
+- dispatch/routing internals and minor messaging consistency
 
-"Submission 2 pattern work is an incremental extension of existing seams: we formalize creation and algorithm variation points while preserving baseline behavior, so the refactor improves extensibility without destabilizing delivery."
+## Verification
+
+- Full test suite passes after refactor.
+- Pattern-focused tests added for Factory, Strategy, State, Command, and Specification.
+
+## Anti-goals respected
+
+- no feature expansion beyond agreed scope
+- no menu-to-repository leakage
+- no architectural boundary regressions

@@ -1,6 +1,8 @@
 using CommerceConsole.Application.Interfaces;
-using CommerceConsole.Domain.Enums;
+using CommerceConsole.Presentation.Commands;
+using CommerceConsole.Presentation.Factories;
 using CommerceConsole.Presentation.Helpers;
+using CommerceConsole.Presentation.Interfaces;
 
 namespace CommerceConsole.Presentation.Menus;
 
@@ -18,8 +20,7 @@ public sealed class MainMenu
 
     private readonly IAuthService _authService;
     private readonly ISessionContext _sessionContext;
-    private readonly CustomerMenu _customerMenu;
-    private readonly AdminMenu _adminMenu;
+    private readonly IRoleMenuFactory _roleMenuFactory;
 
     /// <summary>
     /// Initializes the main menu.
@@ -27,13 +28,11 @@ public sealed class MainMenu
     public MainMenu(
         IAuthService authService,
         ISessionContext sessionContext,
-        CustomerMenu customerMenu,
-        AdminMenu adminMenu)
+        IRoleMenuFactory roleMenuFactory)
     {
         _authService = authService;
         _sessionContext = sessionContext;
-        _customerMenu = customerMenu;
-        _adminMenu = adminMenu;
+        _roleMenuFactory = roleMenuFactory;
     }
 
     /// <summary>
@@ -55,33 +54,24 @@ public sealed class MainMenu
             ShowMenuOptions();
             int selection = ConsoleInputHelper.ReadSelection("Choose option (1-3): ", 3);
 
-            switch (selection)
-            {
-                case 1:
-                    MenuActionHelper.Execute(RegisterCustomer);
-                    break;
-                case 2:
-                    MenuActionHelper.Execute(LoginAndRoute);
-                    break;
-                case 3:
-                    if (ConfirmationPrompt.AskYesNo("Exit CommerceConsole now?", false))
-                    {
-                        exitRequested = true;
-                        ConsoleTheme.WriteInfo("Session ended. Goodbye.");
-                    }
-                    else
-                    {
-                        ConsoleTheme.WriteInfo("Exit cancelled.");
-                    }
-
-                    break;
-            }
+            IReadOnlyDictionary<int, IMenuCommand> commands = BuildCommands(() => exitRequested = true);
+            MenuCommandDispatcher.Execute(commands, selection);
 
             if (!exitRequested)
             {
                 ConsoleTheme.Pause();
             }
         }
+    }
+
+    private IReadOnlyDictionary<int, IMenuCommand> BuildCommands(Action requestExit)
+    {
+        return new Dictionary<int, IMenuCommand>
+        {
+            [1] = new DelegateMenuCommand(() => MenuActionHelper.Execute(RegisterCustomer)),
+            [2] = new DelegateMenuCommand(() => MenuActionHelper.Execute(LoginAndRoute)),
+            [3] = new DelegateMenuCommand(() => HandleExit(requestExit))
+        };
     }
 
     private static void ShowMenuOptions()
@@ -91,6 +81,19 @@ public sealed class MainMenu
             "Home",
             MenuOptions,
             "Use number selection. Register or login to access role-based workspaces.");
+    }
+
+    private static void HandleExit(Action requestExit)
+    {
+        if (ConfirmationPrompt.AskYesNo("Exit CommerceConsole now?", false))
+        {
+            requestExit();
+            ConsoleTheme.WriteInfo("Session ended. Goodbye.");
+        }
+        else
+        {
+            ConsoleTheme.WriteInfo("Exit cancelled.");
+        }
     }
 
     private void RegisterCustomer()
@@ -126,20 +129,15 @@ public sealed class MainMenu
             return;
         }
 
-        switch (_sessionContext.CurrentUser.Role)
+        IUserWorkspace? workspace = _roleMenuFactory.Resolve(_sessionContext.CurrentUser.Role);
+        if (workspace is null)
         {
-            case UserRole.Customer:
-                ConsoleTheme.WriteInfo("Opening customer workspace...");
-                _customerMenu.Run(_sessionContext);
-                break;
-            case UserRole.Administrator:
-                ConsoleTheme.WriteInfo("Opening administrator workspace...");
-                _adminMenu.Run(_sessionContext);
-                break;
-            default:
-                ConsoleTheme.WriteWarning("Unsupported user role. Signing out.");
-                _sessionContext.SignOut();
-                break;
+            ConsoleTheme.WriteWarning("Unsupported user role. Signing out.");
+            _sessionContext.SignOut();
+            return;
         }
+
+        ConsoleTheme.WriteInfo($"Opening {workspace.SupportedRole} workspace...");
+        workspace.Run(_sessionContext);
     }
 }

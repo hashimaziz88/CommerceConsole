@@ -1,3 +1,5 @@
+using CommerceConsole.Domain.Specifications;
+
 namespace CommerceConsole.Application.Interfaces;
 
 /// <summary>
@@ -29,4 +31,9 @@ public interface IRepository<T>
     /// Removes an entity by ID.
     /// </summary>
     void Remove(Guid id);
+
+    /// <summary>
+    /// Returns entities matching the provided specification.
+    /// </summary>
+    List<T> Find(ISpecification<T> specification);
 }
