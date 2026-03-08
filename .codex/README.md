@@ -1,38 +1,89 @@
 # CommerceConsole Codex Pack
 
 This folder is the internal delivery and governance pack for AI-assisted implementation.
+It is intentionally deeper than the root `README.md` and acts as the study and execution control center.
 
-It exists to keep architecture, coding standards, milestone scope, and prompt workflows synchronized with the live codebase.
+## Purpose Of This Pack
 
-## What this pack contains
+- Keep architecture, standards, prompts, and milestone policies synchronized with the live codebase.
+- Provide a stable handoff guide for implementation agents and collaborators.
+- Keep deep study and viva-oriented guidance out of the root README while preserving it in one place.
+
+## What This Pack Contains
 
 - `01_Project_Overview.md`: project scope, execution model, and rubric intent
 - `02_Architecture_and_Solution_Structure.md`: layer boundaries and folder ownership
 - `03_Domain_Model.md`: entity model, invariants, and exception model
 - `04_Submission_1_Implementation_Blueprint.md`: baseline execution sequence
 - `05_Submission_2_Design_Pattern_Upgrade.md`: Monday pattern-only upgrade plan
-- `06_Coding_Standards.md`: non-negotiable coding and documentation standards
-- `07_Git_Workflow_and_Branching.md`: branch strategy, milestone locks, PR checklist
-- `08_Codex_Prompt_Pack.md`: copy-paste prompts (core + extension)
-- `09_GitHub_Feature_Issues.md`: milestone-locked issue templates
-- `agents.md`: role-oriented agent execution guide
-- `rules.md`: hard constraints and guardrails
+- `06_Coding_Standards.md`: coding and documentation standards
+- `07_Git_Workflow_and_Branching.md`: branch strategy, milestone locks, PR checks
+- `08_Codex_Prompt_Pack.md`: copy-paste prompt workflow
+- `09_GitHub_Feature_Issues.md`: milestone-locked issue set
+- `agents.md`: role-oriented agent execution guidance
+- `rules.md`: hard constraints and delivery guardrails
 
-## Usage order
+## Recommended Usage Order
 
-1. Read `01`, `02`, `03` for context and boundaries.
-2. Execute work using `04` and `06`.
-3. Follow milestone/branch discipline in `07` and `09`.
-4. Use `08` prompts for task slicing.
-5. Only apply `05` during the Monday pattern phase.
+1. Read `01`, `02`, `03` for system context.
+2. Execute work with `04` and `06` as non-negotiable guardrails.
+3. Use `08` for task slicing and `09` for milestone alignment.
+4. Follow branch and milestone discipline in `07`.
+5. Apply `05` only during the pattern-refactor phase.
 
-## Current project state assumptions
+## Study Navigation And Revision Path
+
+Use this order for deep understanding:
+1. `docs/architecture.md`
+2. `docs/folder-structure-rationale.md`
+3. `docs/oop-design-notes.md`
+4. `docs/access-modifiers-and-class-design.md`
+5. `docs/design-patterns-current.md`
+6. Feature behavior docs (`auth-flow`, `product-catalog`, `cart-wallet`, `checkout-orders`, `order-lifecycle`, `reviews-reporting`, `persistence`)
+7. `docs/test-plan.md`
+8. `docs/demo-study-guide.md`
+9. `docs/viva-questions-and-answers.md`
+
+## Architecture Rationale References
+
+Primary references:
+- `docs/architecture.md`
+- `docs/folder-structure-rationale.md`
+- `02_Architecture_and_Solution_Structure.md`
+
+Key positioning:
+- Layered architecture with DDD-inspired modeling discipline.
+- Rich domain invariants are implemented, while full tactical DDD is intentionally deferred.
+
+## OOP And Pattern Explanation Pointers
+
+Use these together when preparing explanations:
+- `docs/oop-design-notes.md`
+- `docs/access-modifiers-and-class-design.md`
+- `docs/design-patterns-current.md`
+- `03_Domain_Model.md`
+
+## Demo And Viva Preparation Pointers
+
+- Demo flow and speaking structure: `docs/demo-study-guide.md`
+- Likely questions and concise answers: `docs/viva-questions-and-answers.md`
+- Regression confidence references: `docs/test-plan.md`
+
+## Governance And Process Notes
+
+- Root `README.md` stays concise and marker-facing.
+- Deep reasoning and implementation governance stay in `.codex` and `docs`.
+- Milestone locks in `09_GitHub_Feature_Issues.md` are mandatory unless explicitly approved changes are made.
+- All behavior, architecture, or scope updates must be reflected in both docs and codex guidance.
+
+## Current Project State Assumptions
 
 - Baseline Submission 1 features are implemented.
 - UX hardening, JSON persistence, and no-GUID presentation flows are implemented.
 - Bonus features are implemented (PDF export, insights, recommendations).
-- Monday pattern work remains a controlled refactor phase, not feature catch-up.
+- Submission 2 pattern work remains a controlled refactor phase.
 
-## Maintenance rule
+## Maintenance Rule
 
-Any behavior, architecture, testing, or milestone change must be reflected in this folder immediately to avoid process drift.
+If implementation changes and this pack is not updated, process drift occurs.
+Update `.codex` files in the same delivery cycle as behavior/documentation changes.

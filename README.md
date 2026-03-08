@@ -1,139 +1,114 @@
 # CommerceConsole
 
-CommerceConsole is a layered C# console implementation of an online shopping backend.
-It is built to be:
-- submission-ready
-- demo/viva explainable
-- safe to evolve into Submission 2 patterns without rewrite-heavy risk
+## What Is CommerceConsole?
 
-## What Architecture Is This Exactly?
+CommerceConsole is a C# console application for an Online Shopping Backend System.
+It delivers core shopping workflows with clean layering, strong validation, and JSON-backed persistence for repeatable demos and coursework delivery.
 
-Short answer:
-- It is a **Layered Architecture** with **Clean Architecture principles**.
-- It is **DDD-inspired**, but **not full tactical Domain-Driven Design**.
+## Why Choose CommerceConsole?
 
-Why "DDD-inspired":
-- domain entities are rich (behavior + invariants, not just data)
-- rules are protected through guard clauses and encapsulation
-- business language is explicit (`Customer`, `Order`, `Payment`, `Review`)
+- Clear architecture: Presentation, Application, Domain, and Infrastructure are separated.
+- Reliable workflow rules: cart, wallet, checkout, and order transitions are centrally enforced.
+- Practical persistence: mutable runtime data is stored in JSON without database setup overhead.
+- Test-backed quality: core business behavior is covered by automated tests.
+- Demo-friendly UX: index-based selection flows avoid exposing internal identifiers.
 
-Why it is not full tactical DDD:
-- no explicit aggregate root boundaries and aggregate repositories
-- no domain events
-- no explicit value-object catalog (beyond primitive-centric model)
-- no bounded-context split yet
+# Documentation
 
-If asked in viva:
-"This is a layered, DDD-inspired console architecture. We use rich domain entities and business invariants, but we intentionally stopped short of full tactical DDD complexity for scope and delivery speed."
+## Software Requirement Specification
 
-## Folder and Naming Philosophy
+### Overview
 
-Top-level folders:
-- `Presentation`: menus, prompts, rendering helpers
-- `Application`: use-case orchestration services + contracts
-- `Domain`: entities, enums, business exceptions, invariants
-- `Infrastructure`: repository implementations, JSON store, seed data, exporters
-- `Tests`: architecture-mirrored automated tests
-- `docs`: architecture, OOP, workflow, and study pack notes
-- `.codex`: implementation standards, prompts, issue/milestone plan
+CommerceConsole provides role-based shopping workflows for customers and administrators, including catalog management, cart and wallet operations, checkout and orders, reviews, reporting, and quality-focused input/exception handling.
 
-Naming conventions used:
-- interfaces: `I*` (`IOrderService`, `IProductRepository`)
-- services: `*Service`
-- repositories: implementation-style prefix (`InMemory*Repository`)
-- persistence records: `*Record`
-- menu helpers: `*Helper` and `*Renderer`
-- read/report models: concise `*Item` / `*Snapshot` records
+### Components And Functional Requirements
 
-## Core Scope Implemented
+**1. Authentication and authorization management**
+- Customer registration.
+- Customer and administrator login.
+- Role-based routing to customer/admin workspaces.
 
-Submission 1 baseline:
-1. Registration, login, and role-based routing.
-2. Product browse/search + full admin catalog management.
-3. Cart and wallet workflows with stock/funds validation.
-4. Checkout with wallet simulation, payment record, order snapshots.
-5. Order history/tracking + admin status transitions.
-6. Reviews (purchased products only) + reporting via LINQ.
-7. Validation hardening, friendly exception boundaries, improved UX.
+**2. Product catalog and inventory management**
+- Customer browse and search (name/category).
+- Administrator add, update, delete, and restock product workflows.
+- Low-stock product visibility.
 
-Bonus scope above baseline:
-1. PDF sales report export (`IReportExporter` + `PdfReportExporter`).
-2. Heuristic smart admin insights (`IInsightsService`).
-3. Customer recommendations with reason text.
+**3. Cart and wallet subsystem**
+- Add/update/remove cart items.
+- Quantity validation against stock.
+- Wallet balance view and wallet top-up.
 
-## Why This Design Holds Up
+**4. Checkout, payment, and order processing**
+- Wallet-only checkout flow.
+- Stock and balance validation before payment.
+- Stock deduction, payment creation, order snapshot creation, and cart clear on success.
 
-- Menus are thin and index-driven (no GUID input).
-- Business rules live in services/domain, not in I/O handlers.
-- Persistence is isolated behind repository contracts.
-- Domain state changes happen through intention-revealing methods.
-- Tests cover success + failure paths across layers.
-- Docs map directly to implementation for demo confidence.
+**5. Order management subsystem**
+- Customer order history and status tracking.
+- Administrator all-orders view and controlled status updates.
 
-## How To Run
+**6. Reviews and reporting subsystem**
+- Purchased-product-only reviews with rating validation.
+- Sales reporting with revenue, order-status counts, best sellers, and low-stock outputs.
 
-Prerequisites:
+**7. Quality and persistence**
+- Friendly presentation-layer exception handling.
+- Reusable prompt/render helpers.
+- JSON persistence for users/products/orders.
+
+**8. Bonus capabilities implemented**
+- PDF sales report export.
+- Smart heuristic admin insights.
+- Customer product recommendations.
+
+### Architecture Summary
+
+CommerceConsole uses a layered architecture:
+- `Presentation`: menu routing, prompts, output formatting.
+- `Application`: service orchestration and contracts.
+- `Domain`: entities, invariants, enums, and domain exceptions.
+- `Infrastructure`: repository implementations, JSON file store, seed data, export adapter.
+
+Detailed architecture and design notes are available in `docs/`.
+
+### Quality And Testing
+
+- Automated tests cover domain, application, infrastructure, and presentation helpers.
+- Current local test run result: `61` tests passed.
+- Validation and exception pathways are included in regression coverage.
+
+## Additional Documentation
+
+- `docs/architecture.md`
+- `docs/auth-flow.md`
+- `docs/product-catalog.md`
+- `docs/cart-wallet.md`
+- `docs/checkout-orders.md`
+- `docs/order-lifecycle.md`
+- `docs/reviews-reporting.md`
+- `docs/persistence.md`
+- `docs/test-plan.md`
+
+# Running Application
+
+## Prerequisites
+
 - .NET 10 SDK
 
-Build:
+## Build
+
 ```powershell
 dotnet build CommerceConsole.csproj
 ```
 
-Run:
+## Run
+
 ```powershell
 dotnet run --project CommerceConsole.csproj
 ```
 
-Run tests:
+## Run Tests
+
 ```powershell
 dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
 ```
-
-Current passing count:
-- `61` tests (as of March 8, 2026 local workspace run)
-
-## Persistence Model
-
-Runtime state is persisted to JSON:
-- `data/users.json`
-- `data/products.json`
-- `data/orders.json`
-
-Seed behavior is idempotent:
-- admin is created only if missing
-- seed products are inserted only if missing by name
-
-Bonus export artifact:
-- sales report PDF files are generated under chosen output directory (default `./exports`)
-
-## Study Path (Recommended)
-
-If your goal is deep understanding (not just marks), use this order:
-1. `docs/architecture.md`
-2. `docs/folder-structure-rationale.md`
-3. `docs/oop-design-notes.md`
-4. `docs/access-modifiers-and-class-design.md`
-5. `docs/design-patterns-current.md`
-6. Feature docs (`auth-flow`, `product-catalog`, `cart-wallet`, `checkout-orders`, `order-lifecycle`, `reviews-reporting`, `persistence`)
-7. `docs/test-plan.md`
-8. `docs/demo-study-guide.md`
-9. `docs/viva-questions-and-answers.md`
-
-## Milestones (Locked)
-
-1. `M1-Foundation-and-Auth`
-2. `M2-Catalog-Cart-and-Checkout`
-3. `M3-Orders-Reporting-and-Quality`
-4. `M4-Monday-Patterns-2026-03-09`
-
-## Known Trade-Offs
-
-- Password storage is plain text in current coursework scope.
-- JSON store is optimized for single-process usage.
-- Order transition map is centralized in service (State pattern extraction is planned for Submission 2).
-- Manual PDF generator is intentionally simple and deterministic.
-
-## 30-Second Architecture Defense
-
-"CommerceConsole is layered: Presentation handles interaction, Application orchestrates workflows, Domain enforces business invariants, and Infrastructure handles JSON/export mechanics. It is DDD-inspired through rich entities and explicit business rules, while remaining lightweight enough for coursework delivery and safe pattern evolution."
