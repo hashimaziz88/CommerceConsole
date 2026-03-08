@@ -1,110 +1,157 @@
-# Test Plan
+# Test Plan and Quality Strategy
 
-## Goal
+## Purpose
 
-Ensure core authentication, catalog, cart/wallet, checkout/order lifecycle, reviews/reporting, persistence, presentation handling, and bonus features remain correct and stable while features evolve.
+This document explains how testing is structured, what behaviors are covered, how to run tests, and how to extend test quality safely as the project evolves.
 
-## Test Projects and Structure
+## Testing Philosophy
 
-Current test project:
+CommerceConsole testing is architecture-aligned:
+- domain behavior tested in isolation
+- service workflows tested as business units
+- persistence/export adapters tested separately
+- presentation helpers tested with console harnesses
+
+Principle:
+- test the right concern at the right layer.
+
+## Current Test Project Structure
+
+Project:
 - `Tests/CommerceConsole.Tests/CommerceConsole.Tests.csproj`
 
-Current test folders:
-- `Tests/CommerceConsole.Tests/Domain`
-- `Tests/CommerceConsole.Tests/Application`
-- `Tests/CommerceConsole.Tests/Infrastructure`
-- `Tests/CommerceConsole.Tests/Presentation`
+Folders:
+- `Domain`
+- `Application`
+- `Infrastructure`
+- `Presentation`
 
-## Current Coverage Summary
+Why this split:
+- mirrors production architecture
+- makes coverage gaps obvious
 
-### Domain tests
-- product negative price validation
+## Current Status Snapshot
 
-### Application tests
+Latest local run (March 8, 2026):
+- Total tests: `61`
+- Passed: `61`
+- Failed: `0`
+- Skipped: `0`
+
+## Coverage by Capability
+
+## Domain invariants
+
+Representative checks:
+- invalid product values rejected
+- entity constructor guard behavior
+
+## Authentication and session
+
+Covers:
 - registration success
 - duplicate email rejection
 - invalid email rejection
-- customer login success
-- seeded admin login success
+- customer/admin login success paths
 - wrong-password rejection
-- session sign-in/sign-out state behavior
-- product add success
-- product add validation failure
-- product search by category with active filtering
-- product update success
-- product update not-found failure
-- product delete success
-- product restock success
-- low-stock filtering by threshold
-- cart add success
-- cart add stock violation
-- cart null-customer guard
-- cart update-to-zero removal
-- cart negative quantity rejection
-- cart update stock violation
-- wallet top-up success + persistence
-- wallet top-up validation failure
-- wallet null-customer guard
-- checkout happy path (wallet debit + stock deduction + order/payment creation + cart clear)
-- checkout failure on insufficient funds
-- checkout failure on insufficient stock
-- checkout failure on missing product in cart
-- checkout snapshot integrity for order items
-- customer-order lookup empty-ID guard
-- status update empty-ID guard
-- valid order status transition sequence
-- invalid order status transition rejection
+- sign-in/sign-out state behavior
+
+## Catalog and inventory
+
+Covers:
+- add/update/delete/restock workflows
+- search and active filtering
+- low-stock threshold behavior
+
+## Cart and wallet
+
+Covers:
+- add/update/remove cart mutations
+- stock validation against requested quantities
+- wallet top-up validation and persistence
+
+## Checkout and orders
+
+Covers:
+- happy path orchestration
+- insufficient funds/stock failure paths
+- missing product failure path
+- order snapshot correctness
+
+## Order lifecycle transitions
+
+Covers:
+- valid sequence transitions
+- invalid transition rejection
 - terminal-state transition rejection
-- review add success + persistence + average rating
-- review blocked for unpurchased product
-- reviewable-products list contains purchased products only
-- review rating validation failure
-- report total revenue calculation
-- report orders-by-status calculation
-- report best-selling product aggregation/ranking
-- report low-stock filtering/sorting
-- bonus recommendation filtering/ranking and purchase exclusion
-- bonus recommendation validation (invalid max count)
-- bonus admin insight summary generation
-- bonus export orchestration delegates snapshot to exporter
 
-### Infrastructure tests
-- seed persistence to JSON files
-- idempotent reseeding behavior for expanded catalog
-- persisted user reload across repository instances
-- bonus PDF exporter file creation and header validation
-- bonus PDF exporter validation guard for blank output directory
+## Reviews and reporting
 
-### Presentation tests
-- menu selection range validation/retry behavior
-- positive integer input retry behavior
-- non-negative integer input behavior
-- positive decimal input retry behavior
-- invalid input-range configuration guard
-- confirmation prompt yes/no/default behavior
-- paged product rendering for larger lists
-- global index visibility in selectable product views
+Covers:
+- purchased-only review rules
+- rating validation
+- average rating, revenue, status counts, best-seller, low-stock calculations
 
-## Test Data Strategy
+## Bonus features
 
-- each test creates its own temporary data directory where repository persistence is involved
-- tests clean up temp directories after execution
-- console input/output tests isolate `Console.In`/`Console.Out` per case with synchronization
+Covers:
+- recommendation filtering/ranking
+- admin insight generation
+- report export orchestration and PDF output guards
+
+## Presentation helpers
+
+Covers:
+- input retry loops and range validation
+- confirmation prompts
+- paginated product rendering and index visibility
+
+## Test Data and Isolation Strategy
+
+Persistence-related tests:
+- use temporary per-test directories
+- avoid shared mutable fixtures
+
+Console tests:
+- redirect `Console.In` / `Console.Out`
+- synchronize where required to avoid global console collision
+
+Benefit:
+- deterministic runs with low flakiness risk
 
 ## How to Run
 
-- Build: `dotnet build CommerceConsole.csproj`
-- Test: `dotnet test Tests/CommerceConsole.Tests/CommerceConsole.Tests.csproj`
+```powershell
+dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
+```
 
-## Current Risks and Gaps
+Recommended pre-demo sequence:
+```powershell
+dotnet build CommerceConsole.csproj
+dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
+```
 
-Not yet covered (planned in next phases):
-- full end-to-end interactive console script regression suite
-- multi-process file concurrency behavior
-- multi-page PDF export rendering behavior
+## Regression Checklist for New Features
 
-## Expansion Plan
+When adding/changing behavior:
+1. add happy-path test
+2. add at least one failure/guard test
+3. update docs reflecting rule changes
+4. verify no existing tests regress
+5. include persistence/assertion updates if state model changed
 
-1. Continue regression coverage as UX and bonus options evolve.
-2. Add tests for future export formats (for example CSV) if introduced.
-3. Expand pattern-focused tests during Monday pattern milestone work.
+## Current Gaps and Planned Improvements
+
+Known gaps:
+- no full interactive end-to-end scripted console session tests
+- no cross-process file contention simulation
+- no multi-page PDF fidelity tests
+
+Planned additions:
+- pattern-focused tests during Submission 2 refactor
+- exporter-variant tests if CSV/other exporters added
+- deeper audit-log tests if event logging bonus is expanded
+
+## Quick Viva Script
+
+"Tests are organized by architecture layer so each concern is validated at the right level. We cover core happy paths and failure paths for auth, catalog, cart, checkout, lifecycle, reviews, reporting, persistence, and presentation helpers, with deterministic isolation for file and console tests."

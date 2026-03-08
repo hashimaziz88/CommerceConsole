@@ -1,45 +1,38 @@
-# Online Shopping Backend System - Documentation Pack
+# CommerceConsole Codex Pack
 
-This documentation pack is designed to build the Boxfusion-style console application to Submission 2 quality from day one.
+This folder is the internal delivery and governance pack for AI-assisted implementation.
 
-Baseline execution rule:
-- Implement core features, quality hardening, tests, and documentation from the start.
-- Monday add-on (2026-03-09): implement design patterns and pattern-focused verification.
+It exists to keep architecture, coding standards, milestone scope, and prompt workflows synchronized with the live codebase.
 
-## Included documents
+## What this pack contains
 
-- `01_Project_Overview.md` - scope, goals, assumptions, and rubric mapping
-- `02_Architecture_and_Solution_Structure.md` - modular architecture and solution structure
-- `03_Domain_Model.md` - entities, relationships, invariants, and responsibilities
-- `04_Submission_1_Implementation_Blueprint.md` - baseline implementation plan that already includes Submission 2 quality facets
-- `05_Submission_2_Design_Pattern_Upgrade.md` - Monday pattern implementation plan
-- `06_Coding_Standards.md` - Boxfusion-aligned C# coding standards adapted to this project
-- `07_Git_Workflow_and_Branching.md` - delivery plan, branching strategy, PR checklist, and commit guidance
-- `08_Codex_Prompt_Pack.md` - prompt-ready instructions for coding agents
-- `09_GitHub_Feature_Issues.md` - copy-paste issue tickets aligned to this strategy
+- `01_Project_Overview.md`: project scope, execution model, and rubric intent
+- `02_Architecture_and_Solution_Structure.md`: layer boundaries and folder ownership
+- `03_Domain_Model.md`: entity model, invariants, and exception model
+- `04_Submission_1_Implementation_Blueprint.md`: baseline execution sequence
+- `05_Submission_2_Design_Pattern_Upgrade.md`: Monday pattern-only upgrade plan
+- `06_Coding_Standards.md`: non-negotiable coding and documentation standards
+- `07_Git_Workflow_and_Branching.md`: branch strategy, milestone locks, PR checklist
+- `08_Codex_Prompt_Pack.md`: copy-paste prompts (core + extension)
+- `09_GitHub_Feature_Issues.md`: milestone-locked issue templates
+- `agents.md`: role-oriented agent execution guide
+- `rules.md`: hard constraints and guardrails
 
-## Recommended usage
+## Usage order
 
-1. Read `01_Project_Overview.md` and `02_Architecture_and_Solution_Structure.md` first.
-2. Build using `04_Submission_1_Implementation_Blueprint.md` as the primary execution plan.
-3. Follow `06_Coding_Standards.md` while coding and testing.
-4. Create GitHub issues from `09_GitHub_Feature_Issues.md`.
-5. Use `08_Codex_Prompt_Pack.md` to delegate implementation tasks to Codex.
-6. On Monday, apply `05_Submission_2_Design_Pattern_Upgrade.md` for patterns only.
+1. Read `01`, `02`, `03` for context and boundaries.
+2. Execute work using `04` and `06`.
+3. Follow milestone/branch discipline in `07` and `09`.
+4. Use `08` prompts for task slicing.
+5. Only apply `05` during the Monday pattern phase.
 
-## Submission strategy
+## Current project state assumptions
 
-The specification requires:
-- registration and login
-- role separation for customer and administrator
-- product catalog management
-- cart functionality
-- order placement and tracking
-- wallet-based payment simulation
-- inventory management
-- reporting and analytics
-- product reviews and ratings
-- input validation and exception handling
-- use of OOP, interfaces, LINQ, collections, and clean architecture
+- Baseline Submission 1 features are implemented.
+- UX hardening, JSON persistence, and no-GUID presentation flows are implemented.
+- Bonus features are implemented (PDF export, insights, recommendations).
+- Monday pattern work remains a controlled refactor phase, not feature catch-up.
 
-This pack treats all non-pattern quality requirements as baseline work from the first implementation cycle.
+## Maintenance rule
+
+Any behavior, architecture, testing, or milestone change must be reflected in this folder immediately to avoid process drift.

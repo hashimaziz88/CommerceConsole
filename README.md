@@ -1,194 +1,139 @@
 # CommerceConsole
 
-## What Is CommerceConsole?
+CommerceConsole is a layered C# console implementation of an online shopping backend.
+It is built to be:
+- submission-ready
+- demo/viva explainable
+- safe to evolve into Submission 2 patterns without rewrite-heavy risk
 
-CommerceConsole is a C# console-based Online Shopping Backend System.
+## What Architecture Is This Exactly?
 
-It is structured as a layered, maintainable codebase for coursework delivery, with:
-- Presentation layer (menus and console UX)
-- Application layer (services and interfaces)
-- Domain layer (entities, enums, exceptions, invariants)
-- Infrastructure layer (JSON-backed repositories, seed data, export implementations)
-- Test project (domain/application/infrastructure/presentation coverage)
+Short answer:
+- It is a **Layered Architecture** with **Clean Architecture principles**.
+- It is **DDD-inspired**, but **not full tactical Domain-Driven Design**.
 
-The project is delivered with Submission 2-quality engineering practices from the start, then extended with optional bonus features.
+Why "DDD-inspired":
+- domain entities are rich (behavior + invariants, not just data)
+- rules are protected through guard clauses and encapsulation
+- business language is explicit (`Customer`, `Order`, `Payment`, `Review`)
 
-## Why Choose CommerceConsole?
+Why it is not full tactical DDD:
+- no explicit aggregate root boundaries and aggregate repositories
+- no domain events
+- no explicit value-object catalog (beyond primitive-centric model)
+- no bounded-context split yet
 
-- Clean architecture: business logic is separated from UI concerns.
-- Maintainability: services, repositories, and domain rules are isolated by responsibility.
-- Testability: workflow logic is service-driven and covered by automated tests.
-- Practical persistence: mutable data is stored in JSON files for console-level persistence.
-- Security-aware presentation: user-facing screens avoid exposing internal identifiers.
-- Demo-friendly terminal UX: framed menus, confirmations, breadcrumbs, and consistent message styling.
-- Bonus-ready design: export and insights functionality is isolated behind interfaces.
+If asked in viva:
+"This is a layered, DDD-inspired console architecture. We use rich domain entities and business invariants, but we intentionally stopped short of full tactical DDD complexity for scope and delivery speed."
 
-## Documentation
+## Folder and Naming Philosophy
 
-### Core Project Docs
+Top-level folders:
+- `Presentation`: menus, prompts, rendering helpers
+- `Application`: use-case orchestration services + contracts
+- `Domain`: entities, enums, business exceptions, invariants
+- `Infrastructure`: repository implementations, JSON store, seed data, exporters
+- `Tests`: architecture-mirrored automated tests
+- `docs`: architecture, OOP, workflow, and study pack notes
+- `.codex`: implementation standards, prompts, issue/milestone plan
 
-- `docs/architecture.md`
-- `docs/auth-flow.md`
-- `docs/product-catalog.md`
-- `docs/cart-wallet.md`
-- `docs/checkout-orders.md`
-- `docs/order-lifecycle.md`
-- `docs/reviews-reporting.md`
-- `docs/persistence.md`
-- `docs/oop-design-notes.md`
-- `docs/design-patterns-current.md`
-- `docs/test-plan.md`
-- `docs/bonus-features.md`
+Naming conventions used:
+- interfaces: `I*` (`IOrderService`, `IProductRepository`)
+- services: `*Service`
+- repositories: implementation-style prefix (`InMemory*Repository`)
+- persistence records: `*Record`
+- menu helpers: `*Helper` and `*Renderer`
+- read/report models: concise `*Item` / `*Snapshot` records
 
-### Planning and Delivery Docs
+## Core Scope Implemented
 
-- `.codex/README.md`
-- `.codex/04_Submission_1_Implementation_Blueprint.md`
-- `.codex/05_Submission_2_Design_Pattern_Upgrade.md`
-- `.codex/09_GitHub_Feature_Issues.md`
+Submission 1 baseline:
+1. Registration, login, and role-based routing.
+2. Product browse/search + full admin catalog management.
+3. Cart and wallet workflows with stock/funds validation.
+4. Checkout with wallet simulation, payment record, order snapshots.
+5. Order history/tracking + admin status transitions.
+6. Reviews (purchased products only) + reporting via LINQ.
+7. Validation hardening, friendly exception boundaries, improved UX.
 
-## Software Requirement Snapshot
+Bonus scope above baseline:
+1. PDF sales report export (`IReportExporter` + `PdfReportExporter`).
+2. Heuristic smart admin insights (`IInsightsService`).
+3. Customer recommendations with reason text.
 
-### Baseline Scope (Submission 1)
+## Why This Design Holds Up
 
-1. Authentication and authorization management
-- customer registration
-- customer/admin login
-- seeded administrator account
-- role-based navigation
-Status: Implemented
+- Menus are thin and index-driven (no GUID input).
+- Business rules live in services/domain, not in I/O handlers.
+- Persistence is isolated behind repository contracts.
+- Domain state changes happen through intention-revealing methods.
+- Tests cover success + failure paths across layers.
+- Docs map directly to implementation for demo confidence.
 
-2. User/account and session management
-- session context for active user state
-- account-level wallet balance handling
-- persistent customer/cart data through repository updates
-Status: Implemented
+## How To Run
 
-3. Product catalog and inventory management
-- browse active products
-- search products by name/category (LINQ)
-- admin add/update/delete/restock
-- low-stock query support
-- paged product-list rendering for larger catalogs
-Status: Implemented
-
-4. Cart and wallet subsystem
-- add to cart, view cart, update quantity, remove on zero
-- stock-aware cart validation
-- wallet balance and top-up
-Status: Implemented
-
-5. Checkout, payments, and order processing
-- checkout with wallet-only payment
-- pre-checkout stock and wallet validation
-- stock deduction and wallet debit on success
-- payment/order record creation with snapshot order items
-- cart clear after successful checkout
-Status: Implemented
-
-6. Order history, tracking, and admin status updates
-- customer order history view
-- customer order status tracking
-- admin all-order visibility
-- admin status updates with transition-rule enforcement
-Status: Implemented
-
-7. Reviews and reporting
-- customer product reviews with rating/comment (purchased products only)
-- average rating display
-- admin sales report: total revenue, orders by status, best sellers, low stock
-Status: Implemented
-
-8. Quality hardening
-- stronger validation/exception UX paths
-- regression coverage and docs alignment
-Status: Implemented
-
-### Bonus Scope (Above Submission 1)
-
-1. PDF sales report export (admin)
-- generates one-page PDF report files
-- uses `IReportExporter` abstraction and `PdfReportExporter` implementation
-Status: Implemented
-
-2. Heuristic smart insights (admin)
-- rule-based operational insight lines (revenue/category/restock/sentiment/fulfillment)
-- no external AI dependency required
-Status: Implemented
-
-3. Customer recommendations
-- suggests active, in-stock, not-yet-purchased products
-- prioritizes preferred categories and rating signals
-Status: Implemented
-
-## Running the Application
-
-### Prerequisites
-
+Prerequisites:
 - .NET 10 SDK
-- Windows PowerShell (recommended in this workspace)
 
-### Build
-
+Build:
 ```powershell
 dotnet build CommerceConsole.csproj
 ```
 
-### Run
-
+Run:
 ```powershell
 dotnet run --project CommerceConsole.csproj
 ```
 
-### Run Tests
-
+Run tests:
 ```powershell
 dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
 ```
 
-## Persistence
+Current passing count:
+- `61` tests (as of March 8, 2026 local workspace run)
 
-Mutable runtime data is persisted to JSON files in `data/`:
+## Persistence Model
+
+Runtime state is persisted to JSON:
 - `data/users.json`
 - `data/products.json`
 - `data/orders.json`
 
-Seed behavior:
-- default admin and expanded starter catalog are seeded on startup
-- missing seeded products are added idempotently by product name (no duplicates)
+Seed behavior is idempotent:
+- admin is created only if missing
+- seed products are inserted only if missing by name
 
-Bonus export files:
-- report PDFs are generated on demand under a chosen output directory (default `./exports`)
+Bonus export artifact:
+- sales report PDF files are generated under chosen output directory (default `./exports`)
 
-## Milestone Plan (Locked)
+## Study Path (Recommended)
+
+If your goal is deep understanding (not just marks), use this order:
+1. `docs/architecture.md`
+2. `docs/folder-structure-rationale.md`
+3. `docs/oop-design-notes.md`
+4. `docs/access-modifiers-and-class-design.md`
+5. `docs/design-patterns-current.md`
+6. Feature docs (`auth-flow`, `product-catalog`, `cart-wallet`, `checkout-orders`, `order-lifecycle`, `reviews-reporting`, `persistence`)
+7. `docs/test-plan.md`
+8. `docs/demo-study-guide.md`
+9. `docs/viva-questions-and-answers.md`
+
+## Milestones (Locked)
 
 1. `M1-Foundation-and-Auth`
-- architecture bootstrap
-- registration/login/session + tests
-
 2. `M2-Catalog-Cart-and-Checkout`
-- catalog management
-- cart/wallet
-- checkout/payment/order processing
-
 3. `M3-Orders-Reporting-and-Quality`
-- order tracking/status updates
-- reviews/reporting
-- quality hardening and documentation alignment
-
 4. `M4-Monday-Patterns-2026-03-09`
-- explicit design pattern implementation without feature expansion
 
-## Current Limitations
+## Known Trade-Offs
 
-- PDF exporter is intentionally simple one-page output
-- password storage is plain text (coursework scope trade-off)
-- JSON persistence is designed for single-process console use
+- Password storage is plain text in current coursework scope.
+- JSON store is optimized for single-process usage.
+- Order transition map is centralized in service (State pattern extraction is planned for Submission 2).
+- Manual PDF generator is intentionally simple and deterministic.
 
-## Development Notes
+## 30-Second Architecture Defense
 
-- Coding standards: `.codex/06_Coding_Standards.md`
-- Git workflow and branching: `.codex/07_Git_Workflow_and_Branching.md`
-- Prompt pack and issue mapping: `.codex/08_Codex_Prompt_Pack.md`, `.codex/09_GitHub_Feature_Issues.md`
-
-
+"CommerceConsole is layered: Presentation handles interaction, Application orchestrates workflows, Domain enforces business invariants, and Infrastructure handles JSON/export mechanics. It is DDD-inspired through rich entities and explicit business rules, while remaining lightweight enough for coursework delivery and safe pattern evolution."

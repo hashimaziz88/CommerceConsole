@@ -1,57 +1,239 @@
-# Current Design Patterns in Code
+# Current Design Patterns in CommerceConsole
 
 ## Purpose
 
-This document lists the design patterns that are already implemented in the current codebase and explains their practical use.
+This document maps patterns currently present in code, explains why they were used, and clarifies which upgrades are still planned for Submission 2.
 
-It intentionally distinguishes currently used patterns from larger Monday-focused pattern expansion work.
+Important framing:
+- Not every pattern here is a Gang-of-Four pattern.
+- Some are architectural patterns or implementation techniques.
+- In viva, that is acceptable if you define the category clearly.
 
-## Pattern Inventory
+## Pattern Inventory at a Glance
 
-| Pattern | How it appears in this project | Key locations | Why it is used |
-|---|---|---|---|
-| Repository Pattern | Interfaces define data contracts and concrete repositories implement persistence details | `Application/Interfaces/IRepository.cs`, `IUserRepository.cs`, `IProductRepository.cs`, `IOrderRepository.cs`; `Infrastructure/Repositories/InMemory*Repository.cs` | decouples business logic from storage, supports testability and future persistence swaps |
-| Service Layer Pattern | Application services coordinate use cases and keep workflows out of menus | `Application/Services/AuthService.cs`, `ProductService.cs`, `CartService.cs`, `WalletService.cs`, `OrderService.cs`, `ReviewService.cs`, `ReportService.cs` | centralizes business workflows and policy logic |
-| Dependency Injection (Constructor Injection) | Services/menus receive dependencies through constructors | constructors across `Application/Services/*` and `Presentation/Menus/*` | improves loose coupling and makes collaborators explicit |
-| Composition Root | One startup point wires repositories, services, and menus | `Program.cs` | keeps object graph construction in one place and avoids ad-hoc service creation across layers |
-| Data Mapper Pattern | Repositories map between persistence records and domain entities with dedicated mapping methods | `InMemoryUserRepository.ToDomain/FromDomain`, `InMemoryProductRepository.ToDomain/FromDomain`, `InMemoryOrderRepository.ToDomain/FromDomain` | isolates JSON schema from domain model, reducing persistence leakage |
-| Rich Domain Model (Entity Behavior) | Entities own invariants and state transitions through methods, not public setters | `Domain/Entities/Product.cs`, `Customer.cs`, `Cart.cs`, `Payment.cs`, `Order.cs` | protects domain integrity and keeps rules close to the data they govern |
-| Guard Clause Pattern | Constructors and methods fail fast on invalid input/state | constructors and mutator methods in `Domain/Entities/*`; validation checks in services | provides predictable error flow and prevents invalid state propagation |
-| Session Context Pattern | A dedicated object stores authenticated user state for the running process | `Application/Services/SessionContext.cs`, `Application/Interfaces/ISessionContext.cs` | avoids passing auth state manually through every call and keeps session responsibility focused |
-| Strategy-style Export Seam | Report export behavior is abstracted behind an exporter contract with swappable implementation | `Application/Interfaces/IReportExporter.cs`, `Application/Services/ReportExportService.cs`, `Infrastructure/Export/PdfReportExporter.cs` | enables export-format extension without changing report aggregation services |
-| Command-Query Separation (style) | Write operations and read operations are separated by intent and naming | command examples: `AddToCart`, `RestockProduct`, `AddFunds`; query examples: `GetActiveProducts`, `GetCartItems`, `GetOrdersByStatus` | improves readability and reduces accidental side effects |
-| Idempotent Seed/Bootstrap Pattern | Startup seed checks existing data before inserting defaults | `Infrastructure/Data/SeedData.cs` | safe repeated startup without duplicate admin/products |
+Implemented now:
+1. Repository Pattern
+2. Service Layer Pattern
+3. Constructor Injection
+4. Composition Root
+5. Data Mapper Pattern
+6. Rich Domain Model
+7. Guard Clauses
+8. Session Context Pattern
+9. Strategy-style Export Abstraction
+10. Idempotent Seed Pattern (startup reliability technique)
 
-## Pattern Use by Layer
+Planned next (Submission 2 style):
+- Factory Pattern (menu/user creation extraction)
+- broader Strategy Pattern (payment/report variants)
+- State-style transition objects for orders
 
-### Presentation
-- Uses service-layer APIs instead of repositories directly.
-- Keeps flow orchestration and exception boundary handling only.
+## 1. Repository Pattern
 
-### Application
-- Implements Service Layer with constructor-injected repository abstractions.
-- Encapsulates query ordering/filtering and workflow logic.
-- Adds exporter and insights abstraction points for extension-friendly bonus features.
+Definition:
+- Provides collection-like access to domain objects while hiding data-source details.
 
-### Domain
-- Implements rich entities with guard clauses and controlled mutation.
+Where:
+- contracts in `Application/Interfaces` (`IUserRepository`, `IProductRepository`, `IOrderRepository`)
+- implementations in `Infrastructure/Repositories`
 
-### Infrastructure
-- Implements Repository + Data Mapper over JSON file persistence.
-- Implements concrete PDF exporter behind application-level interface.
+Why used:
+- services should reason about business operations, not JSON I/O internals.
 
-## What Is Still Planned for Monday-focused Expansion
+Problem solved:
+- decouples business workflows from storage technology.
 
-The following are intentionally scoped for further formalization:
-- Factory Pattern modules for role-based creation
-- broader Strategy variants beyond export seam
-- more explicit State-style order transition policy object
+Trade-off:
+- additional interfaces and mapping logic.
 
-## Quick Explanation Script (for demo/viva)
+## 2. Service Layer Pattern
 
-If asked "What patterns are currently in your code?":
-- We use Repository + Service Layer + constructor-based DI and a single composition root.
-- Repositories use Data Mapper methods so JSON schema stays separate from domain entities.
-- Domain entities are rich models with guard clauses to enforce invariants.
-- Session state is isolated in `SessionContext`.
-- Report exporting uses a strategy-style abstraction (`IReportExporter`) with a concrete PDF implementation.
+Definition:
+- Centralizes use-case orchestration in dedicated service classes.
+
+Where:
+- `Application/Services/*`
+
+Why used:
+- keeps menus thin and prevents workflow duplication across UI handlers.
+
+Problem solved:
+- avoids business logic leakage into presentation.
+
+Trade-off:
+- more service classes to maintain as scope grows.
+
+## 3. Constructor Injection
+
+Definition:
+- dependencies are passed through constructors rather than created internally.
+
+Where:
+- application services and menus
+
+Why used:
+- explicit dependency graphs
+- easy test construction
+
+Problem solved:
+- avoids hidden coupling and hard-wired implementation creation.
+
+Trade-off:
+- constructors become longer for coordinator types.
+
+## 4. Composition Root
+
+Definition:
+- single entry point where object graph is assembled.
+
+Where:
+- `Program.cs`
+
+Why used:
+- all runtime wiring is visible in one place.
+
+Problem solved:
+- avoids object creation scattered across menus/services.
+
+Trade-off:
+- startup file grows as dependencies increase.
+
+## 5. Data Mapper Pattern
+
+Definition:
+- maps between domain entities and storage record models.
+
+Where:
+- `ToDomain(...)` / `FromDomain(...)` methods in repositories
+- `Infrastructure/Repositories/Models/*Record.cs`
+
+Why used:
+- domain model stays independent from JSON schema shape.
+
+Problem solved:
+- prevents persistence concerns from polluting domain entities.
+
+Trade-off:
+- explicit mapper code overhead.
+
+## 6. Rich Domain Model
+
+Definition:
+- entities contain both data and behavior/invariant enforcement.
+
+Where:
+- `Domain/Entities` (`Product`, `Cart`, `Customer`, `Order`, `Payment`, `Review`)
+
+Why used:
+- business rules should be enforced by the object that owns state.
+
+Problem solved:
+- reduces invalid-state bugs from unrestricted property writes.
+
+Trade-off:
+- requires disciplined method design to avoid entity bloat.
+
+## 7. Guard Clauses
+
+Definition:
+- fail-fast validation at method/constructor boundaries.
+
+Where:
+- domain constructors/mutators
+- service entry methods
+
+Why used:
+- immediate feedback and simpler debugging.
+
+Problem solved:
+- blocks invalid state early.
+
+Trade-off:
+- repetitive checks if not consistently organized.
+
+## 8. Session Context Pattern
+
+Definition:
+- dedicated holder for current authenticated runtime user state.
+
+Where:
+- `ISessionContext` + `SessionContext`
+
+Why used:
+- avoids passing user state through every call manually.
+
+Problem solved:
+- centralizes sign-in/sign-out state management.
+
+Trade-off:
+- currently process-local only.
+
+## 9. Strategy-Style Export Abstraction
+
+Definition:
+- output/export behavior is hidden behind an interface and selected implementation.
+
+Where:
+- `IReportExporter`
+- `ReportExportService`
+- `PdfReportExporter`
+
+Why used:
+- report aggregation (`ReportService`) should not know PDF formatting details.
+
+Problem solved:
+- separates what to export from how to export.
+
+Trade-off:
+- one more abstraction for small scope.
+
+Note:
+- this is a practical strategy seam, even if only one concrete exporter exists currently.
+
+## 10. Idempotent Seed Pattern
+
+Definition:
+- startup seed can run repeatedly without duplicate inserts.
+
+Where:
+- `SeedData.Seed(...)`
+
+Why used:
+- predictable restarts and repeat demos.
+
+Problem solved:
+- avoids duplicate admin/products after relaunch.
+
+Trade-off:
+- small startup check overhead.
+
+## Pattern Interactions (How They Work Together)
+
+Typical flow:
+1. Menu (Presentation) calls service.
+2. Service (Service Layer) uses repository interfaces.
+3. Repository implementation maps domain <-> record models (Data Mapper).
+4. File store persists JSON (Infrastructure detail).
+5. Domain entities enforce invariants via guard clauses throughout.
+
+This interaction is the core maintainability story of the project.
+
+## What Is Not Fully Patternized Yet (Intentional)
+
+Not yet extracted:
+- factory classes for role/menu creation
+- state objects for order transitions
+- multiple payment strategies
+
+Reason:
+- baseline delivery and reliability first
+- pattern extraction planned as controlled refactor phase (Monday milestone)
+
+## How to Explain Pattern Choice in Viva
+
+Good phrasing:
+"We used patterns that solve immediate structural problems: Repository for storage decoupling, Service Layer for workflow centralization, Data Mapper for schema isolation, and composition root plus constructor injection for explicit wiring. Pattern adoption is incremental and driven by concrete needs, not overengineering."
+
+## 30-Second Pattern Defense Script
+
+"Current patterns isolate responsibilities: repositories abstract storage, services own use-case orchestration, mappers separate domain from JSON schema, and composition root keeps wiring explicit. We intentionally added an exporter strategy seam and kept future factory/state extractions as low-risk next steps."

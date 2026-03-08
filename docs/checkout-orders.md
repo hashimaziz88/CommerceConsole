@@ -1,89 +1,115 @@
 # Checkout, Payment, and Order Processing
 
-## Scope
+## Purpose
 
-This document explains Prompt 5 implementation for:
-- wallet-only checkout
-- stock and funds validation before payment
-- stock deduction and wallet debit on success
-- payment and order record creation
-- snapshot-based order items
-- cart clearing after successful checkout
+This document explains checkout orchestration, payment simulation, order creation, and invariants after success/failure.
 
-## Checkout Workflow
+## Central Design Rule
 
-Service:
-- `OrderService.Checkout(Customer customer)`
+Checkout orchestration lives in one place:
+- `Application/Services/OrderService.Checkout(Customer customer)`
 
-Execution sequence:
-1. Validate customer object and ensure cart is not empty.
-2. Validate every cart line:
+Why this is important:
+- complex state changes (wallet, stock, payment, order, cart) stay coordinated in one use-case method
+- menus remain thin
+
+## Checkout Sequence (Detailed)
+
+1. Validate customer object exists.
+2. Read cart items; reject empty cart.
+3. Build checkout lines by resolving each product and validating:
 - product exists
 - product is active
-- cart quantity does not exceed current stock
-3. Validate wallet balance is sufficient for cart total.
-4. Create payment draft (`method = Wallet`).
-5. Debit customer wallet.
-6. Reduce stock for each product and persist product updates.
-7. Mark payment completed.
-8. Build snapshot `OrderItem` records from cart items.
-9. Create order, set order status to `Paid`, and persist order.
-10. Clear customer cart and persist user update.
+- requested quantity <= available stock
+4. Calculate cart total.
+5. Ensure wallet balance >= total.
+6. Create payment draft (`method = Wallet`).
+7. Debit customer wallet.
+8. Deduct stock from each product and persist each product update.
+9. Mark payment completed.
+10. Build immutable order item snapshots from cart lines.
+11. Create order (`Pending` by constructor), then set to `Paid`.
+12. Persist order.
+13. Append order to customer history and clear cart.
+14. Persist updated customer state.
 
-## Validation and Exceptions
+## Why Snapshot Order Items Matter
 
-`OrderService.Checkout(...)` may throw:
-- `ValidationException`
-- `NotFoundException`
-- `InsufficientStockException`
-- `InsufficientFundsException`
+At checkout time, `OrderItem` captures:
+- product ID
+- product name
+- unit price
+- purchased quantity
 
-Validation guarantees:
-- no checkout from an empty cart
-- no checkout for inactive/missing products
-- no checkout when stock is insufficient
-- no checkout when wallet funds are insufficient
+Benefit:
+- order history remains historically accurate even if catalog name/price later changes.
 
-## State Invariants
+## Validation and Exception Model
 
-On successful checkout:
+Potential exceptions:
+- `ValidationException` for invalid customer, empty cart, or inactive product
+- `NotFoundException` for missing product during checkout
+- `InsufficientStockException` if requested quantity exceeds stock
+- `InsufficientFundsException` if wallet is too low
+
+All are caught at presentation boundary for friendly messages.
+
+## Post-Checkout Invariants (Success)
+
+After successful checkout:
 - payment status is `Completed`
 - order status is `Paid`
-- order total equals sum of snapshot order items
-- product stock is reduced according to purchased quantities
-- customer wallet balance is debited by order total
+- order total equals sum of snapshot line totals
+- product stocks are reduced
+- customer wallet is debited
 - customer cart is empty
+- order and user records are persisted
 
-On failed checkout validation:
-- no order record is created
+## Failure Invariants (No Partial Business Completion)
+
+If validation fails before stock/funds mutation:
+- no order is persisted
+- wallet and stock remain unchanged
 - cart remains unchanged
-- stock remains unchanged
-- wallet balance remains unchanged
 
-## Snapshot Behavior
+Note:
+- this is not a database transaction engine; it is deterministic service sequencing suitable for single-process coursework scope.
 
-Order items are created from cart snapshots (`CartItem -> OrderItem`) so later product catalog edits do not rewrite historical order details.
+## Persistence Touchpoints
 
-## Presentation Integration
-
-Customer menu now includes:
-- `Checkout` action routed to `OrderService.Checkout(...)`
-
-Presentation remains thin:
-- menu handles input/output and friendly exception messages
-- checkout orchestration remains in application service layer
-
-## Persistence
-
-Checkout touches three persistence stores:
-- `data/orders.json` (new order + payment record)
+Checkout writes to:
+- `data/orders.json` (new order + payment state)
 - `data/products.json` (updated stock)
-- `data/users.json` (wallet debit + cleared cart)
+- `data/users.json` (wallet debit + cart clear + order reference in memory)
 
-## Key Files
+## Architecture and Responsibility Split
 
-- `Application/Services/OrderService.cs`
-- `Application/Interfaces/IOrderService.cs`
-- `Infrastructure/Repositories/InMemoryOrderRepository.cs`
-- `Presentation/Menus/CustomerMenu.cs`
+Presentation:
+- confirmation prompt
+- summary display
+- invoke checkout
+
+Application (`OrderService`):
+- full orchestration and cross-entity policy checks
+
+Domain:
+- payment/order/cart/product invariants and mutation rules
+
+Infrastructure:
+- write-through persistence after updates
+
+## Testing Coverage
+
+Primary file:
 - `Tests/CommerceConsole.Tests/Application/OrderServiceTests.cs`
+
+Representative scenarios:
+- checkout happy path
+- insufficient funds failure
+- insufficient stock failure
+- missing product failure
+- snapshot integrity verification
+
+## Quick Viva Script
+
+"Checkout is intentionally centralized in `OrderService` because it coordinates multiple state changes. It validates stock and funds first, then executes wallet debit, stock deduction, payment completion, order persistence, and cart clear in a controlled sequence."

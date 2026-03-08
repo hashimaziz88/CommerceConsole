@@ -2,444 +2,189 @@
 
 ## Purpose
 
-This document explains the OOP design decisions in the current `CommerceConsole` implementation so you can justify both architecture and code-level choices during demos, reviews, and viva discussions.
+This is the long-form OOP reasoning document for CommerceConsole.
+It explains not just what classes exist, but why they are shaped this way.
 
-It covers:
-- why each major access modifier was chosen
-- why classes are `abstract`, `sealed`, or `static`
-- specialized method patterns used in domain/application/infrastructure
-- where LINQ is used, how query chains work, and why those operators were selected
+Use this as your core revision source for design and architecture questions.
 
-## Architecture Context
+## OOP Goals for This Project
 
-The project follows layered separation:
-- Presentation: menus + console helpers (`Presentation/*`)
-- Application: use-case orchestration via interfaces/services (`Application/*`)
-- Domain: entities, invariants, exceptions (`Domain/*`)
-- Infrastructure: repositories + JSON persistence + export adapters (`Infrastructure/*`)
+The codebase uses OOP to achieve five goals:
+1. protect business invariants where state lives
+2. keep workflows readable and testable
+3. reduce coupling between UI, business logic, and infrastructure
+4. support extension without destabilizing baseline behavior
+5. make design decisions explainable under viva questioning
 
-OOP choices were made to keep each layer cohesive and minimize cross-layer leakage.
+## Encapsulation: The Most Important Rule Here
 
-## Current Design Patterns Already Present
-
-The codebase already includes concrete pattern usage (not just planned refactors):
-- Repository Pattern (`I*Repository` with `InMemory*Repository` implementations)
-- Service Layer Pattern (`Application/Services/*`)
-- Constructor-based Dependency Injection
-- Composition Root in `Program.cs`
-- Data Mapper methods (`ToDomain` / `FromDomain`) in repositories
-- Rich Domain Model with guard clauses in entities
-- Session Context pattern for process-level authenticated user state
-- Strategy-style export seam (`IReportExporter` + `PdfReportExporter`) for bonus report formatting extension
-
-For the full pattern inventory and usage mapping, see:
-- `docs/design-patterns-current.md`
-
-## Core OOP Pillars Applied
-
-### Encapsulation
-
-Domain state transitions are restricted to explicit methods with guard clauses.
+Encapsulation strategy:
+- domain objects hold state
+- state changes are made through explicit behavior methods
+- direct setters are restricted (`private set` or getter-only)
 
 Examples:
-- `Product.UpdateDetails(...)`, `Product.Restock(...)`, `Product.ReduceStock(...)`
-- `Customer.AddFunds(...)`, `Customer.DebitFunds(...)`
-- `Cart.AddItem(...)`, `Cart.UpdateQuantity(...)`, `Cart.RemoveItem(...)`
-- `Payment.MarkCompleted()`, `Payment.MarkFailed()`
+- stock changes only through `Product.Restock` / `Product.ReduceStock`
+- wallet changes only through `Customer.AddFunds` / `Customer.DebitFunds`
+- cart mutation only through `Cart.AddItem` / `Cart.UpdateQuantity` / `Cart.RemoveItem`
 
-Impact:
-- invalid writes are blocked at the entity boundary
-- service and menu code cannot mutate critical fields directly
+Why this matters:
+- there is a single controlled gate for each important business mutation.
 
-### Abstraction
+## Abstraction and Contracts
 
-Service/repository interfaces expose capabilities without leaking implementation details.
+The application layer uses interfaces to abstract behavior from implementation.
 
-Examples:
-- service contracts: `IAuthService`, `IProductService`, `ICartService`, `IWalletService`
-- repository contracts: `IRepository<T>`, `IUserRepository`, `IProductRepository`, `IOrderRepository`
+Contract examples:
+- repositories: `IUserRepository`, `IProductRepository`, `IOrderRepository`
+- services: `IAuthService`, `IOrderService`, `IReviewService`, etc.
+- extension seam: `IReportExporter`
 
-Impact:
-- use cases depend on behavior, not storage mechanics
-- implementations can change with low ripple (e.g., in-memory to database)
+Benefits:
+- implementations can change without changing callers
+- tests can isolate behavior more easily
+- architecture boundaries stay explicit
 
-### Inheritance
+## Inheritance and Polymorphism (Used Carefully)
 
-`User` is an abstract base type for shared identity/authentication data.
+Inheritance exists where domain meaning is strong:
+- `User` (abstract) -> `Customer`, `Administrator`
 
-Concrete types:
-- `Customer : User`
-- `Administrator : User`
+Polymorphism examples:
+- role-based behavior via `UserRole` and derived user type checks in menus
+- repository polymorphism through interfaces (could swap implementation)
+- exporter polymorphism through `IReportExporter`
 
-Why inheritance is appropriate here:
-- these are true "is-a" relationships
-- shared fields/behavior are centralized in one base type
-- role-specific behavior/data stays in concrete classes
+Why not heavy inheritance everywhere:
+- deep inheritance hierarchies increase fragility
+- composition keeps responsibilities more explicit
 
-### Polymorphism
+## Composition Over Inheritance
 
-The application layer consumes interfaces and base types, enabling substitution.
+Composition-heavy design in practice:
+- `Customer` contains `Cart`, order history, and review history
+- `Order` contains item snapshots and payment
+- `Product` contains its reviews
 
-Examples:
-- `AuthService` depends on `IUserRepository`
-- `ProductService` depends on `IProductRepository`
-- `MainMenu` routes by `UserRole` using `ISessionContext`
+Benefits:
+- local reasoning
+- easier replacement and testing
+- fewer inheritance-related side effects
 
-Impact:
-- clearer boundaries
-- easier testing
-- easier refactoring for Submission 2 patterns
+## Guard Clauses and Invariants
 
-## Access Modifier Decisions and Reasoning
+Guard clauses are used in constructors and mutators to fail fast.
 
-### Access modifier strategy summary
+Invariant examples:
+- no negative product price or stock
+- review rating always between 1 and 5
+- order must have at least one item
+- payment amount must be > 0
+- user and entity IDs must not be empty GUIDs
 
-| Modifier | Where used | Why it was chosen |
-|---|---|---|
-| `public` | interfaces, entities, services, menu entry methods | marks the intentional API surface across layers |
-| `private` | dependency fields, helper methods, backing lists | hides implementation details and protects invariants |
-| `protected` | `User` constructor | allows inheritance while preventing direct `User` instantiation |
-| `private set` | mutable domain properties (`WalletBalance`, `Status`, etc.) | allows controlled mutation only through validated methods |
-| getter-only (`{ get; }`) | IDs, snapshots, immutable references | prevents accidental reassignment after construction |
+Design result:
+- impossible or unsafe states are blocked at source.
 
-### Why `public` is limited to intentional API surface
+## Why `sealed`, `abstract`, and `static` Were Chosen
 
-Public members are used where callers in other layers need access.
+`abstract`:
+- used where base type should not be instantiated (`User`)
 
-Examples:
-- service methods consumed by menus: `CartService.AddToCart`, `WalletService.AddFunds`
-- domain behavior consumed by services: `Product.Restock`, `Customer.DebitFunds`
+`sealed`:
+- used on most concrete classes to prevent accidental inheritance drift
 
-Reasoning:
-- keeps contract clear
-- reduces accidental coupling
+`static`:
+- used for stateless helpers (`ConsoleInputHelper`, `ConsoleTheme`, `MenuActionHelper`, etc.)
 
-### Why dependencies are `private readonly`
+Rationale:
+- class shape communicates intent and controls extensibility.
 
-Services and menus use private readonly fields for injected collaborators.
+## Separation of Concerns Through OOP Boundaries
 
-Examples:
-- `_productRepository` in `ProductService`
-- `_productService` in `AdminMenu`
+Presentation concerns:
+- prompting, selection, rendering, friendly errors
 
-Reasoning:
-- dependency cannot be changed after construction
-- improves predictability and testability
+Application concerns:
+- workflow orchestration, cross-entity coordination, query aggregation
 
-### Why domain properties avoid public setters
+Domain concerns:
+- entity correctness and local business behavior
 
-Examples:
-- `Product.Price { get; private set; }`
-- `Customer.WalletBalance { get; private set; }`
-- `Payment.Status { get; private set; }`
+Infrastructure concerns:
+- persistence/export mechanics and mapping
 
-Reasoning:
-- all changes must pass through methods that enforce rules
-- prevents illegal state transitions (negative stock, invalid wallet flows, etc.)
+This separation is the practical reason the architecture feels "clean" despite being a console app.
 
-### Why only `User` constructor is `protected`
+## LINQ Usage and Query Thinking
 
-`User` is abstract and not a valid standalone runtime type.
+LINQ is heavily used in application/infrastructure for expressive query logic.
 
-Reasoning:
-- only derived user roles should construct base identity data
-- guarantees a valid `UserRole` is provided by concrete constructors
+Where LINQ appears and why:
+- `ProductService.SearchProducts`: filter + sort catalog quickly
+- `ReportService`: group/aggregate revenue, status counts, and best sellers
+- `ReviewService`: compute purchased-only review eligibility
+- `InsightsService`: recommendation ranking and insight summarization
 
-## Class-Level Specialization Choices
+How to explain in viva:
+"LINQ lets us express domain questions directly: What sold most? What is low stock? What did this customer purchase? The query shape mirrors the business question."
 
-### `abstract` for `User`
+## Persistence Model Separation (OOP Boundary Hygiene)
 
-Reasoning:
-- base aggregation of common identity + auth behavior (`VerifyPassword`)
-- prevents meaningless direct instantiation
+Domain types are not serialized directly as repository schema contracts.
 
-### `sealed` for most concrete classes
+Instead:
+- infrastructure uses `*Record` types for JSON transport
+- repositories map between domain entities and record models
 
-Used on concrete entities/services/exceptions/menus.
+Why this is strong OOP design:
+- domain model remains business-focused
+- persistence model can evolve with less domain impact
+- mapping logic is explicit and testable
 
-Reasoning:
-- prevents unplanned inheritance chains
-- keeps behavior stable and explicit
-- avoids subclass-based bypass of business rules
+## Session Context as Application State Boundary
 
-### `static` for stateless utilities
+`SessionContext` centralizes authenticated runtime user state.
 
-Examples:
-- `Program` bootstrap entry point
-- `SeedData` bootstrap utility
-- `ConsoleInputHelper`, `ProductDisplayHelper`, `CartDisplayHelper`
+Benefits:
+- avoids passing user references manually through many methods
+- keeps sign-in/sign-out behavior explicit
+- prevents ad-hoc static global state
 
-Reasoning:
-- no instance state required
-- avoids unnecessary object creation
-- signals utility intent clearly
+## How OOP Choices Improve Testability
 
-## Specialized Method Usage Patterns
+Testability gains from design:
+- rich domain invariants can be tested in isolation
+- services can be tested without console interaction
+- persistence can be tested with temporary directories
+- presentation helpers can be tested with input/output harness
 
-### Guard-clause constructors
+Current result:
+- broad workflow coverage with fast unit-style tests
 
-Most domain constructors validate immediately and fail fast.
+## What This OOP Design Enables Next
 
-Examples:
-- empty IDs rejected in `User`, `Product`, `Order`, `Payment`, `Review`
-- invalid ranges rejected (e.g., review rating 1..5)
+Low-risk next steps:
+- introduce factory abstractions for role/menu creation
+- introduce strategy variants for payment/export/reporting
+- extract state-style order transition policies
+- replace JSON repositories with DB-backed repositories behind same contracts
 
-Why:
-- ensures every created instance starts valid
-- simplifies downstream logic since invalid states are blocked early
+Because boundaries are already strict, these upgrades are incremental rather than rewrite-driven.
 
-### Command methods for state transitions
+## Study Drills (Use This to Internalize)
 
-Methods that change state are named as domain actions.
+Drill 1:
+- pick one entity and list its invariants, mutators, and why setters are restricted.
 
-Examples:
-- `Product.Restock`, `Product.ReduceStock`, `Product.Deactivate`
-- `Cart.AddItem`, `Cart.UpdateQuantity`, `Cart.Clear`
-- `Payment.MarkCompleted`, `Payment.MarkFailed`
+Drill 2:
+- trace one workflow (`Checkout`) across layers and state which layer owns each step.
 
-Why:
-- method names reflect business intent
-- state transitions stay explicit and auditable
+Drill 3:
+- explain one pattern from code in 30 seconds (Repository, Service Layer, Data Mapper).
 
-### Query methods for read intent
+Drill 4:
+- justify why this is DDD-inspired but not full tactical DDD.
 
-Read-only intent uses `Get*` methods.
+## 30-Second OOP Defense Script
 
-Examples:
-- `GetCartItems`, `GetCartTotal`, `GetActiveProducts`, `GetOrdersByStatus`
-
-Why:
-- clear semantic split between reads and writes
-- easier to test and reason about side effects
-
-### Or-throw helper methods
-
-Private helper methods centralize existence checks and message consistency.
-
-Examples:
-- `ProductService.FindProductOrThrow(...)`
-- `CartService.GetProductOrThrow(...)`
-
-Why:
-- avoids duplicated null-check logic
-- standardizes exception flow
-
-### Mapping methods for persistence boundary
-
-Infrastructure repositories translate between domain entities and JSON record models.
-
-Examples:
-- `ToDomain(...)` and `FromDomain(...)` in all in-memory repositories
-
-Why:
-- isolates persistence schema from domain behavior
-- keeps repository responsibilities focused and explicit
-
-### Session lifecycle methods
-
-`SessionContext` uses small, explicit methods:
-- `SignIn(User user)`
-- `SignOut()`
-
-Why:
-- clear state transitions for authentication lifecycle
-- single responsibility for session process state
-
-### Input specialization in presentation utilities
-
-`ConsoleInputHelper` has dedicated methods:
-- `ReadRequiredString`
-- `ReadDecimal`, `ReadPositiveDecimal`, `ReadNonNegativeDecimal`
-- `ReadInt`, `ReadPositiveInt`, `ReadNonNegativeInt`, `ReadIntInRange`
-- `ReadSelection`
-
-Why:
-- centralizes parsing/validation loops
-- removes duplicated input logic from menus
-- supports secure index-based selection UX
-- keeps menu handlers small while improving recovery from invalid input
-
-### Presentation UX helper specialization
-
-The presentation layer now uses focused static helpers for UX concerns:
-- `ConsoleTheme` for message tone, banners, section headers, separators, and pause behavior
-- `MenuFrameRenderer` for consistent menu framing and breadcrumb-like context
-- `ConfirmationPrompt` for reusable yes/no confirmation loops
-- `MenuActionHelper` for boundary exception-to-message mapping
-
-Why:
-- enforces separation of concerns (UX mechanics remain presentation-only)
-- removes duplicated formatting/prompt code across menus
-- improves demo polish without moving business rules out of application/domain
-
-### Compiled regex for email validation
-
-`AuthService` uses:
-- `private static readonly Regex BasicEmailPattern`
-- options: `Compiled | CultureInvariant`
-
-Why:
-- one reusable compiled pattern instance
-- avoids repeated regex creation
-- keeps validation logic explicit and testable
-
-## LINQ Deep Dive: Where and How Queries Are Used
-
-### LINQ usage principles followed
-
-- use LINQ where query intent is clearer than manual loops
-- materialize with `ToList()` when a stable snapshot is needed
-- combine filtering + ordering in service layer to keep menus thin
-- use aggregation (`Sum`, `Average`, `GroupBy`) for reporting/calculation semantics
-
-### Query map by location
-
-| Location | Query chain / operator | What it does | Why this operator set |
-|---|---|---|---|
-| `ProductService.GetActiveProducts` | `GetAll().Where(IsActive).OrderBy(Name).ToList()` | filters customer-visible products and sorts alphabetically | clean browse UX + deterministic ordering |
-| `ProductService.SearchProducts` | `Search(term).Where(IsActive).OrderBy(Name).ToList()` | applies term search then enforces active-only visibility | reuses repository search + service visibility policy |
-| `ProductService.GetAllProducts` | `GetAll().OrderBy(Name).ToList()` | returns full catalog sorted by name | admin view consistency |
-| `ProductService.GetLowStockProducts` | `GetLowStockProducts(threshold).OrderBy(Stock).ThenBy(Name).ToList()` | prioritizes most critical low-stock items | meaningful triage ordering |
-| `CartService.AddToCart` | `Items.FirstOrDefault(...)? .Quantity ?? 0` | gets existing cart quantity for merge validation | concise null-safe retrieval for stock guard |
-| `Cart.AddItem` | `_items.FirstOrDefault(...)` | locate existing line before add/merge | avoids duplicate line items for same product |
-| `Cart.UpdateQuantity` | `_items.FirstOrDefault(...)` | find target line for update/remove | single lookup path with not-found handling |
-| `Cart.RemoveItem` | `_items.FirstOrDefault(...)` | find optional line before removal | safe no-op behavior when absent |
-| `Cart.CalculateTotal` | `_items.Sum(i => i.LineTotal)` | total cart amount | direct aggregate intent |
-| `Order` constructor | `items?.ToList() ?? new List<OrderItem>()` | materialize and null-protect incoming sequence | snapshot semantics for order creation |
-| `Order` constructor | `orderItems.Sum(i => i.LineTotal)` | compute immutable total | avoids recalculation logic duplication |
-| `ReportService.GetTotalRevenue` | `GetAll().Sum(order => order.TotalAmount)` | total revenue across orders | standard aggregate for financial summary |
-| `ReportService.GetOrdersByStatus` | `GetAll().GroupBy(Status).ToDictionary(...)` | status distribution map | natural grouping + direct dictionary output |
-| `SeedData.Seed` | `GetAll().Any(user => user is Administrator)` | checks whether admin already exists | efficient existence query for idempotent seed |
-| `InMemoryProductRepository.Search` | `_products.Where(name/category contains).ToList()` | case-insensitive search by name/category | concise filter expression |
-| `InMemoryProductRepository.GetLowStockProducts` | `_products.Where(stock <= threshold).ToList()` | low-stock filtering at repository level | reusable query path |
-| `InMemoryOrderRepository.GetByCustomerId` | `_orders.Where(customerId match).ToList()` | customer order history retrieval | straightforward partition query |
-| `InMemoryUserRepository.GetById` | `_users.FirstOrDefault(id match)` | single-user fetch | natural first-match query |
-| `InMemoryUserRepository.GetByEmail` | `_users.FirstOrDefault(email equals ignore-case)` | login lookup | concise normalized identity match |
-| `InMemory*Repository.Load*` | `records.Select(ToDomain).ToList()` | record-to-domain projection | separation of persistence and domain models |
-| `InMemory*Repository.Persist` | `entities.Select(FromDomain).ToList()` | domain-to-record projection | explicit serialization boundary |
-| `ProductDisplayHelper.ShowProducts` | `products.ToList()` | materialize enumerable once for count + iteration | prevents multiple enumeration |
-| `ProductDisplayHelper.CalculateAverageRating` | `Reviews.Average(r => r.Rating)` | average rating display | direct aggregate meaning |
-| `ReviewService.GetProductReviews` | `product.Reviews.ToList()` | returns copy snapshot of reviews | prevents exposing mutable backing list directly |
-
-### How query chains are structured in practice
-
-Common pattern in services:
-1. get base dataset from repository
-2. apply business filter (`Where`)
-3. apply business ordering (`OrderBy` / `ThenBy`)
-4. materialize (`ToList`) for menu consumption
-
-This keeps query policy centralized in application services rather than scattered in menus.
-
-### Why `ToList()` is used frequently
-
-`ToList()` is intentionally used to:
-- force immediate execution at the service/repository boundary
-- return stable snapshots to callers
-- avoid deferred enumeration surprises in menu loops
-
-### Why some loops are still explicit `for/foreach`
-
-Not every scenario uses LINQ.
-
-Examples:
-- numbered menu rendering in `ShowSelectableProducts` and `ShowSelectableCart`
-
-Reasoning:
-- index-aware output is clearer with `for` loops
-- imperative flow is simpler than composing index projections for console rendering
-
-## Separation of Concerns and Responsibility Allocation
-
-### Presentation
-
-Responsibilities:
-- input/output
-- menu flow
-- exception-to-message conversion
-
-Non-responsibilities:
-- stock rules
-- wallet rules
-- repository query logic
-
-### Application
-
-Responsibilities:
-- orchestration across domain + repository
-- policy-level validation
-- use-case level ordering/filtering
-
-### Domain
-
-Responsibilities:
-- invariants
-- controlled state mutation
-- domain exceptions
-
-### Infrastructure
-
-Responsibilities:
-- persistence mechanics
-- mapping domain <-> records
-- JSON read/write behavior
-
-## Composition vs Inheritance Decisions
-
-### Composition-first (preferred default)
-
-Used extensively:
-- `Customer` has `Cart`, `Orders`, `Reviews`
-- `Order` has `OrderItem` snapshots and `Payment`
-- `Product` has `Reviews`
-
-Reasoning:
-- avoids deep class hierarchies
-- models real "has-a" relationships
-- keeps each type focused
-
-### Inheritance only where domain semantics demand it
-
-Used for:
-- `User` base with role-specific subtypes
-
-Reasoning:
-- shared identity/auth behavior is genuinely common
-- role differences are type-safe
-
-## Exception and Error-Handling Strategy (OOP Perspective)
-
-Custom exception types encode intent and support clean layer boundaries:
-- `ValidationException`
-- `NotFoundException`
-- `AuthenticationException`
-- `InsufficientFundsException`
-- `InsufficientStockException`
-- `DuplicateEmailException`
-
-Pattern:
-- domain/application throw typed exceptions
-- presentation catches and converts to friendly messages
-
-This keeps domain/application free from console concerns while still producing good UX.
-
-## Trade-offs and Current Limitations
-
-- terminal UX helper flow is console-focused and intentionally avoids external UI frameworks.
-- Session state is in-memory process state only.
-- Repository persistence is single-process oriented (no cross-process locking policy).
-
-These are deliberate scope choices, not accidental OOP gaps.
-
-## Submission-Ready Justification Summary
-
-If asked to justify design quickly:
-- access modifiers are chosen to minimize mutable surface area and enforce invariants
-- `abstract`/`sealed`/`static` are used intentionally to express role and lifecycle of each type
-- specialized methods are intent-driven (`AddFunds`, `Restock`, `FindProductOrThrow`) and keep rules centralized
-- LINQ is used in services/repositories for readable filtering/ordering/aggregation, with `ToList()` for deterministic snapshots
-- presentation remains thin and identifier-safe, while business logic stays in domain/application
-
-
-
-
+"OOP in this project is used to protect state and keep responsibilities clear. Entities encapsulate invariants with guard clauses, services orchestrate use cases through interfaces, and infrastructure handles technical concerns via mappers and adapters. Access modifiers and class shapes are intentional to keep mutation safe and evolution low-risk."

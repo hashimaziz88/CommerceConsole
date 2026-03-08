@@ -2,16 +2,9 @@
 
 ## Goal
 
-Design the solution so that:
-- the console UI is thin
-- business logic is testable and reusable
-- domain objects hold rules and state
-- services orchestrate use cases
-- data storage starts in memory
-- tests and documentation are maintained from day one
-- design patterns can be added on Monday without breaking behavior
+Keep the console app clean, testable, and explainable by enforcing strict layer responsibilities and dependency direction.
 
-## Recommended project structure
+## Current solution structure
 
 ```text
 CommerceConsole/
@@ -19,147 +12,140 @@ CommerceConsole/
 |-- Application/
 |   |-- Interfaces/
 |   |   |-- IAuthService.cs
-|   |   |-- IProductService.cs
 |   |   |-- ICartService.cs
+|   |   |-- IInsightsService.cs
+|   |   |-- IOrderRepository.cs
 |   |   |-- IOrderService.cs
-|   |   |-- IWalletService.cs
-|   |   |-- IReviewService.cs
+|   |   |-- IProductRepository.cs
+|   |   |-- IProductService.cs
+|   |   |-- IReportExporter.cs
+|   |   |-- IReportExportService.cs
 |   |   |-- IReportService.cs
 |   |   |-- IRepository.cs
-|   |   `-- Pattern interfaces (added Monday where needed)
-|   |-- Services/
-|   |   |-- AuthService.cs
-|   |   |-- ProductService.cs
-|   |   |-- CartService.cs
-|   |   |-- OrderService.cs
-|   |   |-- WalletService.cs
-|   |   |-- ReviewService.cs
-|   |   `-- ReportService.cs
-|   |-- Dtos/
-|   `-- Validators/
+|   |   |-- IReviewService.cs
+|   |   |-- ISessionContext.cs
+|   |   |-- IUserRepository.cs
+|   |   `-- IWalletService.cs
+|   |-- Models/
+|   |   |-- LowStockReportItem.cs
+|   |   |-- ProductRecommendationItem.cs
+|   |   |-- ProductSalesReportItem.cs
+|   |   `-- SalesReportSnapshot.cs
+|   `-- Services/
+|       |-- AuthService.cs
+|       |-- CartService.cs
+|       |-- InsightsService.cs
+|       |-- OrderService.cs
+|       |-- ProductService.cs
+|       |-- ReportExportService.cs
+|       |-- ReportService.cs
+|       |-- ReviewService.cs
+|       |-- SessionContext.cs
+|       `-- WalletService.cs
 |-- Domain/
 |   |-- Entities/
-|   |   |-- User.cs
-|   |   |-- Customer.cs
-|   |   |-- Administrator.cs
-|   |   |-- Product.cs
-|   |   |-- Cart.cs
-|   |   |-- CartItem.cs
-|   |   |-- Order.cs
-|   |   |-- OrderItem.cs
-|   |   |-- Payment.cs
-|   |   `-- Review.cs
 |   |-- Enums/
-|   |   |-- UserRole.cs
-|   |   |-- OrderStatus.cs
-|   |   `-- PaymentStatus.cs
-|   |-- Exceptions/
-|   `-- Rules/
+|   `-- Exceptions/
 |-- Infrastructure/
-|   |-- Repositories/
-|   |   |-- InMemoryUserRepository.cs
-|   |   |-- InMemoryProductRepository.cs
-|   |   |-- InMemoryOrderRepository.cs
-|   |   `-- ...
 |   |-- Data/
 |   |   `-- SeedData.cs
-|   `-- Utilities/
+|   |-- Export/
+|   |   `-- PdfReportExporter.cs
+|   |-- Persistence/
+|   |   `-- JsonFileStore.cs
+|   `-- Repositories/
+|       |-- InMemoryOrderRepository.cs
+|       |-- InMemoryProductRepository.cs
+|       |-- InMemoryUserRepository.cs
+|       `-- Models/
 |-- Presentation/
-|   |-- Menus/
-|   |   |-- MainMenu.cs
-|   |   |-- CustomerMenu.cs
-|   |   `-- AdminMenu.cs
-|   |-- Screens/
-|   `-- Helpers/
+|   |-- Helpers/
+|   `-- Menus/
 |-- Tests/
-|   |-- Domain/
-|   |-- Application/
-|   `-- Integration/
-`-- docs/
-    |-- architecture.md
-    |-- test-plan.md
-    `-- changelog.md
+|   `-- CommerceConsole.Tests/
+|       |-- Application/
+|       |-- Domain/
+|       |-- Infrastructure/
+|       `-- Presentation/
+|-- docs/
+`-- .codex/
 ```
 
 ## Layer responsibilities
 
 ### Presentation
-Only responsible for:
-- showing menus
-- reading console input
-- calling services
+Allowed:
+- menu navigation
+- input parsing and prompt loops
 - formatting output
-- handling user navigation loops
+- calling service methods
+- boundary exception messaging
 
-Must not contain:
-- stock rules
-- checkout rules
-- wallet payment logic
-- order creation logic
-- complex LINQ queries
-
-### Domain
-Contains business concepts and rules:
-- entities and their state
-- enums
-- domain exceptions
-- simple business invariants
-
-Examples:
-- a `Cart` should not allow quantity less than 1
-- a `Product` should not have negative price or stock
-- an `Order` should contain immutable order items after creation
+Not allowed:
+- direct repository access
+- checkout/order/stock business policies
+- JSON/export technical concerns
+- user-facing GUID exposure
 
 ### Application
-Contains use-case orchestration:
-- login flow
-- adding to cart
-- checkout process
-- report generation
-- order updates
-- validation coordination
+Allowed:
+- use-case orchestration
+- workflow validations
+- dependency on interfaces
+- service-level LINQ queries and aggregations
+
+Not allowed:
+- console input/output
+- low-level file I/O implementation
+
+### Domain
+Allowed:
+- entities and value semantics
+- state-transition methods
+- guard clauses and invariants
+- domain enums and exceptions
+
+Not allowed:
+- repository or file operations
+- menu concerns
+- formatter/export details
 
 ### Infrastructure
-Contains data access and technical plumbing:
-- in-memory repositories
-- seed data
-- utilities
+Allowed:
+- repository implementations
+- persistence records and data mapping
+- seed logic
+- exporter implementation details
 
-## Why this structure fits the standards
-
-The coding standards emphasize short classes, understandable methods, clear naming, guard clauses, avoiding duplication, and keeping domain logic in the right layer. This structure also keeps the project ready for pattern adoption without delaying tests or docs.
-
-## Recommended service breakdown
-
-- `AuthService` - registration, login, uniqueness checks
-- `ProductService` - catalog CRUD, search, stock visibility, low-stock lookup
-- `CartService` - add, update, remove, clear, view totals
-- `WalletService` - add funds, get balance, debit funds
-- `OrderService` - checkout, order history, tracking, admin status updates
-- `ReviewService` - add reviews, fetch ratings, validate ownership or purchase rules if enforced
-- `ReportService` - revenue, product performance, low-stock analytics
+Not allowed:
+- UI routing/formatting
+- business policy branching that belongs in services
 
 ## Dependency direction
 
-```text
-Presentation -> Application -> Domain
-Presentation -> Application -> Infrastructure (via interfaces)
-Infrastructure -> Domain
-```
+Required direction:
+- `Presentation -> Application -> Domain`
+- `Infrastructure -> Domain`
+- `Infrastructure` implements contracts from `Application/Interfaces`
 
-Prefer the application layer to depend on abstractions like repositories and service contracts.
+Forbidden direction:
+- `Domain -> Infrastructure`
+- `Presentation -> Infrastructure repositories`
+- `Domain -> Presentation`
 
-## Data strategy from day one
+## Boundary hard rules
 
-Use repositories backed by `List<T>` collections with JSON-file persistence for runtime durability. This keeps implementation simple while ensuring data survives app restarts and remains deterministic for tests.
+1. `Program.cs` remains a composition root, not a business workflow host.
+2. Menus are thin and index-based.
+3. Repository models stay in standalone files (no nested classes in repository files).
+4. Domain mutation must happen through validated methods.
+5. Docs and tests must update when behavior changes.
 
-## Monday pattern implementation path
+## Why this structure is redesign-friendly
 
-On Monday (2026-03-09), add patterns on top of working behavior:
-- Factory for role-based object creation
-- Strategy for payment/report/search variation points
-- State-style transition rules for order lifecycle
-- Repository formalization if additional abstractions are needed
-
-No feature backlog should remain by this step.
-
+This design supports low-risk incremental upgrades:
+- Factory extraction for role/menu creation
+- Strategy extraction for payment/report variants
+- State-style policy extraction for order transitions
+- repository backend swaps (JSON to DB) behind existing interfaces
+- UI replacement without rewriting domain workflows

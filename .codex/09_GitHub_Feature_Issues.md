@@ -1,12 +1,12 @@
 # 09. GitHub Feature Issues
 
-Below are 9 copy-paste-ready feature requests using your template.
+Below are 9 copy-paste-ready feature issues.
 
 Milestone lock policy:
-- Issues 1 to 2 must stay in milestone `M1-Foundation-and-Auth`.
-- Issues 3 to 5 must stay in milestone `M2-Catalog-Cart-and-Checkout`.
-- Issues 6 to 8 must stay in milestone `M3-Orders-Reporting-and-Quality`.
-- Issue 9 must stay in milestone `M4-Monday-Patterns-2026-03-09`.
+- Issues 1-2 must stay in `M1-Foundation-and-Auth`.
+- Issues 3-5 must stay in `M2-Catalog-Cart-and-Checkout`.
+- Issues 6-8 must stay in `M3-Orders-Reporting-and-Quality`.
+- Issue 9 must stay in `M4-Monday-Patterns-2026-03-09`.
 - Do not move issues across milestones without explicit approval.
 
 ---
@@ -16,22 +16,17 @@ title: 'Bootstrap clean solution architecture with tests and docs scaffolding'
 labels: 'feature,architecture'
 assignees: ''
 milestone: 'M1-Foundation-and-Auth'
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-The project needs a clean and scalable foundation before any features are implemented. Without a strong structure, business logic may mix into console menus and make testing and documentation harder to maintain.
+**Problem**
+The project needs a scalable structure before features are implemented.
 
-**Describe the solution you'd like**
-Create the initial CommerceConsole structure using Presentation, Application, Domain, and Infrastructure folders. Add starter interfaces, entities, enums, exceptions, repositories, services, seed data, menu classes, a test project, and docs placeholders.
-
-**Describe alternatives you've considered**
-A flat structure with all classes in one folder would be faster initially, but it would reduce maintainability and increase rework risk.
+**Solution**
+Create layered `Presentation/Application/Domain/Infrastructure` structure with starter interfaces, entities, services, repositories, tests, and docs.
 
 **Additional context**
 Milestone lock: `M1-Foundation-and-Auth`
 Branch suggestion: `feature/01-solution-bootstrap`
-
 
 ---
 name: Feature request
@@ -40,22 +35,17 @@ title: 'Implement registration, login, and role-based navigation with tests'
 labels: 'feature,auth,test'
 assignees: ''
 milestone: 'M1-Foundation-and-Auth'
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-Users cannot access the system meaningfully until authentication and role separation are in place.
+**Problem**
+Role-based access is required before meaningful system usage.
 
-**Describe the solution you'd like**
-Implement customer registration, login for both customers and administrators, unique email validation, seeded admin credentials, role-based navigation, and related service tests.
-
-**Describe alternatives you've considered**
-A single shared menu for all users would be simpler but does not satisfy role separation requirements.
+**Solution**
+Implement registration, customer/admin login, unique email checks, seeded admin credentials, session tracking, and role navigation with tests.
 
 **Additional context**
 Milestone lock: `M1-Foundation-and-Auth`
 Branch suggestion: `feature/02-auth-and-roles`
-
 
 ---
 name: Feature request
@@ -64,22 +54,17 @@ title: 'Build product browsing, searching, and admin catalog management'
 labels: 'feature,products,test'
 assignees: ''
 milestone: 'M2-Catalog-Cart-and-Checkout'
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-The platform cannot function as an online shopping backend without a product catalog and administrative inventory controls.
+**Problem**
+The system needs customer catalog browsing and admin inventory controls.
 
-**Describe the solution you'd like**
-Implement customer product browsing and searching using LINQ, plus administrator features to add, update, delete, restock, and view products, including low-stock visibility. Add tests for product validation, search, and stock operations.
-
-**Describe alternatives you've considered**
-Read-only product browsing would reduce complexity but omits major admin requirements.
+**Solution**
+Implement browse/search (LINQ), add/update/delete/restock, view products, and low-stock visibility with tests.
 
 **Additional context**
 Milestone lock: `M2-Catalog-Cart-and-Checkout`
 Branch suggestion: `feature/03-product-catalog`
-
 
 ---
 name: Feature request
@@ -88,24 +73,18 @@ title: 'Implement shopping cart and wallet workflows'
 labels: 'feature,cart,payments,test'
 assignees: ''
 milestone: 'M2-Catalog-Cart-and-Checkout'
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-Customers need a cart and funding workflow before checkout can work.
+**Problem**
+Checkout cannot function without cart and wallet foundations.
 
-**Describe the solution you'd like**
-Implement add-to-cart, view-cart, update-cart, remove-item, cart totals, wallet balance, and wallet top-up flows with validation and tests.
-
-**Describe alternatives you've considered**
-A direct buy-now flow is simpler but does not match the required cart-based flow.
+**Solution**
+Implement cart mutations, totals, stock-aware quantity checks, wallet balance/top-up, and tests.
 
 **Additional context**
 Milestone lock: `M2-Catalog-Cart-and-Checkout`
 Branch suggestion: `feature/04-cart-management`
 
-
-5
 ---
 name: Feature request
 about: Suggest an idea for this project
@@ -113,24 +92,18 @@ title: 'Add checkout, payments, and order processing'
 labels: 'feature,orders,payments,test'
 assignees: ''
 milestone: 'M2-Catalog-Cart-and-Checkout'
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-The system has no way to complete purchases until checkout and order processing are implemented.
+**Problem**
+Purchases cannot be finalized without checkout orchestration.
 
-**Describe the solution you'd like**
-Implement checkout validation, wallet payment simulation, stock deduction, order creation, order item snapshots, and cart clearing after successful checkout. Add tests for success and failure paths.
-
-**Describe alternatives you've considered**
-Multiple payment methods were considered, but wallet-first keeps scope aligned while still allowing strategy extraction later.
+**Solution**
+Implement wallet-only checkout validation, stock deduction, payment/order records, snapshot order items, and cart clearing with tests.
 
 **Additional context**
 Milestone lock: `M2-Catalog-Cart-and-Checkout`
 Branch suggestion: `feature/05-orders-and-checkout`
 
-
-6
 ---
 name: Feature request
 about: Suggest an idea for this project
@@ -138,22 +111,17 @@ title: 'Implement order history, tracking, and admin order status updates'
 labels: 'feature,orders,admin,test'
 assignees: ''
 milestone: 'M3-Orders-Reporting-and-Quality'
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-Orders become hard to manage after checkout if customers and administrators cannot inspect or update them.
+**Problem**
+Orders become unmanageable without tracking and admin lifecycle control.
 
-**Describe the solution you'd like**
-Allow customers to view order history and track statuses while administrators can view all orders and update statuses. Include tests for valid and invalid status changes.
-
-**Describe alternatives you've considered**
-Keeping orders static after checkout is simpler but fails tracking and admin management requirements.
+**Solution**
+Implement customer history/tracking, admin all-order view, and status updates with valid transition enforcement and tests.
 
 **Additional context**
 Milestone lock: `M3-Orders-Reporting-and-Quality`
 Branch suggestion: `feature/05-orders-and-checkout`
-
 
 ---
 name: Feature request
@@ -162,22 +130,17 @@ title: 'Add reviews, reporting, and documentation alignment'
 labels: 'feature,reviews,reports,docs,test'
 assignees: ''
 milestone: 'M3-Orders-Reporting-and-Quality'
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-The specification requires reviews and reporting, and documentation must stay aligned with implemented behavior.
+**Problem**
+Rubric requires review and reporting features with aligned documentation.
 
-**Describe the solution you'd like**
-Implement customer reviews and admin sales reporting with LINQ. Update docs with report definitions and add tests for rating and report calculations.
-
-**Describe alternatives you've considered**
-Review-only or report-only delivery would be incomplete relative to rubric expectations.
+**Solution**
+Implement purchased-product reviews, LINQ reporting metrics, and synchronized docs/tests.
 
 **Additional context**
 Milestone lock: `M3-Orders-Reporting-and-Quality`
 Branch suggestion: `feature/06-reviews-and-reporting`
-
 
 ---
 name: Feature request
@@ -186,22 +149,17 @@ title: 'Complete quality hardening: validation, exception handling, UX, tests, d
 labels: 'feature,quality,ux,test,docs'
 assignees: ''
 milestone: 'M3-Orders-Reporting-and-Quality'
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-Even with features complete, marks can be lost if invalid input causes failures or if documentation and tests are incomplete.
+**Problem**
+Feature completion alone is not enough without robust UX/validation and documentation quality.
 
-**Describe the solution you'd like**
-Add robust input validation, custom exception handling, friendly messages, reusable console helpers, regression tests, and final documentation cleanup.
-
-**Describe alternatives you've considered**
-Minimal hardening would save time but leaves quality and reliability risks.
+**Solution**
+Harden input handling, exception boundaries, reusable UX helpers, regression tests, and final docs alignment.
 
 **Additional context**
 Milestone lock: `M3-Orders-Reporting-and-Quality`
 Branch suggestion: `feature/07-quality-hardening`
-
 
 ---
 name: Feature request
@@ -210,17 +168,13 @@ title: 'Monday design-pattern implementation (no feature expansion)'
 labels: 'feature,refactor,design-patterns,test,docs'
 assignees: ''
 milestone: 'M4-Monday-Patterns-2026-03-09'
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-Once the baseline is complete, pattern-based architecture is needed for extensibility and Submission 2 positioning.
+**Problem**
+Pattern-based extensibility is needed for Submission 2 positioning.
 
-**Describe the solution you'd like**
-Introduce Factory, Strategy, Repository formalization, and lightweight State-style order transitions while preserving baseline behavior. Add pattern-focused tests and architecture doc updates.
-
-**Describe alternatives you've considered**
-A full rewrite was considered, but incremental pattern introduction is safer and faster.
+**Solution**
+Introduce Factory, Strategy, repository formalization (if needed), and State-style transitions while preserving baseline behavior.
 
 **Additional context**
 Milestone lock: `M4-Monday-Patterns-2026-03-09`

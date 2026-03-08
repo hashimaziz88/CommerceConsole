@@ -2,99 +2,115 @@
 
 ## Purpose
 
-This document captures the optional bonus scope implemented above the Submission 1 baseline.
+This document distinguishes baseline requirements from bonus capabilities, and explains bonus architecture choices in a modular, low-risk way.
 
-Baseline workflows remain unchanged. Bonus features are additive and modular.
+## Baseline vs Bonus Boundary
 
-## Baseline vs Bonus
+Baseline (required):
+- auth and role routing
+- product catalog + admin inventory
+- cart + wallet
+- checkout + order lifecycle
+- reviews + reporting
+- JSON persistence and UX hardening
 
-Baseline (Submission 1):
-- authentication and role navigation
-- catalog and inventory management
-- cart and wallet
-- checkout and order lifecycle
-- reviews and reporting
-- JSON persistence
+Bonus (optional, implemented):
+1. PDF sales report export
+2. smart heuristic admin insights
+3. customer recommendations with explanation reasons
 
-Bonus (Submission 1+):
-- PDF sales report export for admins
-- heuristic smart insights for admins
-- customer recommendation view based on purchase patterns and ratings
+Design principle:
+- bonus features are additive and isolated; they do not rewrite baseline rules.
 
-## Selected Bonus Features
-
-## 1. PDF sales report export
-
-What it does:
-- generates a one-page PDF summary file for sales reporting
-- includes generated timestamp, total revenue, status counts, best sellers, and low-stock rows
-
-Architecture:
-- orchestration: `Application/Services/ReportExportService.cs`
-- abstraction: `Application/Interfaces/IReportExporter.cs`
-- concrete exporter: `Infrastructure/Export/PdfReportExporter.cs`
-
-Why this design:
-- reporting aggregation stays in `ReportService`
-- export formatting is isolated behind an interface
-- future export formats (for example CSV) can be added without changing reporting logic
-
-## 2. Heuristic smart admin insights
+## Bonus Feature 1: PDF Sales Report Export
 
 What it does:
-- returns concise operational insights using rule-based heuristics
-- examples: revenue snapshot, top category by units sold, low-stock watchlist, review sentiment, fulfillment queue alert
+- exports report snapshot into a one-page PDF
+- includes timestamp, revenue, status counts, best sellers, low-stock list
 
 Architecture:
-- contract: `Application/Interfaces/IInsightsService.cs`
-- implementation: `Application/Services/InsightsService.cs`
-- display: `Presentation/Helpers/ReportDisplayHelper.cs`
+- orchestration: `ReportExportService`
+- abstraction: `IReportExporter`
+- concrete adapter: `PdfReportExporter`
 
-Design note:
-- this is intentionally heuristic (local rules), not external LLM integration
-- behavior works offline and degrades gracefully without network dependencies
+Why this design is strong:
+- report computation remains in `ReportService`
+- export format is decoupled behind interface
+- new exporter types can be added without service rewrite
 
-## 3. Customer recommendation view
+## Bonus Feature 2: Smart Admin Insights (Rule-Based)
 
 What it does:
-- proposes active, in-stock products the customer has not already purchased
-- prioritizes products in categories from purchase history
-- uses average ratings and stock signals as tie-breakers
-- shows human-readable reason text for each suggestion
+- generates actionable text insights from current data
+
+Examples:
+- revenue snapshot
+- top category by units sold
+- low-stock watch list
+- review sentiment summary
+- fulfillment queue count
 
 Architecture:
-- recommendation generation in `InsightsService`
-- customer rendering in `ProductDisplayHelper.ShowRecommendations(...)`
-- routing through `CustomerMenu`
+- contract: `IInsightsService`
+- implementation: `InsightsService`
+- presentation: `ReportDisplayHelper` and admin menu route
 
-## Runtime Integration
+Why heuristic instead of external AI:
+- deterministic, offline-safe, and demo-friendly
+- no network dependency risk
+- logic remains explainable in viva
 
-Composition root wiring in `Program.cs`:
-- `InsightsService` created once and shared with admin/customer menus
-- `PdfReportExporter` injected into `ReportExportService`
-- menus only call service interfaces
+## Bonus Feature 3: Customer Recommendations
 
-## Persistence and Safety
+What it does:
+- recommends active, in-stock, not-yet-purchased products
+- prioritizes categories from past purchases
+- uses average rating/stock/name tie-breakers
+- displays "why" reason for each recommendation
 
-- no baseline persistence contract was changed
-- bonus features read existing repository data and write only optional export files
-- no internal IDs are shown in user-facing bonus views
+Architecture:
+- produced by `InsightsService.GetCustomerRecommendations`
+- rendered by `ProductDisplayHelper.ShowRecommendations`
 
-## Tests Added
+Why this is valuable:
+- user-facing personalization above baseline
+- still modular and easy to test
 
-- `Tests/CommerceConsole.Tests/Application/BonusFeaturesServiceTests.cs`
-- `Tests/CommerceConsole.Tests/Infrastructure/PdfReportExporterTests.cs`
+## Baseline Safety Guarantees
 
-Covered scenarios:
-- recommendation filtering and ranking
-- admin insight headline generation
-- report-export orchestration and snapshot delegation
-- PDF file generation and validation guards
+Bonus implementation does not:
+- move business rules into menus
+- expose GUIDs to users
+- bypass repository/service boundaries
+- alter mandatory baseline workflow semantics
 
-## Demo Talking Points
+## Tests for Bonus Features
 
-1. Baseline flow works exactly as before.
-2. Admin opens smart insights for instant operational guidance.
-3. Admin exports the same report to PDF for submission evidence.
-4. Customer opens recommendations and sees "why" explanations per product.
-5. Mention that all bonus logic is isolated in services/exporters, not menu code.
+Coverage files:
+- `Application/BonusFeaturesServiceTests.cs`
+- `Infrastructure/PdfReportExporterTests.cs`
+
+Covered outcomes:
+- recommendation filtering/ranking correctness
+- insight generation and validation behavior
+- export orchestration contract behavior
+- PDF output creation and guard behavior
+
+## Demo Script for Bonus Value
+
+1. complete baseline flow quickly (auth -> cart -> checkout).
+2. open admin insights and explain each line as actionable operations data.
+3. export report PDF and show output location.
+4. open customer recommendations and explain reason text.
+5. conclude: baseline stayed stable while bonus delivered extra value.
+
+## Future Bonus Extensions (Optional)
+
+Low-risk candidates:
+- CSV exporter via another `IReportExporter` implementation
+- audit event log repository + admin viewer
+- advanced filter query service for catalog exploration
+
+## Quick Viva Script
+
+"Bonus features were implemented as modular extensions, not baseline rewrites. Export uses an interface-backed adapter, insights are deterministic and offline-safe, and recommendations are rule-based and explainable. This improves demo impact without destabilizing required behavior."

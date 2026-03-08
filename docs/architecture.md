@@ -1,296 +1,227 @@
-# Architecture Notes
+# Architecture Deep Dive
 
 ## Purpose
 
-This document explains how the current console implementation is structured, why responsibilities are split this way, and how runtime data flows through the system.
+This document explains exactly what architectural style CommerceConsole uses, why the folders are arranged this way, and how to defend these choices in a demo or viva.
 
-## Layered Design
+If you only remember one line, remember this:
 
-### Presentation layer
+"CommerceConsole is a layered, DDD-inspired console architecture with rich domain entities, service-layer orchestration, and infrastructure adapters for persistence/export concerns."
+
+## Architecture Identity
+
+## Is this Domain-Driven Design (DDD)?
+
+Short answer:
+- **Partly yes (DDD-inspired)**
+- **Not full tactical DDD**
+
+What is DDD-like in this project:
+- business language is explicit in domain types (`Customer`, `Order`, `Payment`, `Review`)
+- invariants live in the model (constructor/mutator guard clauses)
+- behavior is attached to entities (`Product.Restock`, `Customer.DebitFunds`, `Cart.UpdateQuantity`)
+- application services express use cases, not raw CRUD scripts
+
+What is not yet full tactical DDD:
+- no explicit aggregate root boundaries formally modeled
+- no domain events
+- no dedicated value-object catalog
+- no bounded-context split
+- repository contracts are in `Application/Interfaces` for pragmatic coursework layering
+
+Conclusion:
+- This is best described as **Layered Architecture + Rich Domain Model + DDD-inspired modeling discipline**.
+
+## Architectural Style in Practical Terms
+
+Primary style:
+- Layered architecture with inward dependency flow
+
+Supporting principles:
+- separation of concerns
+- composition root wiring
+- repository abstraction
+- explicit mapping between domain and persistence models
+
+Dependency direction:
+
+```text
+Presentation -> Application -> Domain
+Infrastructure -> (implements Application interfaces, uses Domain)
+Domain -> (no dependency on higher layers)
+```
+
+## Layer Responsibilities (With Real Project Examples)
+
+## 1. Presentation Layer
+
+Folders:
+- `Presentation/Menus`
+- `Presentation/Helpers`
 
 Responsible for:
-- menu display
-- input capture
 - user navigation
-- friendly error messaging
-- product/cart/order/report rendering helpers
+- input parsing and retry loops
+- index-based selection UX
+- user-facing messaging and formatting
 
-Current classes:
-- `Presentation/Menus/MainMenu.cs`
-- `Presentation/Menus/CustomerMenu.cs`
-- `Presentation/Menus/AdminMenu.cs`
-- `Presentation/Helpers/ProductDisplayHelper.cs`
-- `Presentation/Helpers/CartDisplayHelper.cs`
-- `Presentation/Helpers/OrderDisplayHelper.cs`
-- `Presentation/Helpers/ReportDisplayHelper.cs`
-- `Presentation/Helpers/ConsoleInputHelper.cs`
-- `Presentation/Helpers/MenuActionHelper.cs`
-- `Presentation/Helpers/ConsoleTheme.cs`
-- `Presentation/Helpers/MenuFrameRenderer.cs`
-- `Presentation/Helpers/ConfirmationPrompt.cs`
+Must never do:
+- direct repository calls
+- business-policy decisions (stock, funds, lifecycle rules)
+- persistence/file/export behavior
 
-Rules followed:
-- no repository access from menus
-- no domain mutation logic directly in menu handlers
-- no exposure of internal identifiers in user-facing screens
-- menu options use bounded numeric selection parsing
-- exception handling is centralized through `MenuActionHelper`
-- menu layout framing is centralized through `MenuFrameRenderer`
-- confirmations use `ConfirmationPrompt` and consistent theming uses `ConsoleTheme`
+Examples:
+- `MainMenu` routes by authenticated role
+- `CustomerMenu` and `AdminMenu` only call services
+- `MenuActionHelper` catches exceptions at boundary
 
-### Application layer
+## 2. Application Layer
+
+Folders:
+- `Application/Interfaces`
+- `Application/Services`
+- `Application/Models`
 
 Responsible for:
 - use-case orchestration
-- service contracts and abstractions
-- authentication/session coordination
-- catalog, cart, wallet, checkout, order lifecycle, review, and report rules
-- bonus insights/recommendation generation
-- bonus report export orchestration
+- cross-entity workflow rules
+- querying, filtering, and aggregation logic
+- defining contracts for repositories and services
 
-Current contracts:
-- `Application/Interfaces/*`
+Must never do:
+- console I/O
+- direct JSON/file operations
 
-Current services:
-- `AuthService`
-- `SessionContext`
-- `ProductService`
-- `CartService`
-- `WalletService`
-- `OrderService`
-- `ReviewService`
-- `ReportService`
-- `InsightsService` (bonus)
-- `ReportExportService` (bonus)
+Examples:
+- `OrderService.Checkout` orchestrates checkout invariants and persistence writes
+- `ReviewService` enforces purchased-only review eligibility
+- `ReportService` computes revenue/status/best-seller/low-stock outputs via LINQ
 
-### Domain layer
+## 3. Domain Layer
+
+Folders:
+- `Domain/Entities`
+- `Domain/Enums`
+- `Domain/Exceptions`
 
 Responsible for:
-- entities
-- enums
-- guard clauses and invariants
-- custom exceptions
+- core business concepts
+- invariants and safe state transition methods
+- domain-specific error types
 
-Examples of enforced invariants:
-- `Product` prevents negative price and stock
-- `Review` enforces rating range 1..5
-- `CartItem` enforces positive quantity
-- `User` enforces required identity fields
+Must never do:
+- repository/file interactions
+- UI rendering/input
+- export formatting
 
-### Infrastructure layer
+Examples:
+- `Product` blocks negative price/stock
+- `Review` blocks ratings outside 1..5
+- `Cart` controls add/update/remove behavior
+
+## 4. Infrastructure Layer
+
+Folders:
+- `Infrastructure/Repositories`
+- `Infrastructure/Repositories/Models`
+- `Infrastructure/Persistence`
+- `Infrastructure/Data`
+- `Infrastructure/Export`
 
 Responsible for:
 - repository implementations
-- JSON persistence
-- seed data
-- export-format implementation details
+- JSON storage mechanics
+- mapping between records and domain entities
+- seed data bootstrap
+- report export adapter implementation
 
-Current data access:
-- `InMemoryUserRepository`
-- `InMemoryProductRepository`
-- `InMemoryOrderRepository`
+Must never do:
+- console interaction
+- core business orchestration
 
-Persistence utility:
-- `Infrastructure/Persistence/JsonFileStore.cs`
+Examples:
+- `InMemoryProductRepository` persists mutable catalog to `products.json`
+- `JsonFileStore` handles safe temp-file writes
+- `PdfReportExporter` generates PDF output from report snapshot
 
-Repository persistence model files:
-- `Infrastructure/Repositories/Models/*.cs`
+## Composition Root and Runtime Wiring
 
-Bonus export implementation:
-- `Infrastructure/Export/PdfReportExporter.cs`
+`Program.cs` is the composition root.
 
-## Startup Flow
+Startup flow:
+1. Build repository instances.
+2. Seed missing admin/products.
+3. Build application services with constructor injection.
+4. Build menus with injected services.
+5. Run `MainMenu` loop.
 
-1. `Program.Main()` creates repository instances.
-2. Repositories load persisted JSON from `./data` (if files exist).
-3. `SeedData.Seed(...)` ensures baseline admin and expanded starter catalog entries exist (idempotent by product name).
-4. Application services are created.
-5. Bonus services are created (`InsightsService`, `ReportExportService`).
-6. `SessionContext` is created.
-7. `MainMenu.Run()` starts register/login navigation.
+Why this matters:
+- no hidden object creation across menus
+- dependency graph is easy to read and explain
+- test setup mirrors production wiring cleanly
 
-## Authentication and Routing Flow
+## Folder and Naming Strategy
 
-1. Unauthenticated users see register/login/exit.
-2. Registration is handled by `AuthService.RegisterCustomer(...)`.
-3. Login is handled by `AuthService.Login(...)`.
-4. Successful login updates `SessionContext`.
-5. Routing is role-based:
-- customer -> `CustomerMenu`
-- administrator -> `AdminMenu`
-6. Logout clears session context.
+Folder naming intent:
+- names represent responsibility, not technology hype
+- each folder is a boundary with "allowed" and "not allowed" behaviors
 
-## Product Catalog Flow (Prompt 3)
+Class naming intent:
+- contracts start with `I` (`IOrderService`, `IProductRepository`)
+- orchestration types end with `Service`
+- adapter implementations are explicit (`InMemory*Repository`, `PdfReportExporter`)
+- persistence transport types end in `Record`
+- read/report transport types use `*Item` and `*Snapshot`
 
-Customer:
-- browse active products
-- search products by name/category
-- paged product rendering for larger lists while preserving index-based selection
+Benefit:
+- reviewers can infer class purpose from name before reading code
+- onboarding becomes faster and less error-prone
 
-Administrator:
-- add product
-- update product (numbered product selection)
-- delete product (numbered product selection)
-- restock product (numbered product selection)
-- view all products
-- view low-stock products (threshold based)
+## Why GUIDs Are Hidden in UI but Used Internally
 
-Business rules are centralized in `ProductService` + domain entity guards.
+Internally:
+- GUIDs provide identity stability and persistence safety.
 
-## Cart and Wallet Flow (Prompt 4)
+User-facing screens:
+- only index-based selection is shown.
 
-Customer:
-- add to cart from numbered active-product selections
-- view cart
-- update cart quantities from numbered cart-item selections (zero quantity removes)
-- view wallet balance
-- add wallet funds
+Why:
+- improves usability
+- avoids exposing internal identifiers
+- keeps workflows demo-friendly and less error-prone
 
-Rules centralized in services:
-- stock-aware quantity checks in `CartService`
-- wallet amount validation in `WalletService` and `Customer`
-- presentation only handles input/output and exception display without exposing internal identifiers
+## Architecture Constraints (Guardrails)
 
-## Checkout and Order Processing Flow (Prompt 5)
+Hard constraints enforced by standards:
+1. Menus do not call repositories.
+2. Menus do not host business rules.
+3. Domain state mutations go through validated methods.
+4. Repository record classes are separate files (no nested class anti-pattern).
+5. Mutable runtime data persists in JSON stores.
+6. Docs and tests must evolve when behavior changes.
 
-Customer:
-- checks out cart with wallet-only payment
+## Trade-Offs and Why They Are Acceptable
 
-Orchestration in `OrderService`:
-- validates cart content, product existence/active state, stock, and wallet balance
-- debits wallet and reduces stock on success
-- creates payment and snapshot-based order items
-- persists order record and clears cart
+Trade-off 1: JSON over database
+- Pro: simple setup, deterministic demos, low operational overhead.
+- Con: limited concurrency controls and migration strategy.
 
-Detailed behavior and invariants:
-- `docs/checkout-orders.md`
+Trade-off 2: plain-text passwords in scope
+- Pro: keeps focus on architecture and workflow delivery.
+- Con: not production security posture.
 
-## Order History and Status Lifecycle Flow (Prompt 6)
+Trade-off 3: centralized transition map in service
+- Pro: simple and testable now.
+- Con: eventually better extracted to State-style policy objects.
 
-Customer:
-- views personal order history
-- tracks selected order status
+## How This Architecture Supports Submission 2
 
-Administrator:
-- views all orders
-- updates order statuses
+Ready seams already present:
+- Factory: role/menu creation can move from switch logic to factory classes.
+- Strategy: export/payment choices can be plugged via interfaces.
+- State-style transitions: lifecycle map can be extracted to transition handlers.
+- Persistence swap: repository contracts isolate data-store replacement risk.
 
-Status transition enforcement:
-- centralized in `OrderService`
-- admin can only select allowed next statuses
-- invalid transitions throw `ValidationException`
+## Quick Viva Defense Script
 
-Lifecycle rules and transition matrix:
-- `docs/order-lifecycle.md`
-
-## Reviews and Reporting Flow (Prompt 7)
-
-Customer:
-- adds product reviews with rating and comment for purchased products only
-- review selection only displays products from customer purchase history
-- sees average ratings in product views
-
-Administrator:
-- generates sales report with:
-- total revenue
-- orders by status
-- best-selling products
-- low-stock products
-
-Service orchestration:
-- `ReviewService` validates and persists reviews
-- `ReportService` performs LINQ-based aggregations and report projections
-
-Report definitions and examples:
-- `docs/reviews-reporting.md`
-
-## Quality Hardening Additions (Prompt 8)
-
-Implemented hardening updates:
-- shared presentation-boundary exception handling through `MenuActionHelper`
-- stricter typed input helpers (`ReadPositiveInt`, `ReadNonNegativeInt`, `ReadIntInRange`, `ReadPositiveDecimal`, `ReadNonNegativeDecimal`)
-- menu option handling switched to bounded numeric parsing instead of raw string switches
-- additional service guard clauses for null customer and empty-ID cases (`CartService`, `WalletService`, `OrderService`)
-- regression tests extended for helper parsing and new guard paths
-
-## Terminal UX Enhancement Additions (Prompt 10)
-
-Implemented UX-focused presentation improvements:
-- framed menus with breadcrumb-style paths and grouped action sections
-- consistent message conventions (`[INFO]`, `[OK]`, `[WARN]`, `[ERROR]`, `[TIP]`)
-- confirmation prompts before destructive or high-impact actions (delete, checkout, status updates, exit)
-- improved product/cart/order/report rendering for demo readability
-- optional pause points between menu actions for guided walkthroughs
-- role-aware workspace headers and welcome banner
-
-## Bonus Features Above Submission 1 (Prompt 11)
-
-Implemented bonus additions (modular and optional):
-- PDF sales report export through `IReportExporter` -> `PdfReportExporter`
-- report export orchestration through `ReportExportService`
-- heuristic admin insights through `InsightsService`
-- customer recommendations through `InsightsService` and product-display helpers
-
-Architecture boundaries preserved:
-- menus route and display only
-- business logic remains in services
-- exporter formatting remains in infrastructure
-- no repository access from menus
-
-## Persistence Design
-
-Persisted files:
-- `data/users.json`
-- `data/products.json`
-- `data/orders.json`
-
-Behavior:
-- repositories deserialize records on initialization
-- add/update/remove immediately writes through to JSON
-- malformed JSON is recovered as empty list (non-crashing fallback)
-- user persistence includes wallet balance and cart snapshots
-- checkout/order workflows persist wallet/cart, stock, and order/payment records
-- review additions persist through product repository updates
-
-Bonus export files:
-- generated on-demand under chosen output folder (default `./exports`)
-- export files are optional artifacts and do not alter baseline JSON persistence contracts
-
-## Design Decisions and Rationale
-
-- Repository APIs were kept stable to avoid cascading service changes.
-- Persistence models are standalone files (no nested classes) for readability.
-- Session state is in-memory only by design for current scope.
-- Seed logic is idempotent so restarts do not duplicate baseline data.
-- Core workflow rules are centralized in services to keep menus thin.
-- Report rows are represented by dedicated models for future strategy extraction.
-- Bonus export and insight logic were isolated behind interfaces to preserve maintainability.
-
-## Current Design Patterns
-
-Patterns already implemented in the current baseline:
-- Repository Pattern (`I*Repository` + `InMemory*Repository`)
-- Service Layer Pattern (`Application/Services/*`)
-- Constructor-based Dependency Injection
-- Composition Root (`Program.cs`)
-- Data Mapper (`ToDomain` / `FromDomain` in repositories)
-- Rich Domain Model with Guard Clauses (`Domain/Entities/*`)
-- Session Context pattern (`SessionContext`)
-- Export Strategy seam (`IReportExporter` + `PdfReportExporter`)
-
-Detailed mapping and use-cases are documented in:
-- `docs/design-patterns-current.md`
-
-## Known Limitations (Current Scope)
-
-- PDF exporter intentionally targets simple one-page report output
-- historical timestamps are not fully hydrated from persistence records yet
-- no file locking across multiple app instances (single-process assumption)
-
-## Next Evolution Steps
-
-- continue quality hardening and regression expansion
-- extend bonus exports (for example CSV) behind `IReportExporter`
-- continue Monday-focused pattern formalization in milestone 4
-
-
+"The architecture is layered and intentionally strict: Presentation handles interaction, Application orchestrates use cases, Domain protects business invariants, and Infrastructure owns technical details like JSON persistence and PDF export. It is DDD-inspired through rich entities and explicit business language, but not full tactical DDD yet."

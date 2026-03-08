@@ -1,35 +1,41 @@
 # 03. Domain Model
 
-## Entity map
+## Domain entities
 
-### User
-Base class for all users.
+### User (abstract)
+Shared identity/auth base type.
 
-**Properties**
+Properties:
 - `Id`
 - `FullName`
 - `Email`
-- `PasswordHash` or plain password for console demo if simplicity is required
+- `Password`
 - `Role`
 
-**Responsibilities**
-- identity
-- role awareness
+Design notes:
+- constructor is `protected`
+- role-specific users derive from this base
 
 ### Customer : User
-Adds customer-specific state.
+Customer-specific state owner.
 
-**Properties**
+Properties:
 - `WalletBalance`
 - `Cart`
 - `Orders`
 - `Reviews`
 
+Key behaviors:
+- `AddFunds(decimal amount)`
+- `DebitFunds(decimal amount)`
+
 ### Administrator : User
-May simply inherit `User` with role `Administrator`.
+Admin role marker with inherited identity/auth behavior.
 
 ### Product
-**Properties**
+Catalog and inventory aggregate.
+
+Properties:
 - `Id`
 - `Name`
 - `Description`
@@ -39,24 +45,30 @@ May simply inherit `User` with role `Administrator`.
 - `IsActive`
 - `Reviews`
 
-**Rules**
-- price >= 0
-- stock >= 0
+Key behaviors:
+- `UpdateDetails(...)`
+- `Restock(int quantity)`
+- `ReduceStock(int quantity)`
+- `Deactivate()`
 
 ### Cart
-**Properties**
-- `CustomerId`
-- `Items : List<CartItem>`
+Customer cart aggregate.
 
-**Behaviors**
-- add item
-- update quantity
-- remove item
-- calculate total
-- clear
+Properties:
+- `CustomerId`
+- `Items`
+
+Key behaviors:
+- `AddItem(...)`
+- `UpdateQuantity(...)`
+- `RemoveItem(...)`
+- `CalculateTotal()`
+- `Clear()`
 
 ### CartItem
-**Properties**
+Snapshot line used by cart.
+
+Properties:
 - `ProductId`
 - `ProductName`
 - `UnitPrice`
@@ -64,19 +76,24 @@ May simply inherit `User` with role `Administrator`.
 - `LineTotal`
 
 ### Order
-**Properties**
+Order aggregate.
+
+Properties:
 - `Id`
 - `CustomerId`
-- `Items : List<OrderItem>`
+- `Items`
 - `TotalAmount`
 - `Status`
 - `CreatedAt`
 - `Payment`
 
-### OrderItem
-Snapshot of product data at purchase time.
+Key behavior:
+- `UpdateStatus(OrderStatus)`
 
-**Properties**
+### OrderItem
+Snapshot line used by order history.
+
+Properties:
 - `ProductId`
 - `ProductName`
 - `UnitPrice`
@@ -84,16 +101,23 @@ Snapshot of product data at purchase time.
 - `LineTotal`
 
 ### Payment
-**Properties**
+Checkout payment record.
+
+Properties:
 - `Id`
 - `OrderId`
 - `Amount`
-- `Method` (wallet at baseline, strategy-capable on Monday)
+- `Method`
 - `Status`
-- `PaidAt`
+
+Key behaviors:
+- `MarkCompleted()`
+- `MarkFailed()`
 
 ### Review
-**Properties**
+Product review record.
+
+Properties:
 - `Id`
 - `ProductId`
 - `CustomerId`
@@ -101,87 +125,45 @@ Snapshot of product data at purchase time.
 - `Comment`
 - `CreatedAt`
 
-## Key enums
+## Enums
 
-```csharp
-public enum UserRole
-{
-    Customer = 1,
-    Administrator = 2
-}
+- `UserRole`: Customer, Administrator
+- `OrderStatus`: Pending, Paid, Processing, Shipped, Delivered, Cancelled
+- `PaymentStatus`: Pending, Completed, Failed
 
-public enum OrderStatus
-{
-    Pending = 1,
-    Paid = 2,
-    Processing = 3,
-    Shipped = 4,
-    Delivered = 5,
-    Cancelled = 6
-}
+## Domain exceptions
 
-public enum PaymentStatus
-{
-    Pending = 1,
-    Completed = 2,
-    Failed = 3
-}
-```
+- `ValidationException`
+- `NotFoundException`
+- `AuthenticationException`
+- `InsufficientFundsException`
+- `InsufficientStockException`
+- `DuplicateEmailException`
 
-## Important invariants
+## Core invariants
 
-- user emails must be unique
-- cart quantity must be greater than zero
-- cannot add more product units than available stock
-- cannot checkout empty cart
-- cannot checkout if wallet funds are insufficient
-- successful checkout reduces product stock
-- order items should preserve purchase snapshot even if product later changes
-- ratings should be within valid range such as 1 to 5
+1. Product price and stock cannot be negative.
+2. Cart item quantities must be valid for operation context.
+3. Wallet debit cannot exceed current balance.
+4. Review rating must be in range 1..5.
+5. IDs must be valid non-empty GUID values in domain constructors.
+6. Order total equals sum of order-item snapshots.
 
-## Suggested repository interfaces
+## Application-enforced business rules (outside domain constructor scope)
 
-```csharp
-public interface IRepository<T>
-{
-    List<T> GetAll();
-    T? GetById(Guid id);
-    void Add(T entity);
-    void Update(T entity);
-    void Remove(Guid id);
-}
-```
+- email uniqueness enforced in auth workflow
+- purchased-product eligibility enforced for reviews
+- stock/funds/active checks enforced before checkout
+- valid order status transitions enforced centrally in order service
 
-Specialized interfaces can extend this:
+## LINQ hotspots tied to domain model
 
-```csharp
-public interface IUserRepository : IRepository<User>
-{
-    User? GetByEmail(string email);
-}
+- product search and low-stock selection
+- order history sorting
+- revenue and status aggregation
+- best-seller and rating aggregations
+- recommendation and insight heuristics
 
-public interface IProductRepository : IRepository<Product>
-{
-    List<Product> Search(string term);
-    List<Product> GetLowStockProducts(int threshold);
-}
-```
+## Modeling intent
 
-## LINQ opportunities
-
-- search products by name/category
-- sort products by price or rating
-- get low-stock products
-- group orders by status
-- total revenue from completed payments
-- best-selling products
-- customer order history descending by date
-- average product rating
-
-## Testing implications
-
-Prioritize tests for domain invariants from the beginning:
-- `Product` validation rules
-- `Cart` quantity behavior
-- checkout preconditions (stock and funds)
-- `Review` rating boundaries
+The domain layer is intentionally rich enough to protect core invariants while still delegating workflow orchestration to Application services.
