@@ -24,6 +24,13 @@ public sealed class CartService : ICartService
     /// <inheritdoc />
     public void AddToCart(Customer customer, Guid productId, int quantity)
     {
+        EnsureCustomer(customer);
+
+        if (quantity <= 0)
+        {
+            throw new ValidationException("Quantity must be greater than zero.");
+        }
+
         Product product = GetProductOrThrow(productId);
 
         if (!product.IsActive)
@@ -46,6 +53,13 @@ public sealed class CartService : ICartService
     /// <inheritdoc />
     public void UpdateCartItem(Customer customer, Guid productId, int quantity)
     {
+        EnsureCustomer(customer);
+
+        if (quantity < 0)
+        {
+            throw new ValidationException("Quantity cannot be negative.");
+        }
+
         Product product = GetProductOrThrow(productId);
 
         if (quantity > product.StockQuantity)
@@ -60,6 +74,7 @@ public sealed class CartService : ICartService
     /// <inheritdoc />
     public void RemoveFromCart(Customer customer, Guid productId)
     {
+        EnsureCustomer(customer);
         customer.Cart.RemoveItem(productId);
         _userRepository.Update(customer);
     }
@@ -67,12 +82,14 @@ public sealed class CartService : ICartService
     /// <inheritdoc />
     public IReadOnlyList<CartItem> GetCartItems(Customer customer)
     {
+        EnsureCustomer(customer);
         return customer.Cart.Items;
     }
 
     /// <inheritdoc />
     public decimal GetCartTotal(Customer customer)
     {
+        EnsureCustomer(customer);
         return customer.Cart.CalculateTotal();
     }
 
@@ -85,5 +102,13 @@ public sealed class CartService : ICartService
         }
 
         return product;
+    }
+
+    private static void EnsureCustomer(Customer customer)
+    {
+        if (customer is null)
+        {
+            throw new ValidationException("Customer is required.");
+        }
     }
 }
