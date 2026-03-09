@@ -1,5 +1,3 @@
----
-
 # CommerceConsole
 
 ## What Is CommerceConsole?
@@ -147,5 +145,3 @@ For customer access, first register a new user through the application, then log
 
 * Register a new customer account
 * Log in with your registered email and password
-
----
