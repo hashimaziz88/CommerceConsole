@@ -1,239 +1,404 @@
-# Current Design Patterns in CommerceConsole
+# Design Patterns: Current State and Submission Positioning
 
 ## Purpose
 
-This document maps patterns currently present in code, explains why they were used, and clarifies which upgrades are still planned for Submission 2.
+This is the deep internal reference for pattern reasoning, viva prep, and Submission 2 planning.
 
-Important framing:
-- Not every pattern here is a Gang-of-Four pattern.
-- Some are architectural patterns or implementation techniques.
-- In viva, that is acceptable if you define the category clearly.
+Important documentation split:
+- `docs/design-patterns-current.md` is intentionally narrow for Submission 1 claims.
+- `.codex/design-patterns-current.md` is intentionally deeper for study and refactor planning.
 
-## Pattern Inventory at a Glance
+## Submission 1 Claim-Safe Pattern Set
 
-Implemented now:
+For Submission 1, the official pattern narrative is restricted to:
 1. Repository Pattern
-2. Service Layer Pattern
-3. Constructor Injection
-4. Composition Root
-5. Data Mapper Pattern
-6. Rich Domain Model
-7. Guard Clauses
-8. Session Context Pattern
-9. Strategy-style Export Abstraction
-10. Idempotent Seed Pattern (startup reliability technique)
+2. Strategy Pattern
+3. Factory Pattern
 
-Planned next (Submission 2 style):
-- Factory Pattern (menu/user creation extraction)
-- broader Strategy Pattern (payment/report variants)
-- State-style transition objects for orders
+This keeps claims clear, defensible, and aligned to marker expectations.
+
+## 1) Repository Pattern
+
+Implementation status:
+- implemented and production-critical in current codebase
+
+Evidence in code:
+- generic contract: `Application/Interfaces/IRepository.cs`
+- specialized contracts: `IUserRepository`, `IProductRepository`, `IOrderRepository`
+- concrete adapters: `Infrastructure/Repositories/InMemoryUserRepository.cs`, `InMemoryProductRepository.cs`, `InMemoryOrderRepository.cs`
+- persistence utility: `Infrastructure/Persistence/JsonFileStore.cs`
+
+Why it is used:
+- isolates storage concerns from business workflows
+- keeps menus free of data access
+- enables future persistence replacement with reduced ripple
+
+Trade-off:
+- adds interface and mapping overhead
+
+## 2) Strategy Pattern
+
+Implementation status:
+- implemented as an export-behavior seam
+
+Evidence in code:
+- strategy contract: `Application/Interfaces/IReportExporter.cs`
+- concrete strategy: `Infrastructure/Export/PdfReportExporter.cs`
+- orchestration: `Application/Services/ReportExportService.cs`
+
+Why it is used:
+- report calculation and report formatting are separated
+- new export modes can be added without changing report aggregation logic
+
+Current limitation:
+- one concrete exporter currently exists, but seam is explicit and working
+
+## 3) Factory Pattern
+
+Implementation status:
+- documented refactor target for the next phase
+
+Planned use:
+- centralize role/menu creation and workspace resolution
+- remove creation branching from startup/menu entry paths
+
+Why it matters:
+- clearer construction boundaries
+- easier extension when role/workspace variants increase
+
+## Deep Study Context (Not Part of Submission 1 Pattern Claims)
+
+The codebase also uses several strong architecture techniques.
+Treat these as design techniques for explanation, not as additional formal pattern claims for Submission 1:
+- layered separation of concerns
+- interface-first service/repository boundaries
+- explicit startup wiring in `Program.cs`
+- record-to-domain mapping in repository adapters
+- fail-fast validation at entity/service boundaries
+- centralized runtime session context
+
+Use this wording to stay accurate:
+"These techniques improve maintainability and testability, but our formal Submission 1 pattern set is intentionally restricted to Repository, Strategy, and Factory."
+
+## Submission 2 Plan (Pattern Implementation Focus)
+
+Primary goals:
+1. complete Factory implementation for role/menu/workspace creation flow
+2. broaden Strategy usage to payment processing options while preserving current wallet behavior
+3. keep Repository contracts stable while refining query seams only when needed
+
+Change safety rules:
+- no feature-scope expansion during pattern refactor
+- business behavior parity must be preserved
+- tests and docs updated in the same cycle
+
+## Pattern-Focused Test Checklist for Submission 2
+
+Repository:
+- contract behavior parity across repository implementations
+- persistence correctness after add/update/remove
+
+Strategy:
+- exporter strategy selection/use behavior
+- payment strategy success/failure paths (when added)
+
+Factory:
+- role-to-workspace/menu resolution
+- invalid role handling behavior
+
+Regression protection:
+- auth/routing remains stable
+- catalog/cart/checkout/reviews/reporting behavior unchanged
+- no repository calls from presentation
+- no GUID exposure in user-facing flows
+
+## Viva Positioning Scripts
+
+## 30-second Submission 1 script
+
+"For Submission 1 we intentionally keep pattern claims focused: Repository for storage decoupling, Strategy for export behavior decoupling, and Factory as the next controlled refactor target. This keeps our claims precise, evidence-based, and easy to defend."
+
+## 30-second Submission 2 script
+
+"Submission 2 turns planned seams into concrete implementations by completing Factory creation flow and broadening Strategy usage, while preserving baseline behavior through regression tests and unchanged service boundaries."
+
+## Common Mistake to Avoid in Viva
+
+Do not claim "many patterns" without code-level proof.
+Preferred approach:
+- claim only what is explicitly present
+- point to exact files
+- describe trade-offs honestly
+- show a staged plan for next-step patterns
+
+## Extended Study Catalog (All Patterns And Design Techniques)
+
+This section is study-focused and intentionally broader than Submission 1 claim scope.
+Use it to learn and explain architecture depth, while still keeping formal rubric claims precise.
+
+## A) Patterns/Techniques Already Present In Code
 
 ## 1. Repository Pattern
 
 Definition:
-- Provides collection-like access to domain objects while hiding data-source details.
+- Encapsulates data access behind collection-like interfaces.
 
-Where:
-- contracts in `Application/Interfaces` (`IUserRepository`, `IProductRepository`, `IOrderRepository`)
-- implementations in `Infrastructure/Repositories`
+Where in this project:
+- `Application/Interfaces/IRepository.cs`
+- `Application/Interfaces/IUserRepository.cs`
+- `Application/Interfaces/IProductRepository.cs`
+- `Application/Interfaces/IOrderRepository.cs`
+- `Infrastructure/Repositories/InMemory*Repository.cs`
 
-Why used:
-- services should reason about business operations, not JSON I/O internals.
-
-Problem solved:
-- decouples business workflows from storage technology.
-
-Trade-off:
-- additional interfaces and mapping logic.
-
-## 2. Service Layer Pattern
-
-Definition:
-- Centralizes use-case orchestration in dedicated service classes.
-
-Where:
-- `Application/Services/*`
-
-Why used:
-- keeps menus thin and prevents workflow duplication across UI handlers.
-
-Problem solved:
-- avoids business logic leakage into presentation.
+Why used here:
+- isolates JSON and file concerns from business workflows
+- keeps services and menus storage-agnostic
 
 Trade-off:
-- more service classes to maintain as scope grows.
+- additional interfaces and mapping code.
 
-## 3. Constructor Injection
+## 2. Strategy Pattern (Export Behavior Seam)
 
 Definition:
-- dependencies are passed through constructors rather than created internally.
+- Encapsulates interchangeable algorithms behind a shared contract.
 
-Where:
-- application services and menus
+Where in this project:
+- `Application/Interfaces/IReportExporter.cs`
+- `Infrastructure/Export/PdfReportExporter.cs`
+- `Application/Services/ReportExportService.cs`
 
-Why used:
-- explicit dependency graphs
-- easy test construction
-
-Problem solved:
-- avoids hidden coupling and hard-wired implementation creation.
+Why used here:
+- separates report-data generation from export formatting/output rules.
 
 Trade-off:
-- constructors become longer for coordinator types.
+- extra abstraction for a currently small exporter set.
 
-## 4. Composition Root
+## 3. Service Layer Pattern (Architecture Technique)
 
 Definition:
-- single entry point where object graph is assembled.
+- Organizes use-case orchestration in dedicated application services.
 
-Where:
+Where in this project:
+- `Application/Services/AuthService.cs`
+- `Application/Services/ProductService.cs`
+- `Application/Services/OrderService.cs`
+- `Application/Services/ReviewService.cs`
+- `Application/Services/ReportService.cs`
+
+Why used here:
+- keeps menus thin
+- centralizes business workflows for testing and consistency.
+
+Trade-off:
+- service count grows with feature surface.
+
+## 4. Constructor Injection (DI Technique)
+
+Definition:
+- Dependencies are provided via constructors instead of being created inside classes.
+
+Where in this project:
+- all major services and menus are built with constructor dependencies from `Program.cs`.
+
+Why used here:
+- explicit dependencies
+- simpler unit tests
+- reduced hidden coupling.
+
+Trade-off:
+- longer constructor signatures in orchestration classes.
+
+## 5. Composition Root (Wiring Pattern)
+
+Definition:
+- Single location where the object graph is assembled.
+
+Where in this project:
 - `Program.cs`
 
-Why used:
-- all runtime wiring is visible in one place.
-
-Problem solved:
-- avoids object creation scattered across menus/services.
+Why used here:
+- runtime wiring is visible and predictable
+- easier to reason about environment setup and startup order.
 
 Trade-off:
-- startup file grows as dependencies increase.
+- startup file grows as system grows.
 
-## 5. Data Mapper Pattern
+## 6. Data Mapper (Persistence Mapping Technique)
 
 Definition:
-- maps between domain entities and storage record models.
+- Explicit mapping between domain entities and storage record models.
 
-Where:
-- `ToDomain(...)` / `FromDomain(...)` methods in repositories
-- `Infrastructure/Repositories/Models/*Record.cs`
+Where in this project:
+- repository conversion functions and `Infrastructure/Repositories/Models/*Record.cs`.
 
-Why used:
-- domain model stays independent from JSON schema shape.
-
-Problem solved:
-- prevents persistence concerns from polluting domain entities.
+Why used here:
+- keeps domain objects free of persistence schema concerns.
 
 Trade-off:
-- explicit mapper code overhead.
+- boilerplate mapping code that must stay synchronized.
 
-## 6. Rich Domain Model
+## 7. Rich Domain Model (Domain Modeling Style)
 
 Definition:
-- entities contain both data and behavior/invariant enforcement.
+- Entities encapsulate both state and behavior/invariant enforcement.
 
-Where:
-- `Domain/Entities` (`Product`, `Cart`, `Customer`, `Order`, `Payment`, `Review`)
+Where in this project:
+- `Domain/Entities/Product.cs`, `Cart.cs`, `Customer.cs`, `Order.cs`, `Review.cs`, `Payment.cs`.
 
-Why used:
-- business rules should be enforced by the object that owns state.
-
-Problem solved:
-- reduces invalid-state bugs from unrestricted property writes.
+Why used here:
+- invalid state is blocked at source by behavior methods.
 
 Trade-off:
-- requires disciplined method design to avoid entity bloat.
+- requires discipline to avoid oversized entities.
 
-## 7. Guard Clauses
+## 8. Guard Clauses (Validation Style)
 
 Definition:
-- fail-fast validation at method/constructor boundaries.
+- Fail-fast parameter and state checks at method/constructor boundaries.
 
-Where:
-- domain constructors/mutators
-- service entry methods
+Where in this project:
+- domain constructors/mutators and service entry points.
 
-Why used:
-- immediate feedback and simpler debugging.
-
-Problem solved:
-- blocks invalid state early.
+Why used here:
+- immediate, predictable validation behavior.
 
 Trade-off:
-- repetitive checks if not consistently organized.
+- repeated checks if not consistently structured.
 
-## 8. Session Context Pattern
+## 9. Session Context (Runtime Context Holder)
 
 Definition:
-- dedicated holder for current authenticated runtime user state.
+- Centralized holder for current authenticated user in runtime session.
 
-Where:
-- `ISessionContext` + `SessionContext`
+Where in this project:
+- `Application/Interfaces/ISessionContext.cs`
+- `Application/Services/SessionContext.cs`
 
-Why used:
-- avoids passing user state through every call manually.
-
-Problem solved:
-- centralizes sign-in/sign-out state management.
+Why used here:
+- avoids passing current user through every menu/action method.
 
 Trade-off:
-- currently process-local only.
+- process-local context, not distributed session management.
 
-## 9. Strategy-Style Export Abstraction
+## 10. Adapter Style (Infrastructure Integration Technique)
 
 Definition:
-- output/export behavior is hidden behind an interface and selected implementation.
+- Wraps external/technical details behind application contracts.
 
-Where:
-- `IReportExporter`
-- `ReportExportService`
-- `PdfReportExporter`
+Where in this project:
+- repositories adapt JSON file storage
+- PDF exporter adapts report model to external output format.
 
-Why used:
-- report aggregation (`ReportService`) should not know PDF formatting details.
-
-Problem solved:
-- separates what to export from how to export.
+Why used here:
+- protects application/domain from technical implementation detail churn.
 
 Trade-off:
-- one more abstraction for small scope.
+- more adapter classes to maintain.
 
-Note:
-- this is a practical strategy seam, even if only one concrete exporter exists currently.
-
-## 10. Idempotent Seed Pattern
+## 11. Idempotent Seed Technique
 
 Definition:
-- startup seed can run repeatedly without duplicate inserts.
+- Seed operations can run repeatedly without duplicating baseline records.
 
-Where:
-- `SeedData.Seed(...)`
+Where in this project:
+- `Infrastructure/Data/SeedData.cs`
 
-Why used:
-- predictable restarts and repeat demos.
-
-Problem solved:
-- avoids duplicate admin/products after relaunch.
+Why used here:
+- deterministic startup and repeatable demos/tests.
 
 Trade-off:
-- small startup check overhead.
+- additional startup checks.
 
-## Pattern Interactions (How They Work Together)
+## B) Patterns Intentionally Planned For Submission 2 Refactor
 
-Typical flow:
-1. Menu (Presentation) calls service.
-2. Service (Service Layer) uses repository interfaces.
-3. Repository implementation maps domain <-> record models (Data Mapper).
-4. File store persists JSON (Infrastructure detail).
-5. Domain entities enforce invariants via guard clauses throughout.
+These are part of evolution planning and should be explained as controlled refactors, not baseline feature changes.
 
-This interaction is the core maintainability story of the project.
+## 12. Factory Pattern (Formalization Target)
 
-## What Is Not Fully Patternized Yet (Intentional)
+Planned role:
+- centralize role-to-workspace/menu creation and remove branching from entry flow.
 
-Not yet extracted:
-- factory classes for role/menu creation
-- state objects for order transitions
-- multiple payment strategies
+Expected contract style:
+- `IRoleMenuFactory` and role-specific workspace/menu creators.
 
-Reason:
-- baseline delivery and reliability first
-- pattern extraction planned as controlled refactor phase (Monday milestone)
+Main benefit:
+- cleaner creation logic and easier extension for role variants.
 
-## How to Explain Pattern Choice in Viva
+## 13. Strategy Pattern Expansion (Payment)
 
-Good phrasing:
-"We used patterns that solve immediate structural problems: Repository for storage decoupling, Service Layer for workflow centralization, Data Mapper for schema isolation, and composition root plus constructor injection for explicit wiring. Pattern adoption is incremental and driven by concrete needs, not overengineering."
+Planned role:
+- move wallet payment behavior behind `IPaymentStrategy` (wallet first, future options optional).
 
-## 30-Second Pattern Defense Script
+Main benefit:
+- algorithm variation without touching checkout orchestration shape.
 
-"Current patterns isolate responsibilities: repositories abstract storage, services own use-case orchestration, mappers separate domain from JSON schema, and composition root keeps wiring explicit. We intentionally added an exporter strategy seam and kept future factory/state extractions as low-risk next steps."
+## 14. State-Style Transition Handling (Orders)
+
+Planned role:
+- extract transition logic into status-focused transition handlers while preserving transition matrix.
+
+Main benefit:
+- clearer lifecycle policy ownership and easier extension/testing for new statuses.
+
+## 15. Command Pattern (Menu Dispatch)
+
+Planned role:
+- map menu actions to command handlers instead of large switch blocks.
+
+Main benefit:
+- thinner menus and clearer single-responsibility action handlers.
+
+## 16. Specification Pattern (Query Reuse)
+
+Planned role:
+- reusable query specifications for product/search/report filters.
+
+Main benefit:
+- less duplicate filtering logic and clearer query intent in services.
+
+## C) How To Speak About This Safely In Viva
+
+Use this framing:
+1. "Our formal Submission 1 pattern claims are Repository, Strategy, and Factory."
+2. "Additional listed items are architecture/design techniques and planned controlled refactors used for learning and extension planning."
+3. "We avoid overclaiming; every claim is mapped to concrete files and behavior."
+
+## D) Quick Revision Checklist
+
+Before demo/viva, be ready to answer:
+1. What problem each pattern/technique solves here.
+2. Where it appears in code (file-level proof).
+3. Why it was chosen over a simpler alternative.
+4. What trade-off it introduces.
+5. How it supports safe Submission 2 evolution.
+
+## E) Full Restored Pattern Matrix (Including Previously Removed Names)
+
+This matrix is intentionally exhaustive for study.
+It includes patterns currently implemented, partially represented, and planned.
+
+| Pattern / Technique | Status | Where / Evidence | Why It Matters |
+| --- | --- | --- | --- |
+| Repository Pattern | Implemented | `IRepository<T>`, `IUserRepository`, `IProductRepository`, `IOrderRepository`, `InMemory*Repository` | Decouples storage from workflows |
+| Strategy Pattern (Export) | Implemented | `IReportExporter`, `PdfReportExporter`, `ReportExportService` | Separates report logic from output format |
+| Factory Pattern | Planned Formalization | Main flow/menu creation seams | Centralizes creation, reduces branching |
+| Service Layer Pattern | Implemented | `Application/Services/*Service.cs` | Keeps business logic out of menus |
+| Constructor Injection | Implemented | Constructors across services/menus + `Program.cs` wiring | Explicit dependencies, testability |
+| Composition Root | Implemented | `Program.cs` | One place for graph wiring |
+| Data Mapper Pattern | Implemented | `Infrastructure/Repositories/Models/*Record.cs` + repo mapping methods | Isolates domain from persistence schema |
+| Rich Domain Model | Implemented | `Domain/Entities/*` behavior methods and invariants | Protects business state at source |
+| Guard Clauses | Implemented | Constructors/mutators/service entry guards | Fail-fast validation and safer mutations |
+| Session Context Pattern | Implemented | `ISessionContext`, `SessionContext` | Central auth state boundary |
+| Adapter Pattern | Implemented (Style) | Repository adapters + export adapter | Wraps technical details behind contracts |
+| Idempotent Seed Pattern | Implemented (Technique) | `SeedData.Seed(...)` uniqueness checks | Safe reruns and deterministic startup |
+| State Pattern (Order Lifecycle) | Partial / Planned Upgrade | Current transition map in `OrderService` | Candidate to extract into state objects |
+| Command Pattern (Menu Dispatch) | Planned / Conceptual | Current menu switches | Candidate for action-handler dispatch maps |
+| Specification Pattern (Query Rules) | Planned / Conceptual | Current LINQ predicates in services/repos | Candidate for reusable filtering rules |
+| Facade Pattern (Application as facade to UI) | Partial | Menus call service interfaces as simplified entry points | Reduces UI-facing complexity |
+| Template Method (Workflow Skeleton) | Partial (informal) | Checkout orchestration order in `OrderService` | Stable workflow sequence with variable checks |
+
+### How to use this matrix in viva
+
+1. If asked "which patterns are in production now?" answer with rows marked `Implemented`.
+2. If asked "what are next refactor patterns?" answer with rows marked `Planned` or `Partial / Planned Upgrade`.
+3. Keep Submission 1 claims strict, but use this section for deep study and future defense.

@@ -95,6 +95,14 @@ Detailed architecture and design notes are available in `docs/`.
 
 - .NET 10 SDK
 
+## Navigate To Project Folder
+
+If your terminal is not already in the project directory, run:
+
+```powershell
+cd "C:\Users\Hashim\Documents\Git Repos\CommerceConsole"
+```
+
 ## Build
 
 ```powershell
@@ -112,3 +120,4 @@ dotnet run --project CommerceConsole.csproj
 ```powershell
 dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
 ```
+

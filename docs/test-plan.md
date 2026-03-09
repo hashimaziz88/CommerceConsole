@@ -148,10 +148,11 @@ Known gaps:
 - no multi-page PDF fidelity tests
 
 Planned additions:
-- pattern-focused tests during Submission 2 refactor
+- targeted refactor tests during Submission 2
 - exporter-variant tests if CSV/other exporters added
 - deeper audit-log tests if event logging bonus is expanded
 
 ## Quick Viva Script
 
 "Tests are organized by architecture layer so each concern is validated at the right level. We cover core happy paths and failure paths for auth, catalog, cart, checkout, lifecycle, reviews, reporting, persistence, and presentation helpers, with deterministic isolation for file and console tests."
+

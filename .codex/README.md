@@ -20,6 +20,8 @@ It is intentionally deeper than the root `README.md` and acts as the study and e
 - `07_Git_Workflow_and_Branching.md`: branch strategy, milestone locks, PR checks
 - `08_Codex_Prompt_Pack.md`: copy-paste prompt workflow
 - `09_GitHub_Feature_Issues.md`: milestone-locked issue set
+- `design-patterns-current.md`: deep pattern inventory, evidence, and phased positioning
+- `viva-questions-and-answers.md`: study Q&A scripts and speaking prompts
 - `agents.md`: role-oriented agent execution guidance
 - `rules.md`: hard constraints and delivery guardrails
 
@@ -31,6 +33,15 @@ It is intentionally deeper than the root `README.md` and acts as the study and e
 4. Follow branch and milestone discipline in `07`.
 5. Apply `05` only during the pattern-refactor phase.
 
+## Submission Documentation Boundary
+
+Use this split strictly:
+- Root `docs/` should stay marker-facing and claim-safe.
+- `.codex/` should carry deeper study, trade-offs, and refactor planning detail.
+
+Current rule for Submission 1 pattern claims in public docs:
+- only `Repository Pattern`, `Strategy Pattern`, and `Factory Pattern` are formally named.
+
 ## Study Navigation And Revision Path
 
 Use this order for deep understanding:
@@ -39,10 +50,11 @@ Use this order for deep understanding:
 3. `docs/oop-design-notes.md`
 4. `docs/access-modifiers-and-class-design.md`
 5. `docs/design-patterns-current.md`
-6. Feature behavior docs (`auth-flow`, `product-catalog`, `cart-wallet`, `checkout-orders`, `order-lifecycle`, `reviews-reporting`, `persistence`)
+6. feature behavior docs (`auth-flow`, `product-catalog`, `cart-wallet`, `checkout-orders`, `order-lifecycle`, `reviews-reporting`, `persistence`)
 7. `docs/test-plan.md`
 8. `docs/demo-study-guide.md`
-9. `docs/viva-questions-and-answers.md`
+9. `.codex/viva-questions-and-answers.md`
+10. `.codex/design-patterns-current.md`
 
 ## Architecture Rationale References
 
@@ -52,8 +64,8 @@ Primary references:
 - `02_Architecture_and_Solution_Structure.md`
 
 Key positioning:
-- Layered architecture with DDD-inspired modeling discipline.
-- Rich domain invariants are implemented, while full tactical DDD is intentionally deferred.
+- layered architecture with domain-centered modeling discipline
+- strong invariants and service orchestration with strict folder boundaries
 
 ## OOP And Pattern Explanation Pointers
 
@@ -61,18 +73,19 @@ Use these together when preparing explanations:
 - `docs/oop-design-notes.md`
 - `docs/access-modifiers-and-class-design.md`
 - `docs/design-patterns-current.md`
+- `.codex/design-patterns-current.md`
 - `03_Domain_Model.md`
 
 ## Demo And Viva Preparation Pointers
 
-- Demo flow and speaking structure: `docs/demo-study-guide.md`
-- Likely questions and concise answers: `docs/viva-questions-and-answers.md`
-- Regression confidence references: `docs/test-plan.md`
+- demo flow and speaking structure: `docs/demo-study-guide.md`
+- likely questions and concise answers: `.codex/viva-questions-and-answers.md`
+- regression confidence references: `docs/test-plan.md`
 
 ## Governance And Process Notes
 
 - Root `README.md` stays concise and marker-facing.
-- Deep reasoning and implementation governance stay in `.codex` and `docs`.
+- Deep reasoning and implementation governance stay in `.codex` and focused docs.
 - Milestone locks in `09_GitHub_Feature_Issues.md` are mandatory unless explicitly approved changes are made.
 - All behavior, architecture, or scope updates must be reflected in both docs and codex guidance.
 

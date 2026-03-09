@@ -12,7 +12,7 @@ Presentation:
 
 Application:
 - provide ordered views
-- enforce status transition policy
+- enforce transition rules
 
 Domain:
 - hold current order status and update operation
@@ -62,10 +62,10 @@ Flow:
 Result:
 - status change persisted to repository
 
-## Transition Policy (Centralized)
+## Transition Rules (Centralized)
 
 Policy source:
-- `OrderService` static transition map
+- `OrderService` transition map
 
 Allowed transitions:
 - `Pending -> Paid | Cancelled`
@@ -75,12 +75,12 @@ Allowed transitions:
 - `Delivered ->` terminal
 - `Cancelled ->` terminal
 
-Why centralized policy is good now:
+Why centralized policy is useful now:
 - single source of truth
 - easy to test
-- menu remains free of business-state logic
+- menu remains free of business transition logic
 
-## Terminal-State Behavior
+## Terminal State Behavior
 
 For terminal states (`Delivered`, `Cancelled`):
 - no further transitions are allowed
@@ -95,18 +95,13 @@ For terminal states (`Delivered`, `Cancelled`):
 Behavioral note:
 - no-op when target status equals current status
 
-## Why This Is Not Yet Full State Pattern
+## Future Refactor Seam
 
 Current approach:
-- transition map dictionary in service
+- transition rules are maintained in one service-level policy map
 
-Why acceptable now:
-- small lifecycle with clear progression
-- simpler for baseline scope
-
-Future upgrade path:
-- extract `IOrderStateTransitionPolicy`/state objects per status
-- keep same menu/service contract with internal refactor
+Future direction:
+- transition handling can be extracted into dedicated transition components if lifecycle complexity grows
 
 ## Tests
 
@@ -120,4 +115,4 @@ Covered scenarios:
 
 ## Quick Viva Script
 
-"Order lifecycle rules are centralized in `OrderService` so policy is consistent and testable. Admin UI only shows allowed next statuses, preventing invalid updates at source. Customers only track orders through read-only views."
+"Order lifecycle rules are centralized in `OrderService` so policy is consistent and testable. Admin UI only shows allowed next statuses, preventing invalid updates at source. Customers track orders through read-only views."
