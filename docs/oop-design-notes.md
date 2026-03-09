@@ -2,10 +2,7 @@
 
 ## Purpose
 
-This is the long-form OOP reasoning document for CommerceConsole.
-It explains not just what classes exist, but why they are shaped this way.
-
-Use this as your core revision source for design and architecture questions.
+This document explains the object-oriented design choices in CommerceConsole and how those choices protect correctness, readability, and maintainability.
 
 ## OOP Goals for This Project
 
@@ -14,76 +11,76 @@ The codebase uses OOP to achieve five goals:
 2. keep workflows readable and testable
 3. reduce coupling between UI, business logic, and infrastructure
 4. support extension without destabilizing baseline behavior
-5. make design decisions explainable under viva questioning
+5. make design decisions easy to defend in a demo/viva
 
-## Encapsulation: The Most Important Rule Here
+## Encapsulation: The Core Rule
 
-Encapsulation strategy:
-- domain objects hold state
-- state changes are made through explicit behavior methods
-- direct setters are restricted (`private set` or getter-only)
+Encapsulation approach:
+- domain objects own their state
+- state changes happen through explicit behavior methods
+- direct mutation is restricted (`private set` or getter-only)
 
 Examples:
-- stock changes only through `Product.Restock` / `Product.ReduceStock`
-- wallet changes only through `Customer.AddFunds` / `Customer.DebitFunds`
-- cart mutation only through `Cart.AddItem` / `Cart.UpdateQuantity` / `Cart.RemoveItem`
+- stock changes through `Product.Restock` / `Product.ReduceStock`
+- wallet changes through `Customer.AddFunds` / `Customer.DebitFunds`
+- cart changes through `Cart.AddItem` / `Cart.UpdateQuantity` / `Cart.RemoveItem`
 
 Why this matters:
-- there is a single controlled gate for each important business mutation.
+- each business mutation has one controlled entry point.
 
-## Abstraction and Contracts
+## Abstraction Through Interfaces
 
-The application layer uses interfaces to abstract behavior from implementation.
+The application layer uses interfaces to separate contracts from implementations.
 
 Contract examples:
 - repositories: `IUserRepository`, `IProductRepository`, `IOrderRepository`
 - services: `IAuthService`, `IOrderService`, `IReviewService`, etc.
-- extension seam: `IReportExporter`
+- export seam: `IReportExporter`
 
 Benefits:
 - implementations can change without changing callers
-- tests can isolate behavior more easily
-- architecture boundaries stay explicit
+- tests can isolate behavior cleanly
+- boundaries remain explicit and enforceable
 
 ## Inheritance and Polymorphism (Used Carefully)
 
-Inheritance exists where domain meaning is strong:
+Inheritance is used where domain meaning is strong:
 - `User` (abstract) -> `Customer`, `Administrator`
 
 Polymorphism examples:
-- role-based behavior via `UserRole` and derived user type checks in menus
-- repository polymorphism through interfaces (could swap implementation)
-- exporter polymorphism through `IReportExporter`
+- role behavior based on `UserRole` and concrete user type
+- interface-based repository replacement
+- interface-based export replacement
 
-Why not heavy inheritance everywhere:
-- deep inheritance hierarchies increase fragility
-- composition keeps responsibilities more explicit
+Why not deep inheritance trees:
+- deep hierarchies increase coupling and fragility
+- composition keeps responsibilities clearer
 
 ## Composition Over Inheritance
 
-Composition-heavy design in practice:
+Composition-heavy examples:
 - `Customer` contains `Cart`, order history, and review history
-- `Order` contains item snapshots and payment
-- `Product` contains its reviews
+- `Order` contains order item snapshots and payment details
+- `Product` contains review collection and rating behavior
 
 Benefits:
-- local reasoning
-- easier replacement and testing
-- fewer inheritance-related side effects
+- easier local reasoning
+- fewer hidden side effects
+- easier test setup
 
-## Guard Clauses and Invariants
+## Guarded Validation and Invariants
 
-Guard clauses are used in constructors and mutators to fail fast.
+Validation is applied in constructors and mutators to fail fast.
 
 Invariant examples:
-- no negative product price or stock
-- review rating always between 1 and 5
-- order must have at least one item
-- payment amount must be > 0
-- user and entity IDs must not be empty GUIDs
+- no negative product price/stock
+- review rating always in range 1..5
+- order must contain at least one item
+- payment amount must be greater than zero
+- IDs must not be empty GUIDs
 
 Design result:
-- impossible or unsafe states are blocked at source.
+- invalid state is blocked at source instead of repaired later.
 
 ## Why `sealed`, `abstract`, and `static` Were Chosen
 
@@ -91,100 +88,99 @@ Design result:
 - used where base type should not be instantiated (`User`)
 
 `sealed`:
-- used on most concrete classes to prevent accidental inheritance drift
+- used on concrete types where extension is not required
 
 `static`:
-- used for stateless helpers (`ConsoleInputHelper`, `ConsoleTheme`, `MenuActionHelper`, etc.)
+- used for stateless helpers (`ConsoleInputHelper`, `ConsoleTheme`, `MenuActionHelper`)
 
 Rationale:
-- class shape communicates intent and controls extensibility.
+- class shape communicates intent and controls extension points.
 
 ## Separation of Concerns Through OOP Boundaries
 
 Presentation concerns:
-- prompting, selection, rendering, friendly errors
+- prompt/read/render/retry behavior
 
 Application concerns:
-- workflow orchestration, cross-entity coordination, query aggregation
+- workflow orchestration and cross-entity coordination
 
 Domain concerns:
-- entity correctness and local business behavior
+- state ownership and business rule enforcement
 
 Infrastructure concerns:
-- persistence/export mechanics and mapping
+- persistence and export mechanics
 
-This separation is the practical reason the architecture feels "clean" despite being a console app.
+This separation is why the architecture stays clean even in a console app.
 
 ## LINQ Usage and Query Thinking
 
-LINQ is heavily used in application/infrastructure for expressive query logic.
+LINQ is used heavily for readable business queries.
 
 Where LINQ appears and why:
-- `ProductService.SearchProducts`: filter + sort catalog quickly
-- `ReportService`: group/aggregate revenue, status counts, and best sellers
-- `ReviewService`: compute purchased-only review eligibility
-- `InsightsService`: recommendation ranking and insight summarization
+- `ProductService.SearchProducts`: expressive filtering/sorting
+- `ReportService`: grouped and aggregated sales metrics
+- `ReviewService`: purchased-product eligibility filtering
+- `InsightsService`: ranked recommendations and admin insights
 
 How to explain in viva:
-"LINQ lets us express domain questions directly: What sold most? What is low stock? What did this customer purchase? The query shape mirrors the business question."
+"LINQ lets query code mirror business questions like top sellers, low stock, and customer purchase history."
 
-## Persistence Model Separation (OOP Boundary Hygiene)
+## Persistence Boundary Hygiene
 
-Domain types are not serialized directly as repository schema contracts.
+Domain entities are not used as direct JSON schema contracts.
 
 Instead:
-- infrastructure uses `*Record` types for JSON transport
-- repositories map between domain entities and record models
+- infrastructure uses `*Record` types
+- repositories map between domain entities and records
 
-Why this is strong OOP design:
-- domain model remains business-focused
-- persistence model can evolve with less domain impact
+Why this is strong design:
+- domain model stays business-focused
+- storage schema can evolve with less impact
 - mapping logic is explicit and testable
 
-## Session Context as Application State Boundary
+## Session Context for Auth Flow
 
-`SessionContext` centralizes authenticated runtime user state.
+`SessionContext` stores current authenticated user context during runtime.
 
 Benefits:
-- avoids passing user references manually through many methods
-- keeps sign-in/sign-out behavior explicit
-- prevents ad-hoc static global state
+- clear sign-in/sign-out state handling
+- avoids passing current-user references through every method
+- keeps user context management centralized
 
 ## How OOP Choices Improve Testability
 
-Testability gains from design:
-- rich domain invariants can be tested in isolation
-- services can be tested without console interaction
-- persistence can be tested with temporary directories
-- presentation helpers can be tested with input/output harness
+Testability benefits:
+- domain invariants can be tested in isolation
+- services can be tested without console I/O
+- persistence can be tested with temporary data folders
+- presentation helpers can be tested with controlled input/output harnesses
 
-Current result:
-- broad workflow coverage with fast unit-style tests
+## Submission Pattern Scope
 
-## What This OOP Design Enables Next
+For Submission 1 documentation, only these pattern names are formally claimed:
+- Repository Pattern
+- Strategy Pattern
+- Factory Pattern
 
-Low-risk next steps:
-- introduce factory abstractions for role/menu creation
-- introduce strategy variants for payment/export/reporting
-- extract state-style order transition policies
-- replace JSON repositories with DB-backed repositories behind same contracts
+Current status in code:
+- Repository is implemented across all mutable workflows
+- Strategy is implemented for report export behavior
+- Factory is documented as a controlled refactor seam for the next phase
 
-Because boundaries are already strict, these upgrades are incremental rather than rewrite-driven.
-
-## Study Drills (Use This to Internalize)
+## Study Drills
 
 Drill 1:
 - pick one entity and list its invariants, mutators, and why setters are restricted.
 
 Drill 2:
-- trace one workflow (`Checkout`) across layers and state which layer owns each step.
+- trace checkout across layers and explain which layer owns each step.
 
 Drill 3:
-- explain one pattern from code in 30 seconds (Repository, Service Layer, Data Mapper).
+- explain Repository, Strategy, and Factory usage/status in this codebase.
 
 Drill 4:
-- justify why this is DDD-inspired but not full tactical DDD.
+- justify why this architecture is DDD-inspired, but not full tactical DDD.
 
 ## 30-Second OOP Defense Script
 
-"OOP in this project is used to protect state and keep responsibilities clear. Entities encapsulate invariants with guard clauses, services orchestrate use cases through interfaces, and infrastructure handles technical concerns via mappers and adapters. Access modifiers and class shapes are intentional to keep mutation safe and evolution low-risk."
+"OOP here is used to protect state and keep responsibilities clear. Entities enforce invariants through controlled methods, services orchestrate workflows through interfaces, and infrastructure handles technical adapters like JSON persistence and export formatting. This keeps behavior safe, testable, and easier to evolve."

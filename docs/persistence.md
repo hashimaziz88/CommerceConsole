@@ -41,7 +41,7 @@ So this is:
 - in-memory primary working set
 - file-backed durability layer
 
-## Record Model Separation (Data Mapper Pattern)
+## Record Model Separation
 
 Persistence models are separate from domain entities:
 - `UserRecord`, `ProductRecord`, `OrderRecord`, etc.
@@ -49,7 +49,7 @@ Persistence models are separate from domain entities:
 Why this matters:
 - storage schema can evolve without forcing domain redesign
 - domain invariants stay in domain, not in serialization DTOs
-- mapping logic is explicit in repository `ToDomain` / `FromDomain`
+- repository mapping code stays explicit and testable
 
 ## JsonFileStore Behavior
 
@@ -95,7 +95,7 @@ Limitations:
 
 Even with simple JSON storage:
 - application/domain logic is not coupled to JSON APIs
-- storage can be replaced by DB repositories behind same interfaces
+- storage can be replaced by new repositories behind same interfaces
 - tests can run deterministically with temp data directories
 
 ## Practical Data Reset Guidance
@@ -114,4 +114,4 @@ For clean demo resets:
 
 ## Quick Viva Script
 
-"Persistence is implemented as repository adapters over JSON files. Runtime state lives in memory for speed, and each mutation writes-through to file for durability. Domain and application remain storage-agnostic because mapping and file concerns are isolated in infrastructure."
+"Persistence is implemented as repository adapters over JSON files. Runtime state lives in memory for speed, and each mutation writes-through to file for durability. Domain and application remain storage-agnostic because file concerns are isolated in infrastructure."

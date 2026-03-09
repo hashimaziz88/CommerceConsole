@@ -119,7 +119,7 @@ Mapping examples:
 - `AuthenticationException` -> login error output
 - `DuplicateEmailException` -> registration error output
 
-Why this pattern helps:
+Why this approach helps:
 - services stay free of presentation text concerns
 - user gets consistent error format
 
@@ -150,3 +150,4 @@ Covered scenarios:
 ## Quick Viva Script
 
 "Auth is menu-triggered but service-owned. Registration and login validation live in `AuthService`, persistence lives in repositories, session state lives in `SessionContext`, and role routing is handled in main menu with role checks inside each workspace."
+
