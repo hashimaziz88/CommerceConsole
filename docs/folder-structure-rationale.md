@@ -106,7 +106,7 @@ Primary mission:
 Allowed:
 - architecture notes
 - feature behavior specs
-- OOP and pattern rationale
+- OOP and design rationale
 - demo/viva study material
 
 Forbidden:
@@ -146,7 +146,7 @@ Why:
 
 ## Interfaces
 
-Pattern:
+Convention:
 - prefix `I` (`IOrderService`, `IReportExporter`)
 
 Why:
@@ -155,7 +155,7 @@ Why:
 
 ## Services
 
-Pattern:
+Convention:
 - suffix `Service` (`OrderService`, `ReviewService`)
 
 Why:
@@ -163,7 +163,7 @@ Why:
 
 ## Repository Implementations
 
-Pattern:
+Convention:
 - implementation prefix + `Repository` suffix (`InMemoryUserRepository`)
 
 Why:
@@ -171,7 +171,7 @@ Why:
 
 ## Persistence Models
 
-Pattern:
+Convention:
 - suffix `Record` (`UserRecord`, `OrderRecord`)
 
 Why:
@@ -179,7 +179,7 @@ Why:
 
 ## Menu/Display Helpers
 
-Pattern:
+Convention:
 - `*Helper`, `*Renderer`, `*Prompt`
 
 Why:
@@ -195,21 +195,21 @@ Quick decision checklist when adding a new class:
 5. Is it only test support? -> `Tests`
 6. Is it explanation content? -> `docs`
 
-## Common Anti-Patterns (And Current Protection)
+## Common Mistakes (And Current Protection)
 
-Anti-pattern 1: menu directly calls repository
+Mistake 1: menu directly calls repository
 - Risk: UI and storage coupling, hidden business drift.
 - Protection: repository interfaces are injected into services, not menus.
 
-Anti-pattern 2: domain class handles file I/O
+Mistake 2: domain class handles file I/O
 - Risk: domain polluted with infrastructure concerns.
 - Protection: `JsonFileStore` and repositories isolate I/O in infrastructure.
 
-Anti-pattern 3: nested persistence classes inside repositories
+Mistake 3: nested persistence classes inside repositories
 - Risk: bloated files and poor reuse.
 - Protection: persistence models live in `Infrastructure/Repositories/Models`.
 
-Anti-pattern 4: exposing GUID entry to end users
+Mistake 4: exposing GUID entry to end users
 - Risk: poor UX and accidental identifier leakage.
 - Protection: index-based selection in menus/helpers.
 
@@ -222,3 +222,4 @@ If asked "Why so many folders/classes?" in viva:
 ## 30-Second Folder Defense Script
 
 "Presentation handles interaction, Application handles workflows, Domain protects core rules, and Infrastructure handles technical adapters like JSON and PDF export. Tests mirror that architecture, docs explain it, and .codex controls process standards. The structure is intentional to keep change safe and explainable."
+

@@ -10,7 +10,7 @@ Pair this with:
 - `docs/architecture.md`
 - `docs/oop-design-notes.md`
 - `docs/design-patterns-current.md`
-- `docs/viva-questions-and-answers.md`
+- `.codex/viva-questions-and-answers.md`
 
 ## Study Strategy (3 Phases)
 
@@ -28,7 +28,7 @@ Checkpoint question:
 - "Is this full DDD? If not, what exactly is it?"
 
 Expected answer:
-- layered, DDD-inspired architecture with rich domain model, not full tactical DDD.
+- layered, DDD-inspired architecture with domain-centered modeling, not full tactical DDD.
 
 ## Phase 2: Behavior Mastery (60-90 min)
 
@@ -54,7 +54,7 @@ Read in order:
 2. `docs/oop-design-notes.md`
 3. `docs/design-patterns-current.md`
 4. `docs/test-plan.md`
-5. `docs/viva-questions-and-answers.md`
+5. `.codex/viva-questions-and-answers.md`
 
 Goal:
 - justify choices, trade-offs, and future-ready seams.
@@ -183,4 +183,6 @@ This demonstrates architecture maturity and resilience.
 
 ## 30-Second Closing Script
 
-"CommerceConsole delivers the required workflows with clear separation of concerns, rich domain invariants, and consistent test coverage. The design is intentionally DDD-inspired and extension-ready, which lets us add bonus features and future patterns without destabilizing baseline behavior."
+"CommerceConsole delivers the required workflows with clear separation of concerns, rich domain invariants, and consistent test coverage. The design is intentionally DDD-inspired and extension-ready, which lets us add bonus features and future refactors without destabilizing baseline behavior."
+
+
