@@ -1,6 +1,6 @@
 using CommerceConsole.Application.Interfaces;
-using CommerceConsole.Domain.Enums;
 using CommerceConsole.Presentation.Helpers;
+using CommerceConsole.Presentation.Workspaces;
 
 namespace CommerceConsole.Presentation.Menus;
 
@@ -18,8 +18,7 @@ public sealed class MainMenu
 
     private readonly IAuthService _authService;
     private readonly ISessionContext _sessionContext;
-    private readonly CustomerMenu _customerMenu;
-    private readonly AdminMenu _adminMenu;
+    private readonly IRoleWorkspaceFactory _workspaceFactory;
 
     /// <summary>
     /// Initializes the main menu.
@@ -27,13 +26,11 @@ public sealed class MainMenu
     public MainMenu(
         IAuthService authService,
         ISessionContext sessionContext,
-        CustomerMenu customerMenu,
-        AdminMenu adminMenu)
+        IRoleWorkspaceFactory workspaceFactory)
     {
         _authService = authService;
         _sessionContext = sessionContext;
-        _customerMenu = customerMenu;
-        _adminMenu = adminMenu;
+        _workspaceFactory = workspaceFactory;
     }
 
     /// <summary>
@@ -126,20 +123,14 @@ public sealed class MainMenu
             return;
         }
 
-        switch (_sessionContext.CurrentUser.Role)
+        if (!_workspaceFactory.TryResolve(_sessionContext.CurrentUser.Role, out IUserWorkspace workspace))
         {
-            case UserRole.Customer:
-                ConsoleTheme.WriteInfo("Opening customer workspace...");
-                _customerMenu.Run(_sessionContext);
-                break;
-            case UserRole.Administrator:
-                ConsoleTheme.WriteInfo("Opening administrator workspace...");
-                _adminMenu.Run(_sessionContext);
-                break;
-            default:
-                ConsoleTheme.WriteWarning("Unsupported user role. Signing out.");
-                _sessionContext.SignOut();
-                break;
+            ConsoleTheme.WriteWarning("Unsupported user role. Signing out.");
+            _sessionContext.SignOut();
+            return;
         }
+
+        ConsoleTheme.WriteInfo($"Opening {_sessionContext.CurrentUser.Role.ToString().ToLowerInvariant()} workspace...");
+        workspace.Run(_sessionContext);
     }
 }

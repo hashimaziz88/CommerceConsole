@@ -3,6 +3,7 @@ using CommerceConsole.Infrastructure.Data;
 using CommerceConsole.Infrastructure.Export;
 using CommerceConsole.Infrastructure.Repositories;
 using CommerceConsole.Presentation.Menus;
+using CommerceConsole.Presentation.Workspaces;
 
 namespace CommerceConsole;
 
@@ -53,7 +54,11 @@ public static class Program
             reportExportService,
             insightsService);
 
-        MainMenu mainMenu = new(authService, sessionContext, customerMenu, adminMenu);
+        CustomerWorkspace customerWorkspace = new(customerMenu);
+        AdminWorkspace adminWorkspace = new(adminMenu);
+        RoleWorkspaceFactory roleWorkspaceFactory = new([customerWorkspace, adminWorkspace]);
+
+        MainMenu mainMenu = new(authService, sessionContext, roleWorkspaceFactory);
         mainMenu.Run();
     }
 }
