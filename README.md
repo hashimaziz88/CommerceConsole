@@ -3,15 +3,15 @@
 ## What Is CommerceConsole?
 
 CommerceConsole is a C# console application for an Online Shopping Backend System.
-It delivers core shopping workflows with clean layering, strong validation, and JSON-backed persistence for repeatable demos and coursework delivery.
+It implements role-based shopping workflows with layered architecture, domain-centered validation, JSON persistence, and submission-grade test coverage.
 
 ## Why Choose CommerceConsole?
 
-* Clear architecture: Presentation, Application, Domain, and Infrastructure are separated.
-* Reliable workflow rules: cart, wallet, checkout, and order transitions are centrally enforced.
-* Practical persistence: mutable runtime data is stored in JSON without database setup overhead.
-* Test-backed quality: core business behavior is covered by automated tests.
-* Demo-friendly UX: index-based selection flows avoid exposing internal identifiers.
+- Clear separation of concerns across Presentation, Application, Domain, and Infrastructure layers.
+- Centralized workflow orchestration for authentication, catalog, cart, wallet, checkout, orders, reviews, and reporting.
+- Persistent mutable data using JSON-backed repositories without database setup overhead.
+- Submission 2 pattern implementation with Repository, Strategy, Factory, and Command.
+- Demo-friendly user experience with index-based selection flows and no user-facing GUID entry.
 
 # Documentation
 
@@ -19,90 +19,87 @@ It delivers core shopping workflows with clean layering, strong validation, and 
 
 ### Overview
 
-CommerceConsole provides role-based shopping workflows for customers and administrators, including catalog management, cart and wallet operations, checkout and orders, reviews, reporting, and quality-focused input/exception handling.
+CommerceConsole provides customer and administrator workflows for online shopping operations, including authentication, catalog management, cart/wallet interactions, checkout/order processing, order lifecycle control, reviews, and reporting.
 
-### Components And Functional Requirements
+### Components and Functional Requirements (Implemented)
 
 **1. Authentication and authorization management**
 
-* Customer registration.
-* Customer and administrator login.
-* Role-based routing to customer/admin workspaces.
+- Customer registration.
+- Customer and administrator login.
+- Role-based routing to customer/admin workspaces.
 
 **2. Product catalog and inventory management**
 
-* Customer browse and search (name/category).
-* Administrator add, update, delete, and restock product workflows.
-* Low-stock product visibility.
+- Customer browse and search by name/category.
+- Administrator add, update, delete, and restock workflows.
+- Low-stock visibility and active/inactive product handling.
 
 **3. Cart and wallet subsystem**
 
-* Add/update/remove cart items.
-* Quantity validation against stock.
-* Wallet balance view and wallet top-up.
+- Add/update/remove cart items.
+- Quantity validation against stock rules.
+- Wallet balance view and wallet top-up.
 
 **4. Checkout, payment, and order processing**
 
-* Wallet-only checkout flow.
-* Stock and balance validation before payment.
-* Stock deduction, payment creation, order snapshot creation, and cart clear on success.
+- Wallet-only checkout.
+- Stock and wallet validation before purchase.
+- Stock deduction, payment creation, order item snapshots, and cart clearing on success.
 
 **5. Order management subsystem**
 
-* Customer order history and status tracking.
-* Administrator all-orders view and controlled status updates.
+- Customer order history and status tracking.
+- Administrator all-orders view and controlled status updates.
 
 **6. Reviews and reporting subsystem**
 
-* Purchased-product-only reviews with rating validation.
-* Sales reporting with revenue, order-status counts, best sellers, and low-stock outputs.
+- Purchased-product-only review eligibility.
+- Rating validation and product average rating.
+- Sales reporting: total revenue, orders by status, best sellers, low-stock products.
 
 **7. Quality and persistence**
 
-* Friendly presentation-layer exception handling.
-* Reusable prompt/render helpers.
-* JSON persistence for users/products/orders.
+- Friendly exception handling at presentation boundaries.
+- Reusable console input/output helpers.
+- JSON persistence for users, products, and orders.
 
 **8. Bonus capabilities implemented**
 
-* PDF sales report export.
-* Smart heuristic admin insights.
-* Customer product recommendations.
+- PDF sales report export.
+- Smart heuristic admin insights.
+- Customer recommendations.
 
-### Architecture Summary
+## Quality And Testing
 
-CommerceConsole uses a layered architecture:
-
-* `Presentation`: menu routing, prompts, output formatting.
-* `Application`: service orchestration and contracts.
-* `Domain`: entities, invariants, enums, and domain exceptions.
-* `Infrastructure`: repository implementations, JSON file store, seed data, export adapter.
-
-Detailed architecture and design notes are available in `docs/`.
-
-### Quality And Testing
-
-* Automated tests cover domain, application, infrastructure, and presentation helpers.
-* Current local test run result: `61` tests passed.
-* Validation and exception pathways are included in regression coverage.
+- Automated tests cover domain, application, infrastructure, and presentation layers.
+- Current local regression baseline (March 9, 2026): `115` tests passed.
+- Critical validation and exception pathways are included in regression checks.
 
 ## Additional Documentation
 
-* `docs/architecture.md`
-* `docs/auth-flow.md`
-* `docs/product-catalog.md`
-* `docs/cart-wallet.md`
-* `docs/checkout-orders.md`
-* `docs/order-lifecycle.md`
-* `docs/reviews-reporting.md`
-* `docs/persistence.md`
-* `docs/test-plan.md`
+- `docs/architecture.md`
+- `docs/auth-flow.md`
+- `docs/product-catalog.md`
+- `docs/cart-wallet.md`
+- `docs/checkout-orders.md`
+- `docs/order-lifecycle.md`
+- `docs/reviews-reporting.md`
+- `docs/persistence.md`
+- `docs/design-patterns-current.md`
+- `docs/test-plan.md`
+- `docs/domain-model.md`
+- `docs/class-diagram.md`
+
+### Domain Model
+
+![alt text](docs/images/domain_model.png)
 
 # Running Application
 
 ## Prerequisites
 
-* .NET 10 SDK
+- .NET 10 SDK
 
 ## Navigate To Project Folder
 
@@ -134,14 +131,11 @@ dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
 
 ### Administrator Login
 
-Use the following seeded admin account to log in as an administrator:
+Use the seeded administrator account:
 
-* **Email:** `admin@commerce.local`
-* **Password:** `admin123`
+- **Email:** `admin@commerce.local`
+- **Password:** `admin123`
 
 ### Customer Login
 
-For customer access, first register a new user through the application, then log in using the same details you created during registration.
-
-* Register a new customer account
-* Log in with your registered email and password
+Register a customer account in the application and then log in with those same credentials.
