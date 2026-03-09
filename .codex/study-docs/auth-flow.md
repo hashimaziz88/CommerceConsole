@@ -38,7 +38,7 @@ Created via `SeedData` if none exists:
 - Name: `System Admin`
 
 Design intent:
-- guaranteed admin path for demos
+- guaranteed administrator access path for evaluation workflows
 - idempotent seed behavior to avoid duplicates
 
 ## Registration Flow
@@ -130,7 +130,7 @@ Current constraints:
 - no lockout/rate limiting
 - no password reset
 
-How to explain this in viva:
+Implementation note:
 "Security hardening is acknowledged and isolated for future work; architecture already supports adding hashing at auth/service/repository boundaries without rewriting menus."
 
 ## Tests Covering Auth
@@ -147,7 +147,4 @@ Covered scenarios:
 - wrong-password rejection
 - session sign-in/sign-out behavior
 
-## Quick Viva Script
-
-"Auth is menu-triggered but service-owned. Registration and login validation live in `AuthService`, persistence lives in repositories, session state lives in `SessionContext`, and role routing is handled in main menu with role checks inside each workspace."
 

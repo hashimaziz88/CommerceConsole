@@ -1,71 +1,332 @@
-# Design Patterns (Submission 2 Scope)
+# Design Patterns: Complete Study Reference (Submission 2 Final)
 
 ## Purpose
 
-This document records the Submission 2 pattern implementation scope in public `docs`.
-The concrete pattern set is:
-1. Repository Pattern
-2. Strategy Pattern
-3. Factory Pattern
-4. Command Pattern
+This is the full study version of pattern documentation for personal revision.
+It is intentionally broader than assessor-facing `docs/design-patterns-current.md`.
 
-## Repository Pattern
+Use this file to:
+1. understand what is concretely implemented now
+2. distinguish implemented patterns from architecture techniques
+3. prepare accurate viva answers without over-claiming
+4. plan low-risk future refactors
 
-Status:
-- implemented and hardened with repository contract tests
+## Current Implementation Baseline (March 9, 2026)
 
-Where used:
-- `IRepository<T>`, `IUserRepository`, `IProductRepository`, `IOrderRepository`
-- JSON-backed implementations in `Infrastructure/Repositories`
+- Submission stage: Submission 2 implementation complete
+- Core implemented pattern set:
+  1. Repository
+  2. Strategy
+  3. Factory
+  4. Command
+- Regression status: `115/115` tests passing
 
-Why it matters:
-- decouples storage mechanics from application workflows
-- keeps menus free from data-access responsibilities
+---
 
-## Strategy Pattern
+## A) Core Implemented Patterns (Concretely in Code)
 
-Status:
-- implemented for export and payment behavior
+## 1. Repository Pattern
 
-Where used:
-- export strategy seam: `IReportExporter` -> `PdfReportExporter` via `ReportExportService`
-- payment strategy seam: `IPaymentStrategy` -> `WalletPaymentStrategy` via `OrderService`
+Definition:
+- Encapsulates data-access behavior behind repository interfaces.
 
-Why it matters:
-- separates algorithm choice from orchestration
-- allows extension without rewriting core workflow code
+Where implemented:
+- Contracts:
+  - `Application/Interfaces/IRepository.cs`
+  - `IUserRepository.cs`, `IProductRepository.cs`, `IOrderRepository.cs`
+- Implementations:
+  - `Infrastructure/Repositories/InMemoryUserRepository.cs`
+  - `Infrastructure/Repositories/InMemoryProductRepository.cs`
+  - `Infrastructure/Repositories/InMemoryOrderRepository.cs`
+- Persistence utility:
+  - `Infrastructure/Persistence/JsonFileStore.cs`
 
-## Factory Pattern
+Why used here:
+- keeps services and menus storage-agnostic
+- isolates JSON and file mechanics from business workflows
 
-Status:
-- implemented for role-to-workspace routing
+Trade-off:
+- extra interfaces and mapping maintenance overhead
 
-Where used:
-- `IRoleWorkspaceFactory`, `RoleWorkspaceFactory`
-- `IUserWorkspace`, `CustomerWorkspace`, `AdminWorkspace`
-- `MainMenu` resolves workspace through factory instead of role switch dispatch
+Evidence in tests:
+- `Tests/CommerceConsole.Tests/Infrastructure/RepositoryContractTests.cs`
+- `Tests/CommerceConsole.Tests/Infrastructure/JsonPersistenceTests.cs`
 
-Why it matters:
-- centralizes creation/resolution logic
-- reduces branching in entry/routing flow
+## 2. Strategy Pattern
 
-## Command Pattern
+Definition:
+- Encapsulates interchangeable algorithms behind a common contract.
 
-Status:
-- implemented for menu action dispatch
+Where implemented (payment):
+- `Application/Interfaces/IPaymentStrategy.cs`
+- `Application/Services/WalletPaymentStrategy.cs`
+- `Application/Services/OrderService.cs` (delegates payment execution)
 
-Where used:
-- `IMenuCommand`, `MenuCommandDispatcher`, `MenuCommandResult`, `DelegateMenuCommand`
-- explicit control-flow commands: `MainLoginRouteCommand`, `MainExitMenuCommand`, `WorkspaceLogoutCommand`
-- `MainMenu`, `CustomerMenu`, and `AdminMenu` use command map dispatch instead of selection switches
+Where implemented (report export):
+- `Application/Interfaces/IReportExporter.cs`
+- `Infrastructure/Export/PdfReportExporter.cs`
+- `Application/Services/ReportExportService.cs`
 
-Why it matters:
-- keeps menu loops smaller and more consistent
-- isolates action behavior behind command objects
+Why used here:
+- payment behavior varies independently from checkout orchestration
+- export format varies independently from report aggregation
 
-## Submission Guidance
+Trade-off:
+- abstraction overhead when only one concrete strategy exists in a seam
 
-For Submission 2 explanation:
-- claim these four patterns as concrete implementation
-- map each claim to code-level evidence and tests
-- keep architecture explanation focused on behavior parity + extensibility gains
+Evidence in tests:
+- `Tests/CommerceConsole.Tests/Application/WalletPaymentStrategyTests.cs`
+- `Tests/CommerceConsole.Tests/Application/OrderServiceTests.cs`
+- `Tests/CommerceConsole.Tests/Infrastructure/PdfReportExporterTests.cs`
+
+## 3. Factory Pattern
+
+Definition:
+- Centralizes creation/resolution logic so callers do not branch on concrete types.
+
+Where implemented:
+- `Presentation/Workspaces/IUserWorkspace.cs`
+- `Presentation/Workspaces/IRoleWorkspaceFactory.cs`
+- `Presentation/Workspaces/RoleWorkspaceFactory.cs`
+- `Presentation/Workspaces/CustomerWorkspace.cs`
+- `Presentation/Workspaces/AdminWorkspace.cs`
+- Used by `Presentation/Menus/MainMenu.cs`
+
+Why used here:
+- removes role-based workspace routing logic from main flow
+- keeps role-to-workspace mapping explicit and testable
+
+Trade-off:
+- one more abstraction layer for simple role count
+
+Evidence in tests:
+- `Tests/CommerceConsole.Tests/Presentation/RoleWorkspaceFactoryTests.cs`
+- routing assertions in `Tests/CommerceConsole.Tests/Presentation/MenuCommandTests.cs`
+
+## 4. Command Pattern
+
+Definition:
+- Encapsulates actions as command objects and dispatches by key/context.
+
+Where implemented:
+- Contracts/infrastructure:
+  - `Presentation/Commands/IMenuCommand.cs`
+  - `Presentation/Commands/MenuCommandDispatcher.cs`
+  - `Presentation/Commands/MenuCommandResult.cs`
+  - `Presentation/Commands/DelegateMenuCommand.cs`
+- Explicit control-flow commands:
+  - `Presentation/Commands/MainLoginRouteCommand.cs`
+  - `Presentation/Commands/MainExitMenuCommand.cs`
+  - `Presentation/Commands/WorkspaceLogoutCommand.cs`
+- Usage:
+  - `Presentation/Menus/MainMenu.cs`
+  - `Presentation/Menus/CustomerMenu.cs`
+  - `Presentation/Menus/AdminMenu.cs`
+
+Why used here:
+- removes large selection `switch` blocks
+- standardizes menu dispatch behavior
+- keeps menu loops thinner
+
+Trade-off:
+- more types compared to direct branching
+
+Evidence in tests:
+- `Tests/CommerceConsole.Tests/Presentation/MenuCommandTests.cs`
+
+---
+
+## B) Additional Patterns and Architecture Techniques Implemented
+
+These are present in code and valid to explain in study/viva. They are not part of the narrow four-pattern assessor claim set.
+
+## Service Layer Pattern
+
+Where:
+- `Application/Services/*Service.cs`
+
+Why:
+- centralizes use-case orchestration
+- keeps presentation thin
+
+## Constructor Injection
+
+Where:
+- constructors across services, menus, factories
+- composition in `Program.cs`
+
+Why:
+- explicit dependencies and improved testability
+
+## Composition Root
+
+Where:
+- `Program.cs`
+
+Why:
+- one place to wire object graph and runtime flow
+
+## Data Mapper Pattern
+
+Where:
+- `Infrastructure/Repositories/Models/*Record.cs`
+- map logic inside repository implementations
+
+Why:
+- domain entities stay persistence-agnostic
+
+## Rich Domain Model
+
+Where:
+- domain behavior methods in `Domain/Entities/*`
+
+Why:
+- invariants enforced near owned state
+
+## Guard Clauses
+
+Where:
+- constructors/mutators/service entry methods
+
+Why:
+- fail-fast rule enforcement and predictable errors
+
+## Session Context Pattern
+
+Where:
+- `Application/Interfaces/ISessionContext.cs`
+- `Application/Services/SessionContext.cs`
+
+Why:
+- central authenticated-user runtime context
+
+## Adapter Style (Infrastructure)
+
+Where:
+- JSON/persistence adapters in repositories
+- exporter adapter `PdfReportExporter`
+
+Why:
+- isolates technical integration details behind contracts
+
+## Idempotent Seeding Technique
+
+Where:
+- `Infrastructure/Data/SeedData.cs`
+
+Why:
+- repeatable startup without duplicate baseline records
+
+---
+
+## C) Partial / Informal Pattern Shapes in Current Code
+
+## Facade-like Application Boundary (Informal)
+
+Observation:
+- Menus call service interfaces as simplified access points to complex workflows.
+
+Value:
+- presentation code interacts with fewer objects and less orchestration detail.
+
+## Template-like Workflow Skeleton (Informal)
+
+Observation:
+- `OrderService.Checkout` follows fixed orchestration stages:
+  1. validate customer/cart
+  2. build checkout lines and stock checks
+  3. execute payment strategy
+  4. reduce stock and persist products
+  5. create and persist order
+  6. clear cart and persist customer
+
+Value:
+- stable workflow sequence with isolated variation points.
+
+---
+
+## D) Future Pattern Candidates (Not Yet Implemented)
+
+These are reasonable future upgrades and should be described as optional refactors, not current implementations.
+
+## State Pattern (Order Lifecycle Extraction)
+
+Current state:
+- transition matrix is centralized in `OrderService` static dictionary.
+
+Potential refactor:
+- state handlers per order status implementing transition policy.
+
+Why later:
+- current matrix is small and already test-covered.
+
+## Specification Pattern (Reusable Queries)
+
+Current state:
+- LINQ predicates are embedded inside services/repositories.
+
+Potential refactor:
+- reusable query specifications for active/in-stock/low-stock/search cases.
+
+Why later:
+- useful when query reuse and cross-service duplication grow.
+
+---
+
+## E) Submission 1 -> Submission 2 Pattern Evolution
+
+Submission 1 emphasis:
+- repository seams and basic strategy/factory narrative
+
+Submission 2 completed implementation:
+- payment strategy concretely integrated
+- role workspace factory concretely integrated
+- command dispatch concretely integrated across all menus
+- repository contract behavior hardened with dedicated tests
+
+Result:
+- improved extensibility without feature-scope expansion
+- preserved business behavior and UX rules
+
+---
+
+## F) Viva-Safe Pattern Claims
+
+Use this exact framing:
+
+1. "Our formal implemented pattern set is Repository, Strategy, Factory, and Command."
+2. "Additional items I describe are architecture techniques already present in code (Service Layer, DI, Data Mapper, Rich Domain Model, Guard Clauses, Session Context)."
+3. "Future candidates like State and Specification are documented as optional refactors, not claimed as implemented."
+
+---
+
+## G) Full Study Matrix (All Relevant Patterns/Techniques)
+
+| Pattern / Technique | Status | Evidence | Why It Matters |
+| --- | --- | --- | --- |
+| Repository Pattern | Implemented | `IRepository<T>`, repo interfaces + `InMemory*Repository` | Decouples storage from workflows |
+| Strategy Pattern (Payment) | Implemented | `IPaymentStrategy`, `WalletPaymentStrategy`, `OrderService` | Keeps payment algorithm separate from checkout orchestration |
+| Strategy Pattern (Export) | Implemented | `IReportExporter`, `PdfReportExporter`, `ReportExportService` | Keeps report calculation separate from output format |
+| Factory Pattern | Implemented | `IRoleWorkspaceFactory`, `RoleWorkspaceFactory`, `IUserWorkspace` adapters | Centralizes role workspace resolution |
+| Command Pattern | Implemented | `IMenuCommand`, `MenuCommandDispatcher`, command maps in all menus | Replaces selection switches with composable actions |
+| Service Layer Pattern | Implemented | `Application/Services/*` | Keeps business logic out of presentation |
+| Constructor Injection | Implemented | constructor wiring + `Program.cs` | Explicit dependencies and testability |
+| Composition Root | Implemented | `Program.cs` | Single object-graph assembly point |
+| Data Mapper Pattern | Implemented | repo mapping + `*Record` models | Separates domain from persistence schema |
+| Rich Domain Model | Implemented | domain behavior methods and guards | Protects invariants at entity boundary |
+| Guard Clauses | Implemented | constructors/mutators/service guards | Fail-fast validation |
+| Session Context Pattern | Implemented | `ISessionContext`, `SessionContext` | Central session state handling |
+| Adapter Style | Implemented | repository/export adapters | Isolates technical concerns |
+| Idempotent Seeding | Implemented | `SeedData` uniqueness checks | Stable reruns/demos |
+| Facade-like Service Boundary | Partial (informal) | menu -> service interface usage | Simplifies UI interaction surface |
+| Template-like Checkout Flow | Partial (informal) | fixed orchestration in `OrderService.Checkout` | Stable workflow sequencing |
+| State Pattern (Order transitions) | Candidate | transition map in `OrderService` | Cleaner lifecycle policy object model if complexity grows |
+| Specification Pattern (Query reuse) | Candidate | LINQ predicates in services | Reusable query intent objects if duplication grows |
+
+## Final Revision Reminder
+
+Before any demo/viva:
+1. quote implemented patterns only when asked for concrete implementation
+2. map every claim to exact files and tests
+3. clearly label candidates as "future refactor" to avoid over-claiming
+

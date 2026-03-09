@@ -56,9 +56,9 @@ Architecture:
 - presentation: `ReportDisplayHelper` and admin menu route
 
 Why heuristic instead of external AI:
-- deterministic, offline-safe, and demo-friendly
+- deterministic, offline-safe, and operationally stable
 - no network dependency risk
-- logic remains explainable in viva
+- logic remains auditable and maintainable
 
 ## Bonus Feature 3: Customer Recommendations
 
@@ -96,14 +96,6 @@ Covered outcomes:
 - export orchestration contract behavior
 - PDF output creation and guard behavior
 
-## Demo Script for Bonus Value
-
-1. complete baseline flow quickly (auth -> cart -> checkout).
-2. open admin insights and explain each line as actionable operations data.
-3. export report PDF and show output location.
-4. open customer recommendations and explain reason text.
-5. conclude: baseline stayed stable while bonus delivered extra value.
-
 ## Future Bonus Extensions (Optional)
 
 Low-risk candidates:
@@ -111,6 +103,4 @@ Low-risk candidates:
 - audit event log repository + admin viewer
 - advanced filter query service for catalog exploration
 
-## Quick Viva Script
 
-"Bonus features were implemented as modular extensions, not baseline rewrites. Export uses an interface-backed adapter, insights are deterministic and offline-safe, and recommendations are rule-based and explainable. This improves demo impact without destabilizing required behavior."

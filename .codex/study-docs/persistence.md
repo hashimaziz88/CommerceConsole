@@ -9,7 +9,7 @@ This document explains how data persistence works in CommerceConsole, why JSON w
 CommerceConsole uses JSON file persistence through repository adapters.
 
 Design goals:
-- keep setup simple for coursework/demo
+- keep setup simple for coursework and evaluation
 - preserve state across restarts
 - keep persistence behind interfaces so it can be swapped later
 
@@ -100,7 +100,7 @@ Even with simple JSON storage:
 
 ## Practical Data Reset Guidance
 
-For clean demo resets:
+For clean environment resets:
 1. close app
 2. remove `data/users.json`, `data/products.json`, `data/orders.json` (or clear folder)
 3. restart app to reseed baseline admin/products
@@ -112,6 +112,4 @@ For clean demo resets:
 3. add schema version metadata and migration steps
 4. add audit trail records for operational events
 
-## Quick Viva Script
 
-"Persistence is implemented as repository adapters over JSON files. Runtime state lives in memory for speed, and each mutation writes-through to file for durability. Domain and application remain storage-agnostic because file concerns are isolated in infrastructure."

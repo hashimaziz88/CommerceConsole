@@ -122,7 +122,7 @@ Examples produced:
 Design note:
 - deterministic rule-based insights
 - works offline
-- clearly explainable in demo
+- clearly traceable in architecture review
 
 ## PDF Export
 
@@ -153,6 +153,4 @@ Covered themes:
 - recommendation and insight behavior
 - PDF export output/validation
 
-## Quick Viva Script
 
-"Review eligibility is enforced by order history, not by UI trust. Reporting uses LINQ to express business questions directly, and export/insight features are layered on top without polluting domain entities."
