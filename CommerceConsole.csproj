@@ -22,8 +22,10 @@
     <None Include=".codex\08_Codex_Prompt_Pack.md" />
     <None Include=".codex\09_GitHub_Feature_Issues.md" />
     <None Include=".codex\agents.md" />
+    <None Include=".codex\design-patterns-current.md" />
     <None Include=".codex\README.md" />
     <None Include=".codex\rules.md" />
+    <None Include=".codex\viva-questions-and-answers.md" />
   </ItemGroup>
 
 </Project>
