@@ -2,111 +2,160 @@
 
 ## What Is CommerceConsole?
 
-CommerceConsole is a C# console application for an Online Shopping Backend System.
-It implements role-based shopping workflows with layered architecture, domain-centered validation, JSON persistence, and submission-grade test coverage.
+CommerceConsole is a C# (`.NET 10`) console application for an Online Shopping Backend System.
+It delivers complete customer and administrator workflows with a layered architecture, domain-centered business rules, JSON persistence, and strong automated test coverage.
 
 ## Why Choose CommerceConsole?
 
-- Clear separation of concerns across Presentation, Application, Domain, and Infrastructure layers.
-- Centralized workflow orchestration for authentication, catalog, cart, wallet, checkout, orders, reviews, and reporting.
-- Persistent mutable data using JSON-backed repositories without database setup overhead.
-- Submission 2 pattern implementation with Repository, Strategy, Factory, and Command.
-- Demo-friendly user experience with index-based selection flows and no user-facing GUID entry.
+- Clear layered design: `Presentation`, `Application`, `Domain`, and `Infrastructure` are separated.
+- Reliable business logic: cart, wallet, checkout, and order lifecycle rules are centrally enforced.
+- Submission 2 pattern implementation: `Repository`, `Strategy`, `Factory`, and `Command`.
+- Practical persistence: data stored in JSON files with no database setup required.
+- Demo-friendly UX: index-based selection flows (no user-facing GUID input).
 
-# Documentation
+## Scope And Implemented Capabilities
 
-## Software Requirement Specification
+### Customer Workspace
 
-### Overview
-
-CommerceConsole provides customer and administrator workflows for online shopping operations, including authentication, catalog management, cart/wallet interactions, checkout/order processing, order lifecycle control, reviews, and reporting.
-
-### Components and Functional Requirements (Implemented)
-
-**1. Authentication and authorization management**
-
-- Customer registration.
-- Customer and administrator login.
-- Role-based routing to customer/admin workspaces.
-
-**2. Product catalog and inventory management**
-
-- Customer browse and search by name/category.
-- Administrator add, update, delete, and restock workflows.
-- Low-stock visibility and active/inactive product handling.
-
-**3. Cart and wallet subsystem**
-
+- Register and log in.
+- Browse and search active products.
 - Add/update/remove cart items.
-- Quantity validation against stock rules.
-- Wallet balance view and wallet top-up.
+- View wallet and top up funds.
+- Checkout using wallet payment.
+- View order history and tracking.
+- Add reviews only for purchased products.
+- View recommendation suggestions (bonus).
 
-**4. Checkout, payment, and order processing**
+### Administrator Workspace
 
-- Wallet-only checkout.
-- Stock and wallet validation before purchase.
-- Stock deduction, payment creation, order item snapshots, and cart clearing on success.
+- Add, update, delete, and restock products.
+- View full catalog and low-stock products.
+- View all orders.
+- Update order status using valid transitions only.
+- View sales report (revenue, statuses, best sellers, low stock).
+- View smart insights (bonus).
+- Export sales report to PDF (bonus).
 
-**5. Order management subsystem**
+### Cross-Cutting Quality
 
-- Customer order history and status tracking.
-- Administrator all-orders view and controlled status updates.
+- Centralized validation and domain exceptions.
+- Friendly presentation-layer error handling.
+- Reusable console helpers for consistent UX.
+- JSON-backed repositories for mutable data persistence.
 
-**6. Reviews and reporting subsystem**
+## Architecture At A Glance
 
-- Purchased-product-only review eligibility.
-- Rating validation and product average rating.
-- Sales reporting: total revenue, orders by status, best sellers, low-stock products.
+![alt text](docs/images/architecture.png)
 
-**7. Quality and persistence**
-
-- Friendly exception handling at presentation boundaries.
-- Reusable console input/output helpers.
-- JSON persistence for users, products, and orders.
-
-**8. Bonus capabilities implemented**
-
-- PDF sales report export.
-- Smart heuristic admin insights.
-- Customer recommendations.
-
-## Quality And Testing
-
-- Automated tests cover domain, application, infrastructure, and presentation layers.
-- Current local regression baseline (March 9, 2026): `115` tests passed.
-- Critical validation and exception pathways are included in regression checks.
-
-## Additional Documentation
-
-- `docs/architecture.md`
-- `docs/auth-flow.md`
-- `docs/product-catalog.md`
-- `docs/cart-wallet.md`
-- `docs/checkout-orders.md`
-- `docs/order-lifecycle.md`
-- `docs/reviews-reporting.md`
-- `docs/persistence.md`
-- `docs/design-patterns-current.md`
-- `docs/test-plan.md`
-- `docs/domain-model.md`
-- `docs/class-diagram.md`
-
-### Domain Model
+## Domain Model
 
 ![alt text](docs/images/domain_model.png)
 
-# Running Application
+Design notes:
+- `Program.cs` is the composition root.
+- Menus do not call repositories directly.
+- Domain invariants are enforced in constructors/mutator methods.
+- Infrastructure maps between domain entities and persistence record models.
+
+## Design Patterns Implemented (Submission 2)
+
+1. **Repository Pattern**
+   - Contracts: `IUserRepository`, `IProductRepository`, `IOrderRepository`
+   - Implementations: `InMemoryUserRepository`, `InMemoryProductRepository`, `InMemoryOrderRepository`
+2. **Strategy Pattern**
+   - Payment: `IPaymentStrategy` -> `WalletPaymentStrategy`
+   - Export: `IReportExporter` -> `PdfReportExporter`
+3. **Factory Pattern**
+   - Role routing: `IRoleWorkspaceFactory` -> `RoleWorkspaceFactory`
+4. **Command Pattern**
+   - Menu dispatch: `IMenuCommand` + `MenuCommandDispatcher`
+
+## Project Structure
+
+```text
+CommerceConsole/
+  Presentation/
+    Menus/
+    Commands/
+    Helpers/
+    Workspaces/
+  Application/
+    Interfaces/
+    Services/
+    Models/
+  Domain/
+    Entities/
+    Enums/
+    Exceptions/
+  Infrastructure/
+    Repositories/
+      Models/
+    Persistence/
+    Data/
+    Export/
+  Tests/
+    CommerceConsole.Tests/
+      Domain/
+      Application/
+      Infrastructure/
+      Presentation/
+  docs/
+```
+
+## Persistence Model
+
+Runtime mutable data is persisted to JSON under `data/`:
+
+- `data/users.json`
+- `data/products.json`
+- `data/orders.json`
+
+Persistence behavior:
+- repositories own read/write operations
+- record models (`*Record`) isolate storage schema from domain entities
+- `JsonFileStore` handles file-based persistence operations
+
+## Testing And Quality Baseline
+
+Latest local regression baseline (**March 9, 2026**):
+- Total tests: **115**
+- Passed: **115**
+- Failed: **0**
+- Skipped: **0**
+
+Test coverage spans:
+- domain invariants
+- application workflows
+- infrastructure persistence/export behavior
+- presentation command/input helpers
+
+## Documentation Map
+
+- `docs/architecture.md` - architecture boundaries and dependency direction
+- `docs/domain-model.md` - detailed domain entities, aggregates, invariants
+- `docs/class-diagram.md` - class diagrams (domain, presentation, application/infrastructure)
+- `docs/auth-flow.md` - registration/login/session flow
+- `docs/product-catalog.md` - product and inventory behavior
+- `docs/cart-wallet.md` - cart and wallet rules
+- `docs/checkout-orders.md` - checkout orchestration and order creation
+- `docs/order-lifecycle.md` - order status transition behavior
+- `docs/reviews-reporting.md` - review eligibility and reporting logic
+- `docs/persistence.md` - JSON persistence design and mapping
+- `docs/design-patterns-current.md` - formal pattern implementation scope
+- `docs/test-plan.md` - test strategy, execution, and quality boundaries
+
+## Running The Application
 
 ## Prerequisites
 
 - .NET 10 SDK
 
-## Navigate To Project Folder
+## Navigate To The Project Folder
 
-If your terminal is not already in the project directory, run:
+If needed:
 
 ```powershell
-cd PATH_TO_REPO_FOLDER
+cd PATH_TO_FOLDER
 ```
 
 ## Build
@@ -127,15 +176,14 @@ dotnet run --project CommerceConsole.csproj
 dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
 ```
 
-## Default Login Details
+## Seeded Access
 
-### Administrator Login
+### Administrator
 
-Use the seeded administrator account:
+- Email: `admin@commerce.local`
+- Password: `admin123`
 
-- **Email:** `admin@commerce.local`
-- **Password:** `admin123`
+### Customer
 
-### Customer Login
-
-Register a customer account in the application and then log in with those same credentials.
+- Register a new customer account in the app.
+- Log in with the same credentials you registered.
