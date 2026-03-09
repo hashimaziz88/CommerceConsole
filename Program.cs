@@ -26,7 +26,10 @@ public static class Program
         ProductService productService = new(productRepository);
         CartService cartService = new(productRepository, userRepository);
         WalletService walletService = new(userRepository);
-        OrderService orderService = new(orderRepository, productRepository, userRepository);
+
+        WalletPaymentStrategy paymentStrategy = new();
+        OrderService orderService = new(orderRepository, productRepository, userRepository, paymentStrategy);
+
         ReviewService reviewService = new(orderRepository, productRepository, userRepository);
         ReportService reportService = new(orderRepository, productRepository);
 

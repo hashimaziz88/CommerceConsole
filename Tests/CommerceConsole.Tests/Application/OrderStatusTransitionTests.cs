@@ -108,7 +108,7 @@ public sealed class OrderStatusTransitionTests
         order.UpdateStatus(OrderStatus.Paid);
         orderRepository.Add(order);
 
-        OrderService orderService = new(orderRepository, productRepository, userRepository);
+        OrderService orderService = new(orderRepository, productRepository, userRepository, new WalletPaymentStrategy());
 
         return new TransitionContext(orderService, orderRepository, order);
     }
@@ -133,3 +133,4 @@ public sealed class OrderStatusTransitionTests
         InMemoryOrderRepository OrderRepository,
         Order Order);
 }
+

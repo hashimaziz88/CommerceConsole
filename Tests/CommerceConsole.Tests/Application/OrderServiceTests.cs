@@ -243,7 +243,7 @@ public sealed class OrderServiceTests
         productRepository.Add(productA);
         productRepository.Add(productB);
 
-        OrderService orderService = new(orderRepository, productRepository, userRepository);
+        OrderService orderService = new(orderRepository, productRepository, userRepository, new WalletPaymentStrategy());
 
         return new CheckoutContext(customer, productA, productB, orderService, userRepository, productRepository, orderRepository);
     }
