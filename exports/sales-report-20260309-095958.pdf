@@ -1,0 +1,79 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1060 >>
+stream
+BT
+/F1 11 Tf
+50 760 Td
+(CommerceConsole Sales Report) Tj
+0 -16 Td
+(Generated \(UTC\): 2026-03-09 09:59:58) Tj
+0 -16 Td
+(Total Revenue: R0,00) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(Orders by Status:) Tj
+0 -16 Td
+(- Pending: 0) Tj
+0 -16 Td
+(- Paid: 0) Tj
+0 -16 Td
+(- Processing: 0) Tj
+0 -16 Td
+(- Shipped: 0) Tj
+0 -16 Td
+(- Delivered: 0) Tj
+0 -16 Td
+(- Cancelled: 0) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(Best-Selling Products:) Tj
+0 -16 Td
+(- No sales data available.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(Low-Stock Products:) Tj
+0 -16 Td
+(- 27-inch Monitor \(Electronics\) | Stock: 7 | Price: R4 799,00 | ACTIVE) Tj
+0 -16 Td
+(- Air Fryer \(Home and Kitchen\) | Stock: 9 | Price: R2 299,00 | ACTIVE) Tj
+0 -16 Td
+(- Blender \(Home and Kitchen\) | Stock: 11 | Price: R1 399,00 | ACTIVE) Tj
+0 -16 Td
+(- Laptop \(Electronics\) | Stock: 12 | Price: R15 000,00 | ACTIVE) Tj
+0 -16 Td
+(- Clean Architecture Book \(Books\) | Stock: 13 | Price: R899,00 | ACTIVE) Tj
+0 -16 Td
+(- Smartphone \(Electronics\) | Stock: 14 | Price: R11 999,00 | ACTIVE) Tj
+ET
+
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000062 00000 n 
+0000000122 00000 n 
+0000000251 00000 n 
+0000000324 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1444
+%%EOF

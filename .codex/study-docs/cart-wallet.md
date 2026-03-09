@@ -147,4 +147,6 @@ Covered scenarios include:
 - wallet top-up success and persistence
 - wallet top-up validation failure
 
+## Quick Viva Script
 
+"Cart and wallet logic is kept out of menus. Menus only gather input and display output, while services and domain objects enforce stock, quantity, and balance rules. All mutable customer state is persisted through the user repository."

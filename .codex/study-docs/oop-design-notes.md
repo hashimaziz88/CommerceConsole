@@ -11,7 +11,7 @@ The codebase uses OOP to achieve five goals:
 2. keep workflows readable and testable
 3. reduce coupling between UI, business logic, and infrastructure
 4. support extension without destabilizing baseline behavior
-
+5. make design decisions easy to defend in a demo/viva
 
 ## Encapsulation: The Core Rule
 
@@ -122,7 +122,7 @@ Where LINQ appears and why:
 - `ReviewService`: purchased-product eligibility filtering
 - `InsightsService`: ranked recommendations and admin insights
 
-
+How to explain in viva:
 "LINQ lets query code mirror business questions like top sellers, low stock, and customer purchase history."
 
 ## Persistence Boundary Hygiene
@@ -169,4 +169,21 @@ Current status in code:
 - Factory is implemented for role workspace resolution in main routing flow.
 - Command is implemented for menu dispatch in main/customer/admin workspaces.
 
+## Study Drills
+
+Drill 1:
+- pick one entity and list its invariants, mutators, and why setters are restricted.
+
+Drill 2:
+- trace checkout across layers and explain which layer owns each step.
+
+Drill 3:
+- explain Repository, Strategy, Factory, and Command usage/status in this codebase.
+
+Drill 4:
+- justify why this architecture is DDD-inspired, but not full tactical DDD.
+
+## 30-Second OOP Defense Script
+
+"OOP here is used to protect state and keep responsibilities clear. Entities enforce invariants through controlled methods, services orchestrate workflows through interfaces, and infrastructure handles technical adapters like JSON persistence and export formatting. This keeps behavior safe, testable, and easier to evolve."
 

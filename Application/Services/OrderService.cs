@@ -10,8 +10,6 @@ namespace CommerceConsole.Application.Services;
 /// </summary>
 public sealed class OrderService : IOrderService
 {
-    private const string WalletPaymentMethod = "Wallet";
-
     private static readonly Dictionary<OrderStatus, IReadOnlyList<OrderStatus>> AllowedTransitions = new()
     {
         [OrderStatus.Pending] = new[] { OrderStatus.Paid, OrderStatus.Cancelled },
@@ -25,15 +23,21 @@ public sealed class OrderService : IOrderService
     private readonly IOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IPaymentStrategy _paymentStrategy;
 
     /// <summary>
     /// Initializes the order service.
     /// </summary>
-    public OrderService(IOrderRepository orderRepository, IProductRepository productRepository, IUserRepository userRepository)
+    public OrderService(
+        IOrderRepository orderRepository,
+        IProductRepository productRepository,
+        IUserRepository userRepository,
+        IPaymentStrategy paymentStrategy)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
         _userRepository = userRepository;
+        _paymentStrategy = paymentStrategy;
     }
 
     /// <inheritdoc />
@@ -53,23 +57,14 @@ public sealed class OrderService : IOrderService
         List<ProductCheckoutLine> checkoutLines = BuildCheckoutLines(cartItems);
 
         decimal totalAmount = customer.Cart.CalculateTotal();
-        if (customer.WalletBalance < totalAmount)
-        {
-            throw new InsufficientFundsException("Insufficient wallet funds for checkout.");
-        }
-
         Guid orderId = Guid.NewGuid();
-        Payment payment = new(Guid.NewGuid(), orderId, totalAmount, WalletPaymentMethod);
-
-        customer.DebitFunds(totalAmount);
+        Payment payment = _paymentStrategy.ProcessPayment(customer, orderId, totalAmount);
 
         foreach (ProductCheckoutLine line in checkoutLines)
         {
             line.Product.ReduceStock(line.Quantity);
             _productRepository.Update(line.Product);
         }
-
-        payment.MarkCompleted();
 
         List<OrderItem> orderItems = cartItems.Select(item =>
             new OrderItem(item.ProductId, item.ProductName, item.UnitPrice, item.Quantity)).ToList();

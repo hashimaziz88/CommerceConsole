@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document explains the architecture style used by CommerceConsole, why folders are separated the way they are, and how to explain those decisions clearly in formal assessment and review.
+This document explains the architecture style used by CommerceConsole, why folders are separated the way they are, and how to explain those decisions clearly in a demo.
 
-Architecture statement:
+If you only remember one line, use this:
 
 "CommerceConsole is a layered, domain-centered console architecture where UI, business workflows, core rules, and technical adapters are kept separate."
 
@@ -136,9 +136,7 @@ The Submission 2 pattern set is concretely implemented as:
 
 ## Command Pattern
 - where: `IMenuCommand` command maps + `MenuCommandDispatcher` in Main/Customer/Admin menus
-- why: replaces large selection switches with command dispatch objects
-
-## Architectural Guardrails
+- why: replaces large selection switches with command dispatch objects`r`n`r`n## Architectural Guardrails
 
 1. menus do not call repositories
 2. menus do not own business rules
@@ -150,7 +148,7 @@ The Submission 2 pattern set is concretely implemented as:
 ## Trade-Offs
 
 Trade-off 1: JSON over database
-- pro: simple setup and predictable evaluation runs
+- pro: simple setup and predictable demos
 - con: limited multi-process and migration capabilities
 
 Trade-off 2: plaintext passwords in current coursework scope
@@ -161,6 +159,8 @@ Trade-off 3: centralized transition rules in service
 - pro: simple and easy to test
 - con: may be split into dedicated transition handlers later
 
+## Quick Viva Script
 
+"The architecture is layered and strict: Presentation handles interaction, Application handles use-case orchestration, Domain protects core rules, and Infrastructure handles JSON/export adapters. For Submission 2 we concretely implement Repository, Strategy, Factory, and Command while preserving baseline behavior."
 
 

@@ -113,4 +113,6 @@ Covered scenarios:
 - invalid jump rejection
 - terminal-state transition rejection
 
+## Quick Viva Script
 
+"Order lifecycle rules are centralized in `OrderService` so policy is consistent and testable. Admin UI only shows allowed next statuses, preventing invalid updates at source. Customers track orders through read-only views."

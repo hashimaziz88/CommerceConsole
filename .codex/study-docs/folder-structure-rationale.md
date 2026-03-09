@@ -107,7 +107,7 @@ Allowed:
 - architecture notes
 - feature behavior specs
 - OOP and design rationale
-
+- demo/viva study material
 
 Forbidden:
 - inaccurate or stale behavior claims
@@ -187,7 +187,7 @@ Why:
 
 ## Placement Rules: "What Goes Where"
 
-Decision checklist when adding a new class:
+Quick decision checklist when adding a new class:
 1. Does it read/write console? -> `Presentation`
 2. Does it orchestrate use-case flow? -> `Application/Services`
 3. Does it enforce business invariant/state mutation? -> `Domain/Entities`
@@ -213,5 +213,13 @@ Mistake 4: exposing GUID entry to end users
 - Risk: poor UX and accidental identifier leakage.
 - Protection: index-based selection in menus/helpers.
 
+## How This Structure Helps You Explain the Project Fast
 
+If asked "Why so many folders/classes?" in viva:
+
+"Each folder maps to one type of responsibility. That separation prevents mixing UI, business rules, and technical storage details. It improves testability, readability, and low-risk future upgrades."
+
+## 30-Second Folder Defense Script
+
+"Presentation handles interaction, Application handles workflows, Domain protects core rules, and Infrastructure handles technical adapters like JSON and PDF export. Tests mirror that architecture, docs explain it, and .codex controls process standards. The structure is intentional to keep change safe and explainable."
 

@@ -3,6 +3,7 @@ using CommerceConsole.Infrastructure.Data;
 using CommerceConsole.Infrastructure.Export;
 using CommerceConsole.Infrastructure.Repositories;
 using CommerceConsole.Presentation.Menus;
+using CommerceConsole.Presentation.Workspaces;
 
 namespace CommerceConsole;
 
@@ -26,7 +27,10 @@ public static class Program
         ProductService productService = new(productRepository);
         CartService cartService = new(productRepository, userRepository);
         WalletService walletService = new(userRepository);
-        OrderService orderService = new(orderRepository, productRepository, userRepository);
+
+        WalletPaymentStrategy paymentStrategy = new();
+        OrderService orderService = new(orderRepository, productRepository, userRepository, paymentStrategy);
+
         ReviewService reviewService = new(orderRepository, productRepository, userRepository);
         ReportService reportService = new(orderRepository, productRepository);
 
@@ -50,7 +54,11 @@ public static class Program
             reportExportService,
             insightsService);
 
-        MainMenu mainMenu = new(authService, sessionContext, customerMenu, adminMenu);
+        CustomerWorkspace customerWorkspace = new(customerMenu);
+        AdminWorkspace adminWorkspace = new(adminMenu);
+        RoleWorkspaceFactory roleWorkspaceFactory = new([customerWorkspace, adminWorkspace]);
+
+        MainMenu mainMenu = new(authService, sessionContext, roleWorkspaceFactory);
         mainMenu.Run();
     }
 }
