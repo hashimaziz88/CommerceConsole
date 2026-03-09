@@ -170,6 +170,7 @@ LINQ is used where query intent is clearer than manual loops:
 
 Why:
 - concise expression of filter/group/aggregate intent
+- easier to reason about in viva when tied to business questions
 
 ## Practical Design Rules You Can Apply in Future Projects
 
@@ -185,4 +186,6 @@ When adding a workflow:
 1. does it cross entities/repositories? put it in application service.
 2. does it protect entity state? put it in domain method.
 
+## Viva-Ready 30-Second Script
 
+"Access modifiers are used to protect invariants and reduce coupling. Public APIs are intentional, mutable state is controlled with private setters and domain methods, dependencies are private readonly for stable wiring, and class shapes (abstract/sealed/static) communicate design intent clearly. This keeps behavior safe, testable, and maintainable."

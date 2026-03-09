@@ -133,7 +133,7 @@ Benefit:
 dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
 ```
 
-Recommended local verification sequence:
+Recommended pre-demo sequence:
 ```powershell
 dotnet build CommerceConsole.csproj
 dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
@@ -151,7 +151,7 @@ When adding/changing behavior:
 ## Current Gaps and Planned Improvements
 
 Known gaps:
-- no full interactive end-to-end interactive console session tests
+- no full interactive end-to-end scripted console session tests
 - no cross-process file contention simulation
 - no multi-page PDF fidelity tests
 
@@ -159,5 +159,9 @@ Planned additions:
 - state-transition object tests if lifecycle policy is extracted further
 - exporter-variant tests if CSV/other exporters added
 - deeper audit-log tests if event logging bonus is expanded
+
+## Quick Viva Script
+
+"Tests are organized by architecture layer so each concern is validated at the right level. We cover core happy paths and failure paths for auth, catalog, cart, checkout, lifecycle, reviews, reporting, persistence, and presentation helpers, with deterministic isolation for file and console tests."
 
 

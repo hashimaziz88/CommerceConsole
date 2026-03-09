@@ -69,4 +69,3 @@ For Submission 2 explanation:
 - claim these four patterns as concrete implementation
 - map each claim to code-level evidence and tests
 - keep architecture explanation focused on behavior parity + extensibility gains
-

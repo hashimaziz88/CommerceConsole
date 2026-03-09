@@ -127,7 +127,7 @@ User experience:
 
 Why this matters:
 - less user error
-- clearer operational flow
+- better demo flow
 - avoids exposing internal identifiers
 
 ## Seed Catalog and Scalability
@@ -165,4 +165,6 @@ Representative scenarios:
 - idempotent reseeding
 - paginated rendering and global index visibility
 
+## Quick Viva Script
 
+"Catalog workflows are orchestrated by `ProductService`, product invariants are enforced by the `Product` entity, and JSON persistence is handled by repository adapters. UI uses index-based selection for safer and cleaner user interaction without exposing internal IDs."
