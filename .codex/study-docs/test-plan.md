@@ -2,39 +2,28 @@
 
 ## Purpose
 
-This document explains how testing is structured, what behaviors are covered, how to run tests, and how to extend test quality safely as the project evolves.
+This document defines the current test strategy, execution status, coverage scope, and known quality limits for CommerceConsole.
 
-## Testing Philosophy
+## Test Strategy
 
-CommerceConsole testing is architecture-aligned:
-- domain behavior tested in isolation
-- service workflows tested as business units
-- persistence/export adapters tested separately
-- presentation helpers tested with console harnesses
+Tests are organized to mirror production architecture so each concern is validated in the correct layer:
+- `Domain`: entity invariants and core rule safety
+- `Application`: use-case orchestration and business workflow behavior
+- `Infrastructure`: repository contract behavior, JSON persistence, exporter behavior
+- `Presentation`: menu command dispatch and input/output helper behavior
 
-Principle:
-- test the right concern at the right layer.
-
-## Current Test Project Structure
-
-Project:
-- `Tests/CommerceConsole.Tests/CommerceConsole.Tests.csproj`
-
-Folders:
-- `Domain`
-- `Application`
-- `Infrastructure`
-- `Presentation`
-
-Why this split:
-- mirrors production architecture
-- makes coverage gaps obvious
+Principles:
+1. validate domain invariants at source
+2. validate service happy-path and failure-path behavior
+3. validate persistence behavior independently from UI flow
+4. keep presentation tests focused on interaction helpers and dispatch contracts
 
 ## Current Status Snapshot
 
 Latest local run (March 9, 2026):
-- Total tests: `77`
-- Passed: `77`
+- Command used: `dotnet test Tests\\CommerceConsole.Tests\\CommerceConsole.Tests.csproj --no-build`
+- Total: `115`
+- Passed: `115`
 - Failed: `0`
 - Skipped: `0`
 
@@ -43,125 +32,115 @@ Latest local run (March 9, 2026):
 ## Domain invariants
 
 Representative checks:
-- invalid product values rejected
-- entity constructor guard behavior
+- invalid constructor/mutator inputs are rejected
+- domain guard behavior prevents invalid entity state
 
 ## Authentication and session
 
-Covers:
-- registration success
+Covered behavior:
+- customer registration success
 - duplicate email rejection
-- invalid email rejection
-- customer/admin login success paths
-- wrong-password rejection
-- sign-in/sign-out state behavior
+- invalid credential rejection
+- customer/admin login success
+- sign-in/sign-out session handling
 
 ## Catalog and inventory
 
-Covers:
+Covered behavior:
 - add/update/delete/restock workflows
-- search and active filtering
-- low-stock threshold behavior
+- active catalog filtering and search behavior
+- low-stock query behavior
 
 ## Cart and wallet
 
-Covers:
-- add/update/remove cart mutations
-- stock validation against requested quantities
+Covered behavior:
+- add/update/remove cart operations
+- quantity validation against stock constraints
 - wallet top-up validation and persistence
 
 ## Checkout and orders
 
-Covers:
-- happy path orchestration
-- insufficient funds/stock failure paths
-- missing product failure path
+Covered behavior:
+- checkout success path
+- insufficient funds and insufficient stock failure paths
+- missing-product validation path
 - order snapshot correctness
 
 ## Order lifecycle transitions
 
-Covers:
-- valid sequence transitions
+Covered behavior:
+- valid status transitions
 - invalid transition rejection
-- terminal-state transition rejection
+- terminal-state transition protection
 
 ## Reviews and reporting
 
-Covers:
-- purchased-only review rules
-- rating validation
-- average rating, revenue, status counts, best-seller, low-stock calculations
+Covered behavior:
+- purchased-only review eligibility
+- rating boundary validation
+- report aggregates (revenue, status counts, best-sellers, low stock)
 
 ## Bonus features
 
-Covers:
-- recommendation filtering/ranking
-- admin insight generation
-- report export orchestration and PDF output guards
+Covered behavior:
+- recommendation filtering and ranking
+- admin insights generation
+- PDF export orchestration and file creation guards
 
-## Pattern-focused architecture coverage
+## Pattern-focused coverage
 
-Covers:
-- Repository contract and JSON rehydration parity tests
-- Strategy tests for wallet payment behavior and exporter orchestration
-- Factory resolution tests for role-to-workspace routing
-- Command dispatch tests for mapped actions, invalid selection handling, and logout/exit flow control
+Repository Pattern:
+- `Infrastructure/RepositoryContractTests.cs`
+- `Infrastructure/JsonPersistenceTests.cs`
 
-## Presentation helpers
+Strategy Pattern:
+- `Application/WalletPaymentStrategyTests.cs`
+- checkout integration in `Application/OrderServiceTests.cs`
+- export behavior in `Infrastructure/PdfReportExporterTests.cs`
 
-Covers:
-- input retry loops and range validation
-- confirmation prompts
-- paginated product rendering and index visibility
+Factory Pattern:
+- `Presentation/RoleWorkspaceFactoryTests.cs`
 
-## Test Data and Isolation Strategy
+Command Pattern:
+- `Presentation/MenuCommandTests.cs`
+
+## Test Isolation and Determinism
 
 Persistence-related tests:
-- use temporary per-test directories
+- use temporary directories and isolated files
 - avoid shared mutable fixtures
 
-Console tests:
-- redirect `Console.In` / `Console.Out`
-- synchronize where required to avoid global console collision
+Console-related tests:
+- use console input/output redirection harness
+- avoid cross-test console interference
 
-Benefit:
-- deterministic runs with low flakiness risk
+## Execution Commands
 
-## How to Run
-
-```powershell
-dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
-```
-
-Recommended pre-demo sequence:
 ```powershell
 dotnet build CommerceConsole.csproj
 dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj
 ```
 
-## Regression Checklist for New Features
+If the app executable is currently running and locking rebuild output, execute:
 
-When adding/changing behavior:
-1. add happy-path test
-2. add at least one failure/guard test
-3. update docs reflecting rule changes
-4. verify no existing tests regress
-5. include persistence/assertion updates if state model changed
+```powershell
+dotnet test Tests\CommerceConsole.Tests\CommerceConsole.Tests.csproj --no-build
+```
 
-## Current Gaps and Planned Improvements
+## Regression Checklist for Any Change
 
-Known gaps:
-- no full interactive end-to-end scripted console session tests
-- no cross-process file contention simulation
-- no multi-page PDF fidelity tests
+1. add/update tests for the changed behavior
+2. include at least one guard/failure-path assertion
+3. confirm persistence behavior if mutable state changed
+4. confirm no presentation-to-repository direct coupling was introduced
+5. update formal docs when behavior or architecture contracts change
+6. run full test suite and confirm zero regression
 
-Planned additions:
-- state-transition object tests if lifecycle policy is extracted further
-- exporter-variant tests if CSV/other exporters added
-- deeper audit-log tests if event logging bonus is expanded
+## Known Limits (Current)
 
-## Quick Viva Script
+1. No full interactive end-to-end console scenario tests.
+2. No cross-process JSON contention simulation tests.
+3. No visual fidelity assertions for multi-page PDF formatting.
 
-"Tests are organized by architecture layer so each concern is validated at the right level. We cover core happy paths and failure paths for auth, catalog, cart, checkout, lifecycle, reviews, reporting, persistence, and presentation helpers, with deterministic isolation for file and console tests."
-
+These limits are accepted for current coursework scope and do not affect core functional or architectural verification.
 

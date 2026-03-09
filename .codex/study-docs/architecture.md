@@ -1,41 +1,37 @@
-# Architecture Deep Dive
+# Architecture
 
 ## Purpose
 
-This document explains the architecture style used by CommerceConsole, why folders are separated the way they are, and how to explain those decisions clearly in a demo.
+This document describes the architecture model used in CommerceConsole, the layer boundaries, and the dependency direction enforced by the implementation.
 
-If you only remember one line, use this:
+Architecture statement:
 
-"CommerceConsole is a layered, domain-centered console architecture where UI, business workflows, core rules, and technical adapters are kept separate."
+"CommerceConsole uses a layered, domain-centered architecture where presentation, application orchestration, domain rules, and infrastructure adapters are explicitly separated."
 
-## Architecture Identity
+## Architecture Classification
 
-## Is this Domain-Driven Design (DDD)?
+Is this full Domain-Driven Design (DDD)?
+- No.
 
-Short answer:
-- partly yes (DDD-inspired)
-- not full tactical DDD
+Is this domain-centered and DDD-inspired?
+- Yes.
 
-What is DDD-like in this project:
-- business language is explicit in domain types (`Customer`, `Order`, `Payment`, `Review`)
-- invariants are enforced where state is owned
-- behavior lives on entities (`Product.Restock`, `Customer.DebitFunds`, `Cart.UpdateQuantity`)
-- application services express use cases, not menu-level scripts
+Implemented DDD-inspired elements:
+- explicit business language in domain types (`Customer`, `Order`, `Payment`, `Review`)
+- invariant-protecting behavior methods on entities
+- application services that model use cases
 
-What is not full tactical DDD:
-- no formal aggregate catalog
-- no domain events
-- no bounded-context split
-
-Conclusion:
-- best described as layered architecture with strong domain modeling discipline.
+Not implemented as full tactical DDD:
+- bounded context partitioning
+- domain events/event bus
+- explicit aggregate catalogs and repositories by aggregate root boundaries
 
 ## Dependency Direction
 
 ```text
 Presentation -> Application -> Domain
-Infrastructure -> (implements Application interfaces, uses Domain)
-Domain -> (no dependency on higher layers)
+Infrastructure -> Application + Domain
+Domain -> (no dependency on Presentation/Application/Infrastructure)
 ```
 
 ## Layer Responsibilities
@@ -45,15 +41,18 @@ Domain -> (no dependency on higher layers)
 Folders:
 - `Presentation/Menus`
 - `Presentation/Helpers`
+- `Presentation/Commands`
+- `Presentation/Workspaces`
 
-Responsible for:
-- navigation, prompts, retries, and output rendering
-- index-based selection flows (no GUID entry)
+Responsibilities:
+- menu navigation and user interaction
+- rendering and prompt behavior
+- command dispatch and workspace routing
 
-Must never do:
-- direct repository calls
-- business policy decisions (stock, funds, order lifecycle)
-- JSON/file/export operations
+Must not contain:
+- repository calls
+- business rule ownership (stock/funds/checkout policy)
+- persistence/export implementation logic
 
 ## 2. Application
 
@@ -62,15 +61,15 @@ Folders:
 - `Application/Services`
 - `Application/Models`
 
-Responsible for:
+Responsibilities:
 - use-case orchestration
-- cross-entity validation and sequencing
-- query/filter/report calculations
-- repository and service contracts
+- cross-entity workflow sequencing
+- repository/service abstraction contracts
+- reporting, recommendation, and insights calculations
 
-Must never do:
-- console I/O
-- direct file operations
+Must not contain:
+- console input/output handling
+- direct JSON/file operations
 
 ## 3. Domain
 
@@ -79,14 +78,14 @@ Folders:
 - `Domain/Enums`
 - `Domain/Exceptions`
 
-Responsible for:
-- core business types and rules
-- safe mutation methods and invariants
-- domain-specific exceptions
+Responsibilities:
+- business entities and invariants
+- validated state mutation behavior
+- domain-specific error types
 
-Must never do:
-- persistence/file interactions
-- UI rendering
+Must not contain:
+- repository or persistence concerns
+- UI/presentation concerns
 
 ## 4. Infrastructure
 
@@ -97,70 +96,61 @@ Folders:
 - `Infrastructure/Data`
 - `Infrastructure/Export`
 
-Responsible for:
+Responsibilities:
 - repository implementations
+- record-to-domain mapping
 - JSON persistence mechanics
-- record/domain conversion
-- seed data and export adapters
+- seed data initialization
+- report export adapters
 
-Must never do:
-- user interaction
-- business workflow orchestration
+Must not contain:
+- menu interaction logic
+- use-case orchestration policies
 
-## Startup Wiring
+## Composition Root
 
-`Program.cs` stays thin and only wires dependencies and menu entry flow.
+`Program.cs` is the composition root and remains thin.
 
-Startup order:
-1. build repositories
-2. seed missing baseline data
-3. build services from interfaces/concrete implementations
-4. build menus
-5. run main loop
+Runtime bootstrapping responsibilities:
+1. instantiate repositories
+2. apply seed data
+3. instantiate services
+4. instantiate menu/workspace objects
+5. start `MainMenu`
 
-## Design Patterns in Submission 2 Scope
+## Submission 2 Pattern Implementation in Architecture
 
-The Submission 2 pattern set is concretely implemented as:
+The implemented design pattern set is:
+1. Repository Pattern
+2. Strategy Pattern
+3. Factory Pattern
+4. Command Pattern
 
-## Repository Pattern
-- where: repository interfaces in `Application/Interfaces`, implementations in `Infrastructure/Repositories`
-- why: keeps storage mechanics out of services and menus
+Where these appear:
+- Repository: `Application/Interfaces/*Repository` + `Infrastructure/Repositories/*`
+- Strategy: `IPaymentStrategy`/`WalletPaymentStrategy`, `IReportExporter`/`PdfReportExporter`
+- Factory: `IRoleWorkspaceFactory` + `RoleWorkspaceFactory`
+- Command: `IMenuCommand` + `MenuCommandDispatcher` and menu command maps
 
-## Strategy Pattern
-- where: export (`IReportExporter`) and payment (`IPaymentStrategy`) strategy seams
-- why: keeps algorithm variation separate from orchestration logic
+## Architecture Guardrails
 
-## Factory Pattern
-- where: role workspace resolution through `IRoleWorkspaceFactory` and `IUserWorkspace`
-- why: centralizes role-to-workspace creation/routing
-
-## Command Pattern
-- where: `IMenuCommand` command maps + `MenuCommandDispatcher` in Main/Customer/Admin menus
-- why: replaces large selection switches with command dispatch objects`r`n`r`n## Architectural Guardrails
-
-1. menus do not call repositories
-2. menus do not own business rules
-3. domain mutations go through validated behavior methods
-4. repository record models are separate files (no nested classes)
-5. mutable runtime data persists in JSON
-6. docs and tests are updated when behavior changes
+1. Presentation routes and renders only.
+2. Business workflows are centralized in application services.
+3. Domain entities enforce invariants through behavior methods.
+4. Infrastructure owns persistence/export implementation details.
+5. User-facing flows do not expose internal GUID identifiers.
+6. Mutable runtime data is persisted to JSON through repositories.
 
 ## Trade-Offs
 
-Trade-off 1: JSON over database
-- pro: simple setup and predictable demos
-- con: limited multi-process and migration capabilities
+Trade-off 1: JSON persistence over database
+- Advantage: low operational overhead and deterministic coursework setup
+- Limitation: no multi-process concurrency controls
 
-Trade-off 2: plaintext passwords in current coursework scope
-- pro: keeps focus on architecture and workflow delivery
-- con: not production-grade security
+Trade-off 2: plaintext password handling in coursework scope
+- Advantage: keeps implementation focus on architecture and workflow
+- Limitation: not production-grade security posture
 
-Trade-off 3: centralized transition rules in service
-- pro: simple and easy to test
-- con: may be split into dedicated transition handlers later
-
-## Quick Viva Script
-
-"The architecture is layered and strict: Presentation handles interaction, Application handles use-case orchestration, Domain protects core rules, and Infrastructure handles JSON/export adapters. For Submission 2 we concretely implement Repository, Strategy, Factory, and Command while preserving baseline behavior."
-
-
+Trade-off 3: order transition matrix kept in `OrderService`
+- Advantage: centralized and testable policy enforcement
+- Limitation: state-object extraction is a future refactor option, not currently required

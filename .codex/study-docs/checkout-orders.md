@@ -110,6 +110,4 @@ Representative scenarios:
 - missing product failure
 - snapshot integrity verification
 
-## Quick Viva Script
 
-"Checkout is intentionally centralized in `OrderService` because it coordinates multiple state changes. It validates stock and funds first, then executes wallet debit, stock deduction, payment completion, order persistence, and cart clear in a controlled sequence."
