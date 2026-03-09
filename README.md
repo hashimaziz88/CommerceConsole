@@ -100,7 +100,7 @@ Detailed architecture and design notes are available in `docs/`.
 If your terminal is not already in the project directory, run:
 
 ```powershell
-cd "C:\Users\Hashim\Documents\Git Repos\CommerceConsole"
+cd PATH_TO_REPO_FOLDER
 ```
 
 ## Build
