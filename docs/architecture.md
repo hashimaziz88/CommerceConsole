@@ -118,23 +118,25 @@ Startup order:
 4. build menus
 5. run main loop
 
-## Design Patterns in Submission 1 Scope
+## Design Patterns in Submission 2 Scope
 
-Only these patterns are part of the formal submission narrative:
+The Submission 2 pattern set is concretely implemented as:
 
 ## Repository Pattern
 - where: repository interfaces in `Application/Interfaces`, implementations in `Infrastructure/Repositories`
 - why: keeps storage mechanics out of services and menus
 
 ## Strategy Pattern
-- where: report export behind `IReportExporter` with concrete exporter adapters
-- why: separates report generation from output format implementation
+- where: export (`IReportExporter`) and payment (`IPaymentStrategy`) strategy seams
+- why: keeps algorithm variation separate from orchestration logic
 
 ## Factory Pattern
-- current status: documented as targeted refactor seam for role/menu object creation
-- why: centralizes creation logic and removes branching noise from startup/menu entry flow
+- where: role workspace resolution through `IRoleWorkspaceFactory` and `IUserWorkspace`
+- why: centralizes role-to-workspace creation/routing
 
-## Architectural Guardrails
+## Command Pattern
+- where: `IMenuCommand` command maps + `MenuCommandDispatcher` in Main/Customer/Admin menus
+- why: replaces large selection switches with command dispatch objects`r`n`r`n## Architectural Guardrails
 
 1. menus do not call repositories
 2. menus do not own business rules
@@ -159,4 +161,6 @@ Trade-off 3: centralized transition rules in service
 
 ## Quick Viva Script
 
-"The architecture is layered and strict: Presentation handles interaction, Application handles use-case orchestration, Domain protects core rules, and Infrastructure handles JSON/export adapters. For Submission 1 we formally focus on Repository, Strategy, and Factory as the design pattern set."
+"The architecture is layered and strict: Presentation handles interaction, Application handles use-case orchestration, Domain protects core rules, and Infrastructure handles JSON/export adapters. For Submission 2 we concretely implement Repository, Strategy, Factory, and Command while preserving baseline behavior."
+
+

@@ -380,8 +380,8 @@ It includes patterns currently implemented, partially represented, and planned.
 | Pattern / Technique | Status | Where / Evidence | Why It Matters |
 | --- | --- | --- | --- |
 | Repository Pattern | Implemented | `IRepository<T>`, `IUserRepository`, `IProductRepository`, `IOrderRepository`, `InMemory*Repository` | Decouples storage from workflows |
-| Strategy Pattern (Export) | Implemented | `IReportExporter`, `PdfReportExporter`, `ReportExportService` | Separates report logic from output format |
-| Factory Pattern | Planned Formalization | Main flow/menu creation seams | Centralizes creation, reduces branching |
+| Strategy Pattern (Export + Payment) | Implemented | `IReportExporter`, `PdfReportExporter`, `ReportExportService`, `IPaymentStrategy`, `WalletPaymentStrategy` | Separates algorithm choice from orchestration |
+| Factory Pattern | Implemented | `IRoleWorkspaceFactory`, `RoleWorkspaceFactory`, `IUserWorkspace` adapters | Centralizes role workspace routing and removes entry-point branching |
 | Service Layer Pattern | Implemented | `Application/Services/*Service.cs` | Keeps business logic out of menus |
 | Constructor Injection | Implemented | Constructors across services/menus + `Program.cs` wiring | Explicit dependencies, testability |
 | Composition Root | Implemented | `Program.cs` | One place for graph wiring |
@@ -392,7 +392,7 @@ It includes patterns currently implemented, partially represented, and planned.
 | Adapter Pattern | Implemented (Style) | Repository adapters + export adapter | Wraps technical details behind contracts |
 | Idempotent Seed Pattern | Implemented (Technique) | `SeedData.Seed(...)` uniqueness checks | Safe reruns and deterministic startup |
 | State Pattern (Order Lifecycle) | Partial / Planned Upgrade | Current transition map in `OrderService` | Candidate to extract into state objects |
-| Command Pattern (Menu Dispatch) | Planned / Conceptual | Current menu switches | Candidate for action-handler dispatch maps |
+| Command Pattern (Menu Dispatch) | Implemented | `IMenuCommand`, `MenuCommandDispatcher`, command maps in Main/Customer/Admin menus | Standardizes dispatch and reduces menu switch complexity |
 | Specification Pattern (Query Rules) | Planned / Conceptual | Current LINQ predicates in services/repos | Candidate for reusable filtering rules |
 | Facade Pattern (Application as facade to UI) | Partial | Menus call service interfaces as simplified entry points | Reduces UI-facing complexity |
 | Template Method (Workflow Skeleton) | Partial (informal) | Checkout orchestration order in `OrderService` | Stable workflow sequence with variable checks |
@@ -402,3 +402,35 @@ It includes patterns currently implemented, partially represented, and planned.
 1. If asked "which patterns are in production now?" answer with rows marked `Implemented`.
 2. If asked "what are next refactor patterns?" answer with rows marked `Planned` or `Partial / Planned Upgrade`.
 3. Keep Submission 1 claims strict, but use this section for deep study and future defense.
+
+## Submission 2 Implementation Delta (2026-03-09)
+
+This section supersedes earlier "planned" notes where applicable.
+
+Implemented in code now:
+1. Repository Pattern
+- repository contracts and JSON-backed implementations are active
+- repository contract/parity tests were added
+
+2. Strategy Pattern
+- export strategy seam remains active (`IReportExporter` -> `PdfReportExporter`)
+- payment strategy is now active (`IPaymentStrategy` -> `WalletPaymentStrategy`)
+- `OrderService` now delegates payment behavior to strategy
+
+3. Factory Pattern
+- role workspace routing now uses `IRoleWorkspaceFactory`
+- role-to-workspace adapters implemented via `IUserWorkspace`, `CustomerWorkspace`, and `AdminWorkspace`
+- main menu role switch routing is removed
+
+4. Command Pattern
+- menu dispatch now uses `IMenuCommand` + `MenuCommandDispatcher`
+- main/customer/admin selection switches are replaced with command maps
+- explicit command classes cover key control flow (`MainLoginRouteCommand`, `MainExitMenuCommand`, `WorkspaceLogoutCommand`)
+
+Remaining future candidates (not part of current completed four-pattern scope):
+- State-style lifecycle extraction for order transitions
+- Specification-style reusable query objects
+
+Viva-safe short statement:
+"Submission 2 concretely implemented Repository, Strategy, Factory, and Command patterns while preserving baseline behavior and passing full regression tests."
+

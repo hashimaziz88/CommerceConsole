@@ -157,15 +157,17 @@ Testability benefits:
 
 ## Submission Pattern Scope
 
-For Submission 1 documentation, only these pattern names are formally claimed:
+For Submission 2 documentation, the formal implemented pattern set is:
 - Repository Pattern
 - Strategy Pattern
 - Factory Pattern
+- Command Pattern
 
 Current status in code:
-- Repository is implemented across all mutable workflows
-- Strategy is implemented for report export behavior
-- Factory is documented as a controlled refactor seam for the next phase
+- Repository is implemented across all mutable workflows and hardened by repository contract tests.
+- Strategy is implemented for report export and wallet payment processing.
+- Factory is implemented for role workspace resolution in main routing flow.
+- Command is implemented for menu dispatch in main/customer/admin workspaces.
 
 ## Study Drills
 
@@ -176,7 +178,7 @@ Drill 2:
 - trace checkout across layers and explain which layer owns each step.
 
 Drill 3:
-- explain Repository, Strategy, and Factory usage/status in this codebase.
+- explain Repository, Strategy, Factory, and Command usage/status in this codebase.
 
 Drill 4:
 - justify why this architecture is DDD-inspired, but not full tactical DDD.
@@ -184,3 +186,4 @@ Drill 4:
 ## 30-Second OOP Defense Script
 
 "OOP here is used to protect state and keep responsibilities clear. Entities enforce invariants through controlled methods, services orchestrate workflows through interfaces, and infrastructure handles technical adapters like JSON persistence and export formatting. This keeps behavior safe, testable, and easier to evolve."
+

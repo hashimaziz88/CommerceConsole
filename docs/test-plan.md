@@ -32,9 +32,9 @@ Why this split:
 
 ## Current Status Snapshot
 
-Latest local run (March 8, 2026):
-- Total tests: `61`
-- Passed: `61`
+Latest local run (March 9, 2026):
+- Total tests: `77`
+- Passed: `77`
 - Failed: `0`
 - Skipped: `0`
 
@@ -99,6 +99,14 @@ Covers:
 - admin insight generation
 - report export orchestration and PDF output guards
 
+## Pattern-focused architecture coverage
+
+Covers:
+- Repository contract and JSON rehydration parity tests
+- Strategy tests for wallet payment behavior and exporter orchestration
+- Factory resolution tests for role-to-workspace routing
+- Command dispatch tests for mapped actions, invalid selection handling, and logout/exit flow control
+
 ## Presentation helpers
 
 Covers:
@@ -148,11 +156,12 @@ Known gaps:
 - no multi-page PDF fidelity tests
 
 Planned additions:
-- targeted refactor tests during Submission 2
+- state-transition object tests if lifecycle policy is extracted further
 - exporter-variant tests if CSV/other exporters added
 - deeper audit-log tests if event logging bonus is expanded
 
 ## Quick Viva Script
 
 "Tests are organized by architecture layer so each concern is validated at the right level. We cover core happy paths and failure paths for auth, catalog, cart, checkout, lifecycle, reviews, reporting, persistence, and presentation helpers, with deterministic isolation for file and console tests."
+
 

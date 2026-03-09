@@ -1,79 +1,45 @@
 # 05. Submission 2 Design Pattern Upgrade
 
-## Goal (Monday 2026-03-09)
+## Goal (Completed on 2026-03-09)
 
-Introduce explicit design patterns on top of the stable baseline without adding new business scope.
+Concretely implement the approved Submission 2 pattern set without feature expansion:
+- Repository Pattern
+- Strategy Pattern
+- Factory Pattern
+- Command Pattern
 
-This phase is a controlled refactor for extensibility and architecture marks.
+## Implemented Outcomes
 
-## Non-negotiable constraints
+## 1. Repository Pattern
+- Existing repository contracts and JSON-backed implementations remained the data boundary.
+- Added repository contract/parity tests for CRUD and rehydration behavior.
 
-- preserve current user-visible behavior
-- do not move business logic into menus
-- do not introduce feature backlog catch-up
-- do not break persistence contracts without migration notes
-- add pattern-focused tests and docs for every pattern change
+## 2. Strategy Pattern
+- Existing export strategy seam retained (`IReportExporter`).
+- Added payment strategy seam (`IPaymentStrategy`) with `WalletPaymentStrategy`.
+- `OrderService` now delegates payment execution to strategy while preserving checkout orchestration behavior.
 
-## Priority pattern targets
+## 3. Factory Pattern
+- Added role workspace abstractions (`IUserWorkspace`) and role resolver (`IRoleWorkspaceFactory`).
+- Main role routing now resolves workspace through factory instead of switch logic.
 
-### 1. Factory Pattern
+## 4. Command Pattern
+- Added command abstractions (`IMenuCommand`, `MenuCommandDispatcher`, `MenuCommandResult`).
+- Replaced main/customer/admin menu selection switches with command map dispatch.
+- Added explicit control-flow commands and delegate-backed routine commands.
 
-Candidate uses:
-- role-based menu creation/routing
-- user object creation abstraction if beneficial
+## Validation Summary
 
-Expected benefit:
-- centralize creation logic and reduce switch branching in UI composition points
+- behavior parity preserved (no feature-scope expansion)
+- no repository calls from menus
+- no GUID exposure changes in presentation
+- full regression suite passing after refactor
 
-### 2. Strategy Pattern
+## Remaining Future Refactor Candidates (Outside This Completed Scope)
 
-Candidate uses:
-- payment processing strategy abstraction
-- report generation/export variant strategy
+- state-style transition objects for order lifecycle rules
+- specification-style query objects for reusable filtering policies
 
-Current seam already available:
-- `IReportExporter` -> `PdfReportExporter`
+## Viva Script
 
-Suggested extension:
-- add payment strategy contract and wallet strategy implementation while keeping behavior same
-
-### 3. State-style transition handling
-
-Candidate uses:
-- extract order status transitions from map-based rule checks into dedicated transition policy/state objects
-
-Expected benefit:
-- clearer transition rules and easier extension/audit of lifecycle logic
-
-### 4. Repository formalization (if needed)
-
-Candidate uses:
-- refine repository abstractions only where extension clarity improves
-- avoid needless abstraction churn
-
-## Execution sequence
-
-1. Freeze baseline behavior with passing regression tests.
-2. Add pattern interfaces and adapters around existing seams.
-3. Move branching logic into factories/strategies incrementally.
-4. Extract transition policy objects for order lifecycle.
-5. Verify parity with focused tests.
-6. Document architecture delta and trade-offs.
-
-## Verification checklist
-
-- baseline tests remain green
-- new pattern tests cover extension points
-- no UI/business boundary regression
-- no GUID exposure regression
-- docs updated (`architecture`, `design-patterns`, `oop notes`, `study guide`)
-
-## Anti-goals
-
-- no full rewrite
-- no framework-heavy pattern overengineering
-- no feature expansion hidden inside refactor
-
-## Viva explanation script
-
-"Submission 2 pattern work is an incremental extension of existing seams: we formalize creation and algorithm variation points while preserving baseline behavior, so the refactor improves extensibility without destabilizing delivery."
+"Submission 2 was delivered as a controlled refactor: Repository was hardened, Strategy was expanded to payment, Factory was implemented for role workspace routing, and Command was implemented for menu dispatch. Baseline behavior remained stable with full regression pass."

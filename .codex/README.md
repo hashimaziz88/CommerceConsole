@@ -39,8 +39,8 @@ Use this split strictly:
 - Root `docs/` should stay marker-facing and claim-safe.
 - `.codex/` should carry deeper study, trade-offs, and refactor planning detail.
 
-Current rule for Submission 1 pattern claims in public docs:
-- only `Repository Pattern`, `Strategy Pattern`, and `Factory Pattern` are formally named.
+Current rule for Submission 2 public pattern scope:
+- `Repository Pattern`, `Strategy Pattern`, `Factory Pattern`, and `Command Pattern` are formally named in `docs`.
 
 ## Study Navigation And Revision Path
 
@@ -100,3 +100,4 @@ Use these together when preparing explanations:
 
 If implementation changes and this pack is not updated, process drift occurs.
 Update `.codex` files in the same delivery cycle as behavior/documentation changes.
+
