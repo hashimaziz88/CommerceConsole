@@ -43,6 +43,24 @@ public sealed class MenuCommandTests
     }
 
     /// <summary>
+    /// Verifies logout command dispatch exits menu and invokes callback.
+    /// </summary>
+    [Fact]
+    public void Dispatch_WithLogoutCommand_ReturnsExitMenu()
+    {
+        bool loggedOut = false;
+        MenuCommandDispatcher dispatcher = new(new Dictionary<int, IMenuCommand>
+        {
+            [12] = new WorkspaceLogoutCommand(() => loggedOut = true)
+        });
+
+        MenuCommandResult result = dispatcher.Dispatch(12);
+
+        Assert.True(loggedOut);
+        Assert.Equal(MenuCommandResult.ExitMenu, result);
+    }
+
+    /// <summary>
     /// Verifies main login command invokes callback and continues menu loop.
     /// </summary>
     [Fact]
@@ -81,5 +99,20 @@ public sealed class MenuCommandTests
         MenuCommandResult result = command.Execute();
 
         Assert.Equal(MenuCommandResult.Continue, result);
+    }
+
+    /// <summary>
+    /// Verifies workspace logout command invokes callback and exits menu.
+    /// </summary>
+    [Fact]
+    public void WorkspaceLogoutCommand_ExecutesCallback_AndReturnsExitMenu()
+    {
+        bool loggedOut = false;
+        WorkspaceLogoutCommand command = new(() => loggedOut = true);
+
+        MenuCommandResult result = command.Execute();
+
+        Assert.True(loggedOut);
+        Assert.Equal(MenuCommandResult.ExitMenu, result);
     }
 }

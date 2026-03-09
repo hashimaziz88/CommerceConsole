@@ -2,6 +2,7 @@ using CommerceConsole.Application.Interfaces;
 using CommerceConsole.Application.Models;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
+using CommerceConsole.Presentation.Commands;
 using CommerceConsole.Presentation.Helpers;
 
 namespace CommerceConsole.Presentation.Menus;
@@ -74,55 +75,18 @@ public sealed class CustomerMenu
             return;
         }
 
+        MenuCommandDispatcher dispatcher = BuildDispatcher(customer, sessionContext);
+
         bool done = false;
         while (!done)
         {
             ShowMenuOptions(customer.FullName);
             int selection = ConsoleInputHelper.ReadSelection("Choose option (1-13): ", 13);
+            MenuCommandResult result = dispatcher.Dispatch(selection);
 
-            switch (selection)
+            if (result == MenuCommandResult.ExitMenu)
             {
-                case 1:
-                    MenuActionHelper.Execute(BrowseProducts);
-                    break;
-                case 2:
-                    MenuActionHelper.Execute(SearchProducts);
-                    break;
-                case 3:
-                    MenuActionHelper.Execute(() => AddToCart(customer));
-                    break;
-                case 4:
-                    MenuActionHelper.Execute(() => ViewCart(customer));
-                    break;
-                case 5:
-                    MenuActionHelper.Execute(() => UpdateCartItem(customer));
-                    break;
-                case 6:
-                    MenuActionHelper.Execute(() => ViewWalletBalance(customer));
-                    break;
-                case 7:
-                    MenuActionHelper.Execute(() => AddWalletFunds(customer));
-                    break;
-                case 8:
-                    MenuActionHelper.Execute(() => Checkout(customer));
-                    break;
-                case 9:
-                    MenuActionHelper.Execute(() => ViewOrderHistory(customer));
-                    break;
-                case 10:
-                    MenuActionHelper.Execute(() => TrackOrderStatus(customer));
-                    break;
-                case 11:
-                    MenuActionHelper.Execute(() => AddReview(customer));
-                    break;
-                case 12:
-                    MenuActionHelper.Execute(() => ViewRecommendations(customer));
-                    break;
-                case 13:
-                    sessionContext.SignOut();
-                    done = true;
-                    ConsoleTheme.WriteInfo("You have been logged out and returned to the main menu.");
-                    break;
+                done = true;
             }
 
             if (!done)
@@ -130,6 +94,30 @@ public sealed class CustomerMenu
                 ConsoleTheme.Pause();
             }
         }
+    }
+
+    private MenuCommandDispatcher BuildDispatcher(Customer customer, ISessionContext sessionContext)
+    {
+        return new MenuCommandDispatcher(new Dictionary<int, IMenuCommand>
+        {
+            [1] = new DelegateMenuCommand(() => MenuActionHelper.Execute(BrowseProducts)),
+            [2] = new DelegateMenuCommand(() => MenuActionHelper.Execute(SearchProducts)),
+            [3] = new DelegateMenuCommand(() => MenuActionHelper.Execute(() => AddToCart(customer))),
+            [4] = new DelegateMenuCommand(() => MenuActionHelper.Execute(() => ViewCart(customer))),
+            [5] = new DelegateMenuCommand(() => MenuActionHelper.Execute(() => UpdateCartItem(customer))),
+            [6] = new DelegateMenuCommand(() => MenuActionHelper.Execute(() => ViewWalletBalance(customer))),
+            [7] = new DelegateMenuCommand(() => MenuActionHelper.Execute(() => AddWalletFunds(customer))),
+            [8] = new DelegateMenuCommand(() => MenuActionHelper.Execute(() => Checkout(customer))),
+            [9] = new DelegateMenuCommand(() => MenuActionHelper.Execute(() => ViewOrderHistory(customer))),
+            [10] = new DelegateMenuCommand(() => MenuActionHelper.Execute(() => TrackOrderStatus(customer))),
+            [11] = new DelegateMenuCommand(() => MenuActionHelper.Execute(() => AddReview(customer))),
+            [12] = new DelegateMenuCommand(() => MenuActionHelper.Execute(() => ViewRecommendations(customer))),
+            [13] = new WorkspaceLogoutCommand(() =>
+            {
+                sessionContext.SignOut();
+                ConsoleTheme.WriteInfo("You have been logged out and returned to the main menu.");
+            })
+        });
     }
 
     private static void ShowMenuOptions(string customerName)
@@ -342,4 +330,9 @@ public sealed class CustomerMenu
         ProductDisplayHelper.ShowRecommendations("Recommended For You", recommendations);
     }
 }
+
+
+
+
+
 

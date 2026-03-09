@@ -3,6 +3,7 @@ using CommerceConsole.Application.Models;
 using CommerceConsole.Domain.Entities;
 using CommerceConsole.Domain.Enums;
 using CommerceConsole.Domain.Exceptions;
+using CommerceConsole.Presentation.Commands;
 using CommerceConsole.Presentation.Helpers;
 
 namespace CommerceConsole.Presentation.Menus;
@@ -69,52 +70,18 @@ public sealed class AdminMenu
             return;
         }
 
+        MenuCommandDispatcher dispatcher = BuildDispatcher(sessionContext);
+
         bool done = false;
         while (!done)
         {
             ShowMenuOptions(sessionContext.CurrentUser.FullName);
             int selection = ConsoleInputHelper.ReadSelection("Choose option (1-12): ", 12);
+            MenuCommandResult result = dispatcher.Dispatch(selection);
 
-            switch (selection)
+            if (result == MenuCommandResult.ExitMenu)
             {
-                case 1:
-                    MenuActionHelper.Execute(AddProduct);
-                    break;
-                case 2:
-                    MenuActionHelper.Execute(UpdateProduct);
-                    break;
-                case 3:
-                    MenuActionHelper.Execute(DeleteProduct);
-                    break;
-                case 4:
-                    MenuActionHelper.Execute(RestockProduct);
-                    break;
-                case 5:
-                    MenuActionHelper.Execute(ViewProducts);
-                    break;
-                case 6:
-                    MenuActionHelper.Execute(ViewLowStockProducts);
-                    break;
-                case 7:
-                    MenuActionHelper.Execute(ViewAllOrders);
-                    break;
-                case 8:
-                    MenuActionHelper.Execute(UpdateOrderStatus);
-                    break;
-                case 9:
-                    MenuActionHelper.Execute(ViewSalesReport);
-                    break;
-                case 10:
-                    MenuActionHelper.Execute(ViewSmartInsights);
-                    break;
-                case 11:
-                    MenuActionHelper.Execute(ExportSalesReportPdf);
-                    break;
-                case 12:
-                    sessionContext.SignOut();
-                    done = true;
-                    ConsoleTheme.WriteInfo("Administrator session ended. Returning to main menu.");
-                    break;
+                done = true;
             }
 
             if (!done)
@@ -122,6 +89,29 @@ public sealed class AdminMenu
                 ConsoleTheme.Pause();
             }
         }
+    }
+
+    private MenuCommandDispatcher BuildDispatcher(ISessionContext sessionContext)
+    {
+        return new MenuCommandDispatcher(new Dictionary<int, IMenuCommand>
+        {
+            [1] = new DelegateMenuCommand(() => MenuActionHelper.Execute(AddProduct)),
+            [2] = new DelegateMenuCommand(() => MenuActionHelper.Execute(UpdateProduct)),
+            [3] = new DelegateMenuCommand(() => MenuActionHelper.Execute(DeleteProduct)),
+            [4] = new DelegateMenuCommand(() => MenuActionHelper.Execute(RestockProduct)),
+            [5] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ViewProducts)),
+            [6] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ViewLowStockProducts)),
+            [7] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ViewAllOrders)),
+            [8] = new DelegateMenuCommand(() => MenuActionHelper.Execute(UpdateOrderStatus)),
+            [9] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ViewSalesReport)),
+            [10] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ViewSmartInsights)),
+            [11] = new DelegateMenuCommand(() => MenuActionHelper.Execute(ExportSalesReportPdf)),
+            [12] = new WorkspaceLogoutCommand(() =>
+            {
+                sessionContext.SignOut();
+                ConsoleTheme.WriteInfo("Administrator session ended. Returning to main menu.");
+            })
+        });
     }
 
     private static void ShowMenuOptions(string adminName)
@@ -310,3 +300,5 @@ public sealed class AdminMenu
         return products[selection - 1];
     }
 }
+
+
